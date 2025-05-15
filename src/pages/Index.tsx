@@ -9,7 +9,7 @@ const Index: React.FC = () => {
             <BookOpen className="h-12 w-12 text-kb-purple" />
           </div>
         </div>
-        <h1 className="text-3xl font-bold mb-2 text-kb-darkgray">ΓΕΜΗ - ΤΜΗΜΑ ΟΕ Portal</h1>
+        <h1 className="text-3xl font-bold mb-2 text-kb-darkgray">ΕΒΕΑ- ΤΜΗΜΑ ΟΕ Portal</h1>
         
       </div>
       <PasswordModal />
