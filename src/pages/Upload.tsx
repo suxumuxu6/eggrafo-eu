@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload } from 'lucide-react';
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const UploadPage: React.FC = () => {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -21,7 +22,12 @@ const UploadPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !isAdmin) {
+    // Check if user is authenticated and is admin
+    if (!isAuthenticated) {
+      toast.error('You must be logged in to access this page');
+      navigate('/home');
+    } else if (!isAdmin) {
+      toast.error('You must be an administrator to access this page');
       navigate('/home');
     }
   }, [isAuthenticated, isAdmin, navigate]);
@@ -37,21 +43,48 @@ const UploadPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!file) {
+      toast.error('Please select a PDF file');
+      return;
+    }
+    
     setIsUploading(true);
     
-    // In a real application, you would upload the file to a server
-    // For this demo, we'll simulate an upload delay
-    setTimeout(() => {
+    try {
+      // For demo purposes, we'll simulate the upload with a delay
+      // In a real application with Supabase, you would:
+      // 1. Upload the file to Supabase Storage
+      // 2. Save the metadata (title, description, tags) to a database table
+      
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       toast.success(`Document "${title}" uploaded successfully!`);
+      
+      // Reset form
       setTitle('');
       setDescription('');
       setTags('');
       setFile(null);
+      
+      // Optionally navigate to home page after success
+      // navigate('/home');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload document. Please try again.');
+    } finally {
       setIsUploading(false);
-    }, 1500);
+    }
   };
+
+  // If not authenticated or not admin, the useEffect will handle the redirect
+  // This prevents flashing the upload form briefly before redirect
+  if (!isAuthenticated || !isAdmin) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
