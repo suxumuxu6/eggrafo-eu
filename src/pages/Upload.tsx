@@ -54,13 +54,51 @@ const UploadPage: React.FC = () => {
     setIsUploading(true);
     
     try {
-      // For demo purposes, we'll simulate the upload with a delay
-      // In a real application with Supabase, you would:
-      // 1. Upload the file to Supabase Storage
-      // 2. Save the metadata (title, description, tags) to a database table
+      console.log('Starting file upload process...');
       
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Create a unique file name with timestamp to avoid collisions
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `documents/${fileName}`;
+      
+      console.log(`Uploading file to path: ${filePath}`);
+      
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('Error uploading file');
+      }
+      
+      console.log('File uploaded successfully, now saving metadata...');
+      
+      // Get the public URL for the uploaded file
+      const { data: publicURLData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+        
+      const fileUrl = publicURLData.publicUrl;
+      
+      // Save document metadata to database
+      const { error: metadataError } = await supabase
+        .from('documents')
+        .insert([
+          { 
+            title, 
+            description, 
+            tags: tags.split(',').map(tag => tag.trim()), 
+            file_url: fileUrl,
+            created_by: 'admin' // In a real app, you'd use the user's ID
+          }
+        ]);
+        
+      if (metadataError) {
+        console.error('Metadata error:', metadataError);
+        throw new Error('Error saving document metadata');
+      }
       
       toast.success(`Document "${title}" uploaded successfully!`);
       
@@ -70,8 +108,8 @@ const UploadPage: React.FC = () => {
       setTags('');
       setFile(null);
       
-      // Optionally navigate to home page after success
-      // navigate('/home');
+      // Navigate to home page after success
+      navigate('/home');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload document. Please try again.');
@@ -185,4 +223,4 @@ const UploadPage: React.FC = () => {
   );
 };
 
-export default Upload;
+export default UploadPage;
