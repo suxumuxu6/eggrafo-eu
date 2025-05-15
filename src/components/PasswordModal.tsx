@@ -22,7 +22,7 @@ const PasswordModal: React.FC = () => {
       <div className="mb-8 p-3 bg-kb-purple/10 rounded-full">
         <Lock className="h-8 w-8 text-kb-purple" />
       </div>
-      <h2 className="text-2xl font-bold mb-2 text-center">ΕΒΕΑ- ΤΜΗΜΑ ΟΕ</h2>
+      <h2 className="text-2xl font-bold mb-2 text-center">ΕΒΕΑ- ΤΜΗΜΑ ΟΕ/ΕΕ</h2>
       <p className="text-gray-500 mb-6 text-center">Πληκτρολογήστε τον κωδικό πρόσβασης</p>
       <form onSubmit={handleSubmit} className="w-full">
         <div className="space-y-4">
