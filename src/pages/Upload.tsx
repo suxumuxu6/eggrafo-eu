@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload } from 'lucide-react';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -63,10 +63,8 @@ const UploadPage: React.FC = () => {
     try {
       console.log('Starting file upload process...');
       
-      // Ensure user is authenticated before uploading
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
+      // Check if user is authenticated in our custom auth system
+      if (!isAuthenticated || !user) {
         throw new Error('You must be logged in to upload documents');
       }
       
@@ -119,7 +117,7 @@ const UploadPage: React.FC = () => {
           description, 
           tags: tagsArray, 
           file_url: fileUrl,
-          created_by: user?.id || 'admin'
+          created_by: user.id || 'admin'
         });
         
       if (metadataError) {
