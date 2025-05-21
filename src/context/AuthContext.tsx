@@ -3,9 +3,15 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 
+interface User {
+  id: string;
+  email?: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
+  user: User | null;
   login: (password: string) => Promise<boolean>;
   logout: () => void;
 }
@@ -18,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (authStatus === 'true') {
       setIsAuthenticated(true);
+      // Create a mock user when loading from localStorage
+      setUser({ id: localStorage.getItem('kbUserId') || 'admin' });
     }
     
     if (adminStatus === 'true') {
@@ -38,6 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // In a real application, this would be a server request
     // For demo purposes, we'll use simple hardcoded passwords
     if (password === 'admin123') {
+      const userId = 'admin-' + Date.now();
+      localStorage.setItem('kbUserId', userId);
+      setUser({ id: userId });
       setIsAuthenticated(true);
       setIsAdmin(true);
       localStorage.setItem('kbAuth', 'true');
@@ -46,6 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       navigate('/home');
       return true;
     } else if (password === 'user123') {
+      const userId = 'user-' + Date.now();
+      localStorage.setItem('kbUserId', userId);
+      setUser({ id: userId });
       setIsAuthenticated(true);
       setIsAdmin(false);
       localStorage.setItem('kbAuth', 'true');
@@ -62,14 +77,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setIsAuthenticated(false);
     setIsAdmin(false);
+    setUser(null);
     localStorage.removeItem('kbAuth');
     localStorage.removeItem('kbAdmin');
+    localStorage.removeItem('kbUserId');
     toast.info('Logged out successfully');
     navigate('/');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isAdmin, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

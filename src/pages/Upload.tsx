@@ -77,16 +77,21 @@ const UploadPage: React.FC = () => {
       
       console.log(`Uploading file to path: ${filePath}`);
       
+      // Set up progress tracking
+      const xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
+        }
+      });
+      
       // Upload file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
           upsert: false,
           cacheControl: '3600',
-          onUploadProgress: (progress) => {
-            const percent = Math.round((progress.loaded / progress.total) * 100);
-            setUploadProgress(percent);
-          }
         });
         
       if (uploadError) {
