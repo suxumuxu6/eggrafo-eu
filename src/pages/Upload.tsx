@@ -82,18 +82,19 @@ const UploadPage: React.FC = () => {
         
       const fileUrl = publicURLData.publicUrl;
       
+      // Convert tags string to array
+      const tagsArray = tags.split(',').map(tag => tag.trim());
+      
       // Save document metadata to database
       const { error: metadataError } = await supabase
         .from('documents')
-        .insert([
-          { 
-            title, 
-            description, 
-            tags: tags.split(',').map(tag => tag.trim()), 
-            file_url: fileUrl,
-            created_by: 'admin' // In a real app, you'd use the user's ID
-          }
-        ]);
+        .insert({
+          title, 
+          description, 
+          tags: tagsArray, 
+          file_url: fileUrl,
+          created_by: 'admin' // In a real app, you'd use the user's ID
+        });
         
       if (metadataError) {
         console.error('Metadata error:', metadataError);
