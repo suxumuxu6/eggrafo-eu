@@ -10,9 +10,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload } from 'lucide-react';
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
 const UploadPage: React.FC = () => {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
   const navigate = useNavigate();
   
   const [title, setTitle] = useState('');
@@ -20,6 +22,8 @@ const UploadPage: React.FC = () => {
   const [tags, setTags] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is authenticated and is admin
@@ -37,6 +41,7 @@ const UploadPage: React.FC = () => {
       const selectedFile = e.target.files[0];
       if (selectedFile.type === 'application/pdf') {
         setFile(selectedFile);
+        setErrorMessage(null);
       } else {
         toast.error('Please upload a PDF file');
       }
@@ -52,25 +57,41 @@ const UploadPage: React.FC = () => {
     }
     
     setIsUploading(true);
+    setUploadProgress(0);
+    setErrorMessage(null);
     
     try {
       console.log('Starting file upload process...');
       
+      // Ensure user is authenticated before uploading
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('You must be logged in to upload documents');
+      }
+      
       // Create a unique file name with timestamp to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `documents/${fileName}`;
+      const filePath = `${fileName}`;
       
       console.log(`Uploading file to path: ${filePath}`);
       
       // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('documents')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          upsert: false,
+          cacheControl: '3600',
+          onUploadProgress: (progress) => {
+            const percent = Math.round((progress.loaded / progress.total) * 100);
+            setUploadProgress(percent);
+          }
+        });
         
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        throw new Error('Error uploading file');
+        throw new Error(`Error uploading file: ${uploadError.message}`);
       }
       
       console.log('File uploaded successfully, now saving metadata...');
@@ -83,7 +104,7 @@ const UploadPage: React.FC = () => {
       const fileUrl = publicURLData.publicUrl;
       
       // Convert tags string to array
-      const tagsArray = tags.split(',').map(tag => tag.trim());
+      const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
       
       // Save document metadata to database
       const { error: metadataError } = await supabase
@@ -93,12 +114,12 @@ const UploadPage: React.FC = () => {
           description, 
           tags: tagsArray, 
           file_url: fileUrl,
-          created_by: 'admin' // In a real app, you'd use the user's ID
+          created_by: user?.id || 'admin'
         });
         
       if (metadataError) {
         console.error('Metadata error:', metadataError);
-        throw new Error('Error saving document metadata');
+        throw new Error(`Error saving document metadata: ${metadataError.message}`);
       }
       
       toast.success(`Document "${title}" uploaded successfully!`);
@@ -108,11 +129,13 @@ const UploadPage: React.FC = () => {
       setDescription('');
       setTags('');
       setFile(null);
+      setUploadProgress(0);
       
       // Navigate to home page after success
       navigate('/home');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
+      setErrorMessage(error.message || 'Failed to upload document. Please try again.');
       toast.error('Failed to upload document. Please try again.');
     } finally {
       setIsUploading(false);
@@ -138,6 +161,12 @@ const UploadPage: React.FC = () => {
 
         <Card className="max-w-2xl mx-auto">
           <CardContent className="pt-6">
+            {errorMessage && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700">
@@ -149,6 +178,7 @@ const UploadPage: React.FC = () => {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter document title"
                   required
+                  disabled={isUploading}
                 />
               </div>
 
@@ -163,6 +193,7 @@ const UploadPage: React.FC = () => {
                   placeholder="Enter document description"
                   required
                   className="min-h-[100px]"
+                  disabled={isUploading}
                 />
               </div>
 
@@ -175,6 +206,7 @@ const UploadPage: React.FC = () => {
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="guide, tutorial, reference"
+                  disabled={isUploading}
                 />
               </div>
 
@@ -190,10 +222,11 @@ const UploadPage: React.FC = () => {
                     className="sr-only"
                     onChange={handleFileChange}
                     required
+                    disabled={isUploading}
                   />
                   <label 
                     htmlFor="file"
-                    className="flex flex-col items-center justify-center cursor-pointer"
+                    className={`flex flex-col items-center justify-center cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <Upload className="h-8 w-8 text-gray-400 mb-2" />
                     {file ? (
@@ -208,6 +241,16 @@ const UploadPage: React.FC = () => {
                   </label>
                 </div>
               </div>
+
+              {isUploading && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">Uploading...</span>
+                    <span className="text-sm font-medium">{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-2" />
+                </div>
+              )}
 
               <Button 
                 type="submit" 
