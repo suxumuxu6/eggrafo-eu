@@ -10,7 +10,7 @@ import { useFileUpload } from '../components/upload/useFileUpload';
 import { DocumentFormData } from '../components/upload/UploadForm';
 
 const UploadPage: React.FC = () => {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const { uploadDocument, isUploading, uploadProgress, errorMessage } = useFileUpload();
 
@@ -30,6 +30,8 @@ const UploadPage: React.FC = () => {
   if (!isAuthenticated || !isAdmin) {
     return null;
   }
+
+  console.log('Current logged in user:', user);
 
   // Handle document upload with the correct type
   const handleUpload = async (formData: DocumentFormData) => {

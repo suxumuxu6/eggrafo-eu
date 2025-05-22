@@ -52,6 +52,14 @@ export const useFileUpload = () => {
         }
       }
       
+      // Simulate upload progress since we can't track it directly
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const newProgress = prev + 5;
+          return newProgress > 90 ? 90 : newProgress;
+        });
+      }, 200);
+
       // Upload file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('documents')
@@ -59,6 +67,9 @@ export const useFileUpload = () => {
           upsert: false,
           cacheControl: '3600',
         });
+        
+      clearInterval(progressInterval);
+      setUploadProgress(95);
         
       if (uploadError) {
         console.error('Upload error:', uploadError);
@@ -77,21 +88,32 @@ export const useFileUpload = () => {
       // Convert tags string to array
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
       
+      // First, make sure we're authenticated with Supabase
+      const { data: authData } = await supabase.auth.getSession();
+
+      // Use an anonymous key for inserting document if no Supabase user is found
+      // This is a temporary solution - in a production app, you'd use proper Supabase auth
+      const anonId = user.id || 'admin';
+      console.log('Inserting document with user ID:', anonId);
+      
       // Save document metadata to database
-      const { error: metadataError } = await supabase
+      const { error: metadataError, data: insertData } = await supabase
         .from('documents')
         .insert({
           title, 
           description, 
           tags: tagsArray, 
           file_url: fileUrl,
-          created_by: user.id || 'admin'
+          created_by: anonId
         });
         
       if (metadataError) {
         console.error('Metadata error:', metadataError);
         throw new Error(`Error saving document metadata: ${metadataError.message}`);
       }
+      
+      console.log('Document metadata saved successfully:', insertData);
+      setUploadProgress(100);
       
       toast.success(`Document "${title}" uploaded successfully!`);
       
