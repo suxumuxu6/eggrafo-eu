@@ -40,14 +40,17 @@ export const useFileUpload = () => {
       
       console.log(`Uploading file to path: ${filePath}`);
       
-      // Set up progress tracking using XMLHttpRequest
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          setUploadProgress(percent);
+      // Set up the storage bucket if it doesn't exist yet
+      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('documents');
+      if (bucketError && bucketError.message.includes('does not exist')) {
+        const { error: createBucketError } = await supabase.storage.createBucket('documents', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+        });
+        if (createBucketError) {
+          throw new Error(`Error creating storage bucket: ${createBucketError.message}`);
         }
-      });
+      }
       
       // Upload file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage

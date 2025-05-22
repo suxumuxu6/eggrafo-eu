@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Card, CardContent } from '@/components/ui/card';
 import { UploadForm } from '../components/upload/UploadForm';
 import { useFileUpload } from '../components/upload/useFileUpload';
+import { DocumentFormData } from '../components/upload/UploadForm';
 
 const UploadPage: React.FC = () => {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -30,8 +31,8 @@ const UploadPage: React.FC = () => {
     return null;
   }
 
-  // Using the same function signature as defined in the components
-  const handleUpload = async (formData) => {
+  // Handle document upload with the correct type
+  const handleUpload = async (formData: DocumentFormData) => {
     return await uploadDocument(formData);
   };
 
