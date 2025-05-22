@@ -75,7 +75,7 @@ const UploadPage: React.FC = () => {
       
       console.log(`Uploading file to path: ${filePath}`);
       
-      // Set up progress tracking
+      // Set up progress tracking using XMLHttpRequest
       const xhr = new XMLHttpRequest();
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) {
