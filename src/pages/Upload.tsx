@@ -30,6 +30,11 @@ const UploadPage: React.FC = () => {
     return null;
   }
 
+  // We don't need to modify this handleUpload function wrapper since the UploadForm now accepts Promise<boolean | void>
+  const handleUpload = async (formData: FormData) => {
+    return await uploadDocument(formData);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -44,7 +49,7 @@ const UploadPage: React.FC = () => {
         <Card className="max-w-2xl mx-auto">
           <CardContent className="pt-6">
             <UploadForm 
-              onSubmit={uploadDocument}
+              onSubmit={handleUpload}
               isUploading={isUploading}
               uploadProgress={uploadProgress}
               errorMessage={errorMessage}

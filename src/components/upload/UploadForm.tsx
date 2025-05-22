@@ -7,7 +7,7 @@ import FileUploadField from './FileUploadField';
 import UploadProgress from './UploadProgress';
 
 interface UploadFormProps {
-  onSubmit: (data: FormData) => Promise<void>;
+  onSubmit: (data: FormData) => Promise<boolean | void>; // Updated to accept Promise<boolean | void>
   isUploading: boolean;
   uploadProgress: number;
   errorMessage: string | null;
