@@ -30,8 +30,8 @@ const UploadPage: React.FC = () => {
     return null;
   }
 
-  // We don't need to modify this handleUpload function wrapper since the UploadForm now accepts Promise<boolean | void>
-  const handleUpload = async (formData: FormData) => {
+  // Using the same function signature as defined in the components
+  const handleUpload = async (formData) => {
     return await uploadDocument(formData);
   };
 

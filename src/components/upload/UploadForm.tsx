@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,14 +7,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import FileUploadField from './FileUploadField';
 import UploadProgress from './UploadProgress';
 
+// Renamed the interface to avoid collision with browser's FormData
 interface UploadFormProps {
-  onSubmit: (data: FormData) => Promise<boolean | void>; // Updated to accept Promise<boolean | void>
+  onSubmit: (data: DocumentFormData) => Promise<boolean | void>; 
   isUploading: boolean;
   uploadProgress: number;
   errorMessage: string | null;
 }
 
-interface FormData {
+// Renamed from FormData to DocumentFormData
+interface DocumentFormData {
   title: string;
   description: string;
   tags: string;
@@ -123,4 +126,4 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
   );
 };
 
-export { UploadForm, type FormData };
+export { UploadForm, type DocumentFormData };

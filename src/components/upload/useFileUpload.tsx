@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from "@/integrations/supabase/client";
-import { FormData } from './UploadForm';
+import { DocumentFormData } from './UploadForm';
 
 export const useFileUpload = () => {
   const { user } = useAuth();
@@ -13,12 +13,12 @@ export const useFileUpload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const uploadDocument = async (formData: FormData) => {
+  const uploadDocument = async (formData: DocumentFormData) => {
     const { title, description, tags, file } = formData;
     
     if (!file) {
       toast.error('Please select a PDF file');
-      return;
+      return false;
     }
     
     setIsUploading(true);
