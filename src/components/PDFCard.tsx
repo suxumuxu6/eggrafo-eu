@@ -11,9 +11,10 @@ interface PDFCardProps {
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  isAdmin: boolean;
 }
 
-const PDFCard: React.FC<PDFCardProps> = ({ title, description, tags, onView, onEdit, onDelete }) => {
+const PDFCard: React.FC<PDFCardProps> = ({ title, description, tags, onView, onEdit, onDelete, isAdmin }) => {
   return (
     <Card className="card-hover card-gradient transition-all duration-200 w-full">
       <CardContent className="p-6">
@@ -42,21 +43,25 @@ const PDFCard: React.FC<PDFCardProps> = ({ title, description, tags, onView, onE
         >
           View Document
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onEdit}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onDelete}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {isAdmin && (
+          <>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onEdit}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onDelete}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </CardFooter>
     </Card>
   );

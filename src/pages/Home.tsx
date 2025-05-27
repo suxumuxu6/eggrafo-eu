@@ -11,7 +11,7 @@ import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
 
 const Home: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
@@ -122,6 +122,7 @@ const Home: React.FC = () => {
                 onView={() => handleViewDocument(doc)}
                 onEdit={() => handleEditDocument(doc)}
                 onDelete={() => handleDeleteDocument(doc)}
+                isAdmin={isAdmin}
               />
             ))}
           </div>
