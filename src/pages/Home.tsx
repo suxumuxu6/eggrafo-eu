@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SearchBar from '../components/SearchBar';
 import PDFCard from '../components/PDFCard';
 import PDFViewer from '../components/PDFViewer';
+import EditDocumentModal from '../components/EditDocumentModal';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
@@ -12,10 +13,15 @@ import { Document } from '../utils/searchUtils';
 const Home: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { documents: allDocuments, loading, error, searchDocuments } = useDocuments();
+  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [documentToEdit, setDocumentToEdit] = useState<Document | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -35,6 +41,35 @@ const Home: React.FC = () => {
   const handleViewDocument = (document: Document) => {
     setSelectedDocument(document);
     setIsViewerOpen(true);
+  };
+
+  const handleEditDocument = (document: Document) => {
+    setDocumentToEdit(document);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteDocument = (document: Document) => {
+    setDocumentToDelete(document);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleSaveEdit = async (id: string, updates: { title: string; description: string; tags: string[] }) => {
+    await updateDocument(id, updates);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!documentToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteDocument(documentToDelete.id);
+      setIsDeleteModalOpen(false);
+      setDocumentToDelete(null);
+    } catch (error) {
+      console.error('Delete failed:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (loading) {
@@ -82,8 +117,11 @@ const Home: React.FC = () => {
               <PDFCard 
                 key={doc.id} 
                 title={doc.title} 
-                description={doc.description} 
-                onView={() => handleViewDocument(doc)} 
+                description={doc.description}
+                tags={doc.tags}
+                onView={() => handleViewDocument(doc)}
+                onEdit={() => handleEditDocument(doc)}
+                onDelete={() => handleDeleteDocument(doc)}
               />
             ))}
           </div>
@@ -103,6 +141,27 @@ const Home: React.FC = () => {
           isOpen={isViewerOpen} 
           onClose={() => setIsViewerOpen(false)} 
           document={selectedDocument} 
+        />
+
+        <EditDocumentModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setDocumentToEdit(null);
+          }}
+          document={documentToEdit}
+          onSave={handleSaveEdit}
+        />
+
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setDocumentToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          documentTitle={documentToDelete?.title || ''}
+          isDeleting={isDeleting}
         />
       </main>
     </div>
