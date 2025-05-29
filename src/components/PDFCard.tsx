@@ -8,13 +8,14 @@ interface PDFCardProps {
   title: string;
   description: string;
   tags: string[];
+  category?: string;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   isAdmin: boolean;
 }
 
-const PDFCard: React.FC<PDFCardProps> = ({ title, description, tags, onView, onEdit, onDelete, isAdmin }) => {
+const PDFCard: React.FC<PDFCardProps> = ({ title, description, tags, category, onView, onEdit, onDelete, isAdmin }) => {
   return (
     <Card className="card-hover card-gradient transition-all duration-200 w-full">
       <CardContent className="p-6">
@@ -22,6 +23,11 @@ const PDFCard: React.FC<PDFCardProps> = ({ title, description, tags, onView, onE
           <div className="p-2 bg-kb-purple/10 rounded-lg">
             <FileText className="h-6 w-6 text-kb-purple" />
           </div>
+          {category && (
+            <span className="ml-auto px-3 py-1 bg-kb-blue text-white text-xs rounded-full font-medium">
+              {category}
+            </span>
+          )}
         </div>
         <h3 className="text-lg font-medium text-kb-darkgray mb-2">{title}</h3>
         <p className="text-gray-600 text-sm line-clamp-2 mb-3">{description}</p>

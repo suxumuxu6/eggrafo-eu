@@ -29,6 +29,7 @@ export const useDocuments = () => {
         title: doc.title,
         description: doc.description || '',
         tags: doc.tags || [],
+        category: doc.category || '',
         url: doc.file_url
       }));
 
@@ -41,7 +42,7 @@ export const useDocuments = () => {
     }
   };
 
-  const updateDocument = async (id: string, updates: { title: string; description: string; tags: string[] }) => {
+  const updateDocument = async (id: string, updates: { title: string; description: string; tags: string[]; category?: string }) => {
     try {
       const { error: updateError } = await supabase
         .from('documents')
@@ -49,6 +50,7 @@ export const useDocuments = () => {
           title: updates.title,
           description: updates.description,
           tags: updates.tags,
+          category: updates.category,
           updated_at: new Date().toISOString()
         })
         .eq('id', id);
@@ -60,7 +62,13 @@ export const useDocuments = () => {
       // Update local state
       setDocuments(prev => prev.map(doc => 
         doc.id === id 
-          ? { ...doc, title: updates.title, description: updates.description, tags: updates.tags }
+          ? { 
+              ...doc, 
+              title: updates.title, 
+              description: updates.description, 
+              tags: updates.tags,
+              category: updates.category || doc.category
+            }
           : doc
       ));
 
@@ -101,7 +109,8 @@ export const useDocuments = () => {
     return documents.filter(doc => 
       doc.title.toLowerCase().includes(normalizedQuery) || 
       doc.description.toLowerCase().includes(normalizedQuery) ||
-      doc.tags.some(tag => tag.toLowerCase().includes(normalizedQuery))
+      doc.tags.some(tag => tag.toLowerCase().includes(normalizedQuery)) ||
+      (doc.category && doc.category.toLowerCase().includes(normalizedQuery))
     );
   };
 

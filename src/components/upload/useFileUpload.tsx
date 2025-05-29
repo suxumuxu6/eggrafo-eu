@@ -14,10 +14,15 @@ export const useFileUpload = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const uploadDocument = async (formData: DocumentFormData) => {
-    const { title, description, tags, file } = formData;
+    const { title, description, tags, category, file } = formData;
     
     if (!file) {
       toast.error('Please select a PDF file');
+      return false;
+    }
+    
+    if (!category) {
+      toast.error('Please select a category');
       return false;
     }
     
@@ -103,6 +108,7 @@ export const useFileUpload = () => {
           title, 
           description, 
           tags: tagsArray, 
+          category,
           file_url: fileUrl,
           created_by: anonId
         });

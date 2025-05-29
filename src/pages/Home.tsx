@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -119,6 +120,7 @@ const Home: React.FC = () => {
                 title={doc.title} 
                 description={doc.description}
                 tags={doc.tags}
+                category={doc.category}
                 onView={() => handleViewDocument(doc)}
                 onEdit={() => handleEditDocument(doc)}
                 onDelete={() => handleDeleteDocument(doc)}
