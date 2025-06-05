@@ -11,14 +11,6 @@ interface InlinePDFViewerProps {
 }
 
 const InlinePDFViewer: React.FC<InlinePDFViewerProps> = ({ document, onClose }) => {
-  // Add parameters to the PDF URL to force it to display inline
-  const getPDFUrl = (url: string) => {
-    if (!url) return '';
-    console.log('PDF URL:', url);
-    // Add parameters to ensure proper PDF display in iframe
-    return `${url}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
-  };
-
   const openInNewTab = () => {
     if (document.url) {
       window.open(document.url, '_blank');
@@ -53,23 +45,25 @@ const InlinePDFViewer: React.FC<InlinePDFViewerProps> = ({ document, onClose }) 
         <CardContent className="flex-1 min-h-0 p-0 relative">
           <div className="w-full h-full">
             {document.url ? (
-              <iframe
-                src={getPDFUrl(document.url)}
-                className="w-full h-full border-0"
-                title={document.title}
-                style={{ minHeight: '500px' }}
-                onLoad={() => console.log('PDF iframe loaded')}
-                onError={() => console.log('PDF iframe error')}
-              />
+              <div className="w-full h-full flex flex-col">
+                <iframe
+                  src={`${document.url}#view=FitH&toolbar=0&navpanes=0`}
+                  className="w-full h-full border-0"
+                  title={document.title}
+                  style={{ minHeight: '500px' }}
+                  allow="fullscreen"
+                />
+                <div className="p-4 bg-gray-50 border-t text-center">
+                  <p className="text-sm text-gray-600 mb-2">
+                    If the PDF doesn't display properly, click the button above to open it in a new tab.
+                  </p>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full bg-gray-100">
                 <p className="text-gray-500">No preview available</p>
               </div>
             )}
-          </div>
-          {/* Footer */}
-          <div className="absolute bottom-2 right-4 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
-            © D. Lamprou
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -120,9 +119,9 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1">
         <div className="mb-12 text-center">
           <h1 className="text-3xl font-bold mb-4 text-kb-darkgray">ΕΒΕΑ ΟΕ/ΕΕ PORTAL</h1>
           <p className="text-gray-600 max-w-2xl mx-auto mb-8">
@@ -164,35 +163,43 @@ const Home: React.FC = () => {
             </div>
           )}
         </div>
-
-        {selectedDocument && (
-          <InlinePDFViewer 
-            document={selectedDocument}
-            onClose={() => setSelectedDocument(null)}
-          />
-        )}
-
-        <EditDocumentModal
-          isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setDocumentToEdit(null);
-          }}
-          document={documentToEdit}
-          onSave={handleSaveEdit}
-        />
-
-        <DeleteConfirmModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setDocumentToDelete(null);
-          }}
-          onConfirm={handleConfirmDelete}
-          documentTitle={documentToDelete?.title || ''}
-          isDeleting={isDeleting}
-        />
       </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-sm text-gray-500">© D. Lamprou</p>
+        </div>
+      </footer>
+
+      {/* Modals */}
+      {selectedDocument && (
+        <InlinePDFViewer 
+          document={selectedDocument}
+          onClose={() => setSelectedDocument(null)}
+        />
+      )}
+
+      <EditDocumentModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setDocumentToEdit(null);
+        }}
+        document={documentToEdit}
+        onSave={handleSaveEdit}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDocumentToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        documentTitle={documentToDelete?.title || ''}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
