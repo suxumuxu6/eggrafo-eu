@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SearchBar from '../components/SearchBar';
 import PDFCard from '../components/PDFCard';
-import PDFViewer from '../components/PDFViewer';
+import CategoryFilter from '../components/CategoryFilter';
+import InlinePDFViewer from '../components/InlinePDFViewer';
 import EditDocumentModal from '../components/EditDocumentModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
@@ -16,8 +17,9 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [documentToEdit, setDocumentToEdit] = useState<Document | null>(null);
@@ -31,17 +33,35 @@ const Home: React.FC = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    setFilteredDocuments(allDocuments);
-  }, [allDocuments]);
+    filterDocuments();
+  }, [allDocuments, selectedCategory, searchQuery]);
+
+  const filterDocuments = () => {
+    let filtered = allDocuments;
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = searchDocuments(searchQuery);
+    }
+
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(doc => doc.category === selectedCategory);
+    }
+
+    setFilteredDocuments(filtered);
+  };
 
   const handleSearch = (query: string) => {
-    const results = searchDocuments(query);
-    setFilteredDocuments(results);
+    setSearchQuery(query);
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
   };
 
   const handleViewDocument = (document: Document) => {
     setSelectedDocument(document);
-    setIsViewerOpen(true);
   };
 
   const handleEditDocument = (document: Document) => {
@@ -54,7 +74,7 @@ const Home: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveEdit = async (id: string, updates: { title: string; description: string; tags: string[] }) => {
+  const handleSaveEdit = async (id: string, updates: { title: string; description: string; tags: string[]; category?: string }) => {
     await updateDocument(id, updates);
   };
 
@@ -112,8 +132,13 @@ const Home: React.FC = () => {
         </div>
 
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-6 text-kb-darkgray">Available Documents</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h2 className="text-xl font-semibold mb-6 text-kb-darkgray">Κατηγορίες εγγράφων</h2>
+          <CategoryFilter 
+            documents={allDocuments}
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             {filteredDocuments.map(doc => (
               <PDFCard 
                 key={doc.id} 
@@ -133,18 +158,19 @@ const Home: React.FC = () => {
               <p className="text-gray-500">
                 {allDocuments.length === 0 
                   ? "No documents found. Upload some documents to get started." 
-                  : "No documents found. Try a different search term."
+                  : "No documents found. Try a different search term or category."
                 }
               </p>
             </div>
           )}
         </div>
 
-        <PDFViewer 
-          isOpen={isViewerOpen} 
-          onClose={() => setIsViewerOpen(false)} 
-          document={selectedDocument} 
-        />
+        {selectedDocument && (
+          <InlinePDFViewer 
+            document={selectedDocument}
+            onClose={() => setSelectedDocument(null)}
+          />
+        )}
 
         <EditDocumentModal
           isOpen={isEditModalOpen}
