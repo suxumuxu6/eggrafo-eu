@@ -5,13 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Document } from '../utils/searchUtils';
+
+const CATEGORIES = [
+  'ΥΜΣ',
+  'ΠΙΣΤΟΠΟΙΗΤΙΚΑ', 
+  'ΑΠΟΓΡΑΦΗ',
+  'ΜΕΤΑΒΟΛΕΣ',
+  'ΓΝΩΜΟΔΟΤΗΣΕΙΣ Ν.Υ.'
+];
 
 interface EditDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
   document: Document | null;
-  onSave: (id: string, updates: { title: string; description: string; tags: string[] }) => Promise<void>;
+  onSave: (id: string, updates: { title: string; description: string; tags: string[]; category?: string }) => Promise<void>;
 }
 
 const EditDocumentModal: React.FC<EditDocumentModalProps> = ({ 
@@ -23,6 +32,7 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
+  const [category, setCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -30,6 +40,7 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
       setTitle(document.title);
       setDescription(document.description);
       setTags(document.tags.join(', '));
+      setCategory(document.category || '');
     }
   }, [document]);
 
@@ -39,7 +50,7 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
     setIsSaving(true);
     try {
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      await onSave(document.id, { title, description, tags: tagsArray });
+      await onSave(document.id, { title, description, tags: tagsArray, category });
       onClose();
     } catch (error) {
       console.error('Error saving document:', error);
@@ -73,6 +84,21 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({
               placeholder="Document description"
               rows={3}
             />
+          </div>
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="tags">Tags (comma separated)</Label>
