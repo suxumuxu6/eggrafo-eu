@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,8 @@ const CATEGORIES = [
   'ΠΙΣΤΟΠΟΙΗΤΙΚΑ', 
   'ΑΠΟΓΡΑΦΗ',
   'ΜΕΤΑΒΟΛΕΣ',
-  'ΓΝΩΜΟΔΟΤΗΣΕΙΣ Ν.Υ.'
+  'ΓΝΩΜΟΔΟΤΗΣΕΙΣ Ν.Υ.',
+  'Νόμοι'
 ];
 
 const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadProgress, errorMessage }) => {
