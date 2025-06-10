@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -157,7 +158,7 @@ const Home: React.FC = () => {
               <p className="text-gray-500">
                 {allDocuments.length === 0 
                   ? "No documents found. Upload some documents to get started." 
-                  : "No documents found. Try a different search term or category."
+                  : "Δεν βρέθηκαν έγγραφα. Δοκιμάστε άλλη κατηγορία ή διαφορετική αναζήτηση."
                 }
               </p>
             </div>
