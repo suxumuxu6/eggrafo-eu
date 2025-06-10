@@ -12,7 +12,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   user: User | null;
-  login: (password: string) => Promise<boolean>;
+  login: (password: string, rememberMe?: boolean) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -31,6 +31,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check localStorage on initial load
     const authStatus = localStorage.getItem('kbAuth');
     const adminStatus = localStorage.getItem('kbAdmin');
+    const loginExpiry = localStorage.getItem('kbLoginExpiry');
+    
+    // Check if login has expired
+    if (loginExpiry && Date.now() > parseInt(loginExpiry)) {
+      // Login has expired, clear all auth data
+      localStorage.removeItem('kbAuth');
+      localStorage.removeItem('kbAdmin');
+      localStorage.removeItem('kbUserId');
+      localStorage.removeItem('kbLoginExpiry');
+      return;
+    }
     
     if (authStatus === 'true') {
       setIsAuthenticated(true);
@@ -43,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (password: string): Promise<boolean> => {
+  const login = async (password: string, rememberMe: boolean = false): Promise<boolean> => {
     // In a real application, this would be a server request
     // For demo purposes, we'll use simple hardcoded passwords
     if (password === 'qazWSX86+!') {
@@ -54,6 +65,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(true);
       localStorage.setItem('kbAuth', 'true');
       localStorage.setItem('kbAdmin', 'true');
+      
+      // Set expiration time based on remember me option
+      const expirationTime = rememberMe 
+        ? Date.now() + (20 * 24 * 60 * 60 * 1000) // 20 days
+        : Date.now() + (24 * 60 * 60 * 1000); // 1 day
+      localStorage.setItem('kbLoginExpiry', expirationTime.toString());
+      
       toast.success('Logged in as administrator');
       navigate('/home');
       return true;
@@ -65,6 +83,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(false);
       localStorage.setItem('kbAuth', 'true');
       localStorage.setItem('kbAdmin', 'false');
+      
+      // Set expiration time based on remember me option
+      const expirationTime = rememberMe 
+        ? Date.now() + (20 * 24 * 60 * 60 * 1000) // 20 days
+        : Date.now() + (24 * 60 * 60 * 1000); // 1 day
+      localStorage.setItem('kbLoginExpiry', expirationTime.toString());
+      
       toast.success('Logged in as user');
       navigate('/home');
       return true;
@@ -81,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('kbAuth');
     localStorage.removeItem('kbAdmin');
     localStorage.removeItem('kbUserId');
+    localStorage.removeItem('kbLoginExpiry');
     toast.info('Logged out successfully');
     navigate('/');
   };

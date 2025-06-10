@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,8 +96,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter document description"
-          required
+          placeholder="Enter document description (optional)"
           className="min-h-[100px]"
           disabled={isUploading}
         />

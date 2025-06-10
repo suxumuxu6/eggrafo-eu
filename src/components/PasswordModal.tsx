@@ -2,19 +2,21 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const PasswordModal: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(password);
+      await login(password, rememberMe);
     } finally {
       setIsLoading(false);
     }
@@ -37,6 +39,19 @@ const PasswordModal: React.FC = () => {
             className="w-full" 
             required 
           />
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="remember-me" 
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+            />
+            <label 
+              htmlFor="remember-me" 
+              className="text-sm text-gray-700 cursor-pointer"
+            >
+              Remember me for 20 days
+            </label>
+          </div>
           <Button 
             type="submit" 
             className="w-full bg-kb-purple hover:bg-kb-purple/90" 
