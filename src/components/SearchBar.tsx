@@ -21,14 +21,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
       <div className="flex w-full max-w-3xl items-center space-x-2">
         <Input
           type="text"
-          placeholder="Search documents..."
+          placeholder="Αναζήτηση Εγγράφων..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full rounded-lg border-gray-200 py-3 pl-4 shadow-sm focus:border-kb-purple focus:ring-kb-purple"
         />
         <Button type="submit" className="bg-kb-purple hover:bg-kb-purple/90 text-white">
           <Search className="h-4 w-4 mr-2" />
-          Search
+          Αναζήτηση
         </Button>
       </div>
     </form>
