@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (password: string): Promise<boolean> => {
     // In a real application, this would be a server request
     // For demo purposes, we'll use simple hardcoded passwords
-    if (password === 'admin123') {
+    if (password === 'qazWSX86+!') {
       const userId = 'admin-' + Date.now();
       localStorage.setItem('kbUserId', userId);
       setUser({ id: userId });
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Logged in as administrator');
       navigate('/home');
       return true;
-    } else if (password === 'user123') {
+    } else if (password === 'tmimaoe-ee2025!') {
       const userId = 'user-' + Date.now();
       localStorage.setItem('kbUserId', userId);
       setUser({ id: userId });
