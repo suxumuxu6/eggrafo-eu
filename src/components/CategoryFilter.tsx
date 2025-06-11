@@ -9,7 +9,7 @@ const CATEGORIES = [
   'ΑΠΟΓΡΑΦΗ',
   'ΜΕΤΑΒΟΛΕΣ',
   'ΓΝΩΜΟΔΟΤΗΣΕΙΣ Ν.Υ.',
-  'Νόμοι'
+  'ΝΟΜΟΙ'
 ];
 
 interface CategoryFilterProps {

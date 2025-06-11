@@ -32,10 +32,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const authStatus = localStorage.getItem('kbAuth');
     const adminStatus = localStorage.getItem('kbAdmin');
     const loginExpiry = localStorage.getItem('kbLoginExpiry');
+    const userId = localStorage.getItem('kbUserId');
+    
+    console.log('Auth initialization - authStatus:', authStatus, 'loginExpiry:', loginExpiry);
     
     // Check if login has expired
     if (loginExpiry && Date.now() > parseInt(loginExpiry)) {
       // Login has expired, clear all auth data
+      console.log('Login expired, clearing auth data');
       localStorage.removeItem('kbAuth');
       localStorage.removeItem('kbAdmin');
       localStorage.removeItem('kbUserId');
@@ -43,52 +47,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    if (authStatus === 'true') {
+    if (authStatus === 'true' && userId) {
+      console.log('Restoring session for user:', userId);
       setIsAuthenticated(true);
-      // Create a mock user when loading from localStorage
-      setUser({ id: localStorage.getItem('kbUserId') || 'admin' });
-    }
-    
-    if (adminStatus === 'true') {
-      setIsAdmin(true);
+      setUser({ id: userId });
+      
+      if (adminStatus === 'true') {
+        setIsAdmin(true);
+      }
     }
   }, []);
 
   const login = async (password: string, rememberMe: boolean = false): Promise<boolean> => {
+    console.log('Login attempt with rememberMe:', rememberMe);
+    
     // In a real application, this would be a server request
     // For demo purposes, we'll use simple hardcoded passwords
     if (password === 'qazWSX86+!') {
       const userId = 'admin-' + Date.now();
-      localStorage.setItem('kbUserId', userId);
-      setUser({ id: userId });
-      setIsAuthenticated(true);
-      setIsAdmin(true);
-      localStorage.setItem('kbAuth', 'true');
-      localStorage.setItem('kbAdmin', 'true');
-      
-      // Set expiration time based on remember me option
       const expirationTime = rememberMe 
         ? Date.now() + (20 * 24 * 60 * 60 * 1000) // 20 days
         : Date.now() + (24 * 60 * 60 * 1000); // 1 day
+      
+      console.log('Admin login successful, expiration:', new Date(expirationTime));
+      
+      localStorage.setItem('kbUserId', userId);
+      localStorage.setItem('kbAuth', 'true');
+      localStorage.setItem('kbAdmin', 'true');
       localStorage.setItem('kbLoginExpiry', expirationTime.toString());
+      
+      setUser({ id: userId });
+      setIsAuthenticated(true);
+      setIsAdmin(true);
       
       toast.success('Logged in as administrator');
       navigate('/home');
       return true;
     } else if (password === 'tmimaoe-ee2025!') {
       const userId = 'user-' + Date.now();
-      localStorage.setItem('kbUserId', userId);
-      setUser({ id: userId });
-      setIsAuthenticated(true);
-      setIsAdmin(false);
-      localStorage.setItem('kbAuth', 'true');
-      localStorage.setItem('kbAdmin', 'false');
-      
-      // Set expiration time based on remember me option
       const expirationTime = rememberMe 
         ? Date.now() + (20 * 24 * 60 * 60 * 1000) // 20 days
         : Date.now() + (24 * 60 * 60 * 1000); // 1 day
+      
+      console.log('User login successful, expiration:', new Date(expirationTime));
+      
+      localStorage.setItem('kbUserId', userId);
+      localStorage.setItem('kbAuth', 'true');
+      localStorage.setItem('kbAdmin', 'false');
       localStorage.setItem('kbLoginExpiry', expirationTime.toString());
+      
+      setUser({ id: userId });
+      setIsAuthenticated(true);
+      setIsAdmin(false);
       
       toast.success('Logged in as user');
       navigate('/home');
@@ -100,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    console.log('Logging out user');
     setIsAuthenticated(false);
     setIsAdmin(false);
     setUser(null);

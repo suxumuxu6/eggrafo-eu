@@ -31,7 +31,7 @@ const CATEGORIES = [
   'ΑΠΟΓΡΑΦΗ',
   'ΜΕΤΑΒΟΛΕΣ',
   'ΓΝΩΜΟΔΟΤΗΣΕΙΣ Ν.Υ.',
-  'Νόμοι'
+  'ΝΟΜΟΙ'
 ];
 
 const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadProgress, errorMessage }) => {
