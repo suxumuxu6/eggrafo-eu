@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -27,7 +26,7 @@ const Navbar: React.FC = () => {
               </Link>}
             <Button variant="ghost" className="text-kb-darkgray hover:text-kb-purple flex items-center space-x-2" onClick={logout}>
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>Έξοδος</span>
             </Button>
           </div>
         </div>
