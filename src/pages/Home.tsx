@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import SearchBar from '../components/SearchBar';
-import PDFCard from '../components/PDFCard';
-import CategoryFilter from '../components/CategoryFilter';
+import DocumentsHeader from '../components/DocumentsHeader';
+import DocumentsSection from '../components/DocumentsSection';
 import InlinePDFViewer from '../components/InlinePDFViewer';
 import EditDocumentModal from '../components/EditDocumentModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
@@ -130,47 +129,17 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <main className="container mx-auto px-4 py-8 flex-1">
-        <div className="mb-12 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-kb-darkgray">ΕΒΕΑ ΟΕ/ΕΕ PORTAL</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
-            Μέσα στο site μπορείτε βρείτε γνωμοδοτήσεις των νομικών συμβούλων , manuals και άλλα έγγραφα μέσα απο τις κατηγορίες καθώς και την αναζήτηση.
-          </p>
-          <SearchBar onSearch={handleSearch} />
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-6 text-kb-darkgray">Κατηγορίες εγγράφων</h2>
-          <CategoryFilter 
-            documents={allDocuments}
-            selectedCategory={selectedCategory}
-            onCategoryChange={handleCategoryChange}
-          />
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-6 auto-rows-fr">
-            {filteredDocuments.map(doc => (
-              <PDFCard 
-                key={doc.id} 
-                title={doc.title} 
-                description={doc.description}
-                tags={doc.tags}
-                category={doc.category}
-                onView={() => handleViewDocument(doc)}
-                onEdit={() => handleEditDocument(doc)}
-                onDelete={() => handleDeleteDocument(doc)}
-                isAdmin={isAdmin}
-              />
-            ))}
-          </div>
-          {filteredDocuments.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                {allDocuments.length === 0 
-                  ? "No documents found. Upload some documents to get started." 
-                  : "Δεν βρέθηκαν έγγραφα. Δοκιμάστε άλλη κατηγορία ή διαφορετική αναζήτηση."
-                }
-              </p>
-            </div>
-          )}
-        </div>
+        <DocumentsHeader onSearch={handleSearch} />
+        <DocumentsSection
+          allDocuments={allDocuments}
+          filteredDocuments={filteredDocuments}
+          selectedCategory={selectedCategory}
+          isAdmin={isAdmin}
+          onCategoryChange={handleCategoryChange}
+          onViewDocument={handleViewDocument}
+          onEditDocument={handleEditDocument}
+          onDeleteDocument={handleDeleteDocument}
+        />
       </main>
 
       {/* Footer */}
