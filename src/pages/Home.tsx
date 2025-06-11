@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -26,7 +25,9 @@ const Home: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Only redirect if we're sure the user is not authenticated
+    // The AuthProvider will handle the loading state
+    if (isAuthenticated === false) {
       navigate('/');
     }
   }, [isAuthenticated, navigate]);

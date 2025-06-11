@@ -25,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,10 +45,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('kbAdmin');
       localStorage.removeItem('kbUserId');
       localStorage.removeItem('kbLoginExpiry');
+      setIsLoading(false);
       return;
     }
     
-    if (authStatus === 'true' && userId) {
+    if (authStatus === 'true' && userId && loginExpiry) {
       console.log('Restoring session for user:', userId);
       setIsAuthenticated(true);
       setUser({ id: userId });
@@ -56,6 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAdmin(true);
       }
     }
+    
+    setIsLoading(false);
   }, []);
 
   const login = async (password: string, rememberMe: boolean = false): Promise<boolean> => {
@@ -121,6 +125,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.info('Logged out successfully');
     navigate('/');
   };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-kb-purple"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, isAdmin, user, login, logout }}>
