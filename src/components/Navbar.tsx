@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +15,7 @@ const Navbar: React.FC = () => {
           <div className="flex items-center">
             <Link to="/home" className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-kb-purple" />
-              <span className="font-bold text-xl text-kb-darkgray">ΕΒΕΑ ΟΕ/ΕΕ PORTAL</span>
+              <span className="font-bold text-xl text-kb-darkgray">Knowledge Portal</span>
             </Link>
           </div>
           <div className="flex items-center space-x-4">

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import PasswordModal from '../components/PasswordModal';
 import { BookOpen } from 'lucide-react';
@@ -9,7 +10,7 @@ const Index: React.FC = () => {
             <BookOpen className="h-12 w-12 text-kb-purple" />
           </div>
         </div>
-        <h1 className="text-3xl font-bold mb-2 text-kb-darkgray">ΕΒΕΑ- ΤΜΗΜΑ ΟΕ/ΕΕ Portal</h1>
+        <h1 className="text-3xl font-bold mb-2 text-kb-darkgray">Knowledge Portal</h1>
         
       </div>
       <PasswordModal />
