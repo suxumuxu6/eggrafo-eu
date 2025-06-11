@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../utils/searchUtils';
@@ -30,7 +29,8 @@ export const useDocuments = () => {
         description: doc.description || '',
         tags: doc.tags || [],
         category: doc.category || '',
-        url: doc.file_url
+        url: doc.file_url,
+        view_count: doc.view_count || 0
       }));
 
       setDocuments(transformedDocuments);
@@ -39,6 +39,28 @@ export const useDocuments = () => {
       setError(err.message || 'Failed to fetch documents');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const incrementViewCount = async (documentId: string) => {
+    try {
+      const { error } = await supabase.rpc('increment_document_views', {
+        document_id: documentId
+      });
+
+      if (error) {
+        console.error('Error incrementing view count:', error);
+        return;
+      }
+
+      // Update local state
+      setDocuments(prev => prev.map(doc => 
+        doc.id === documentId 
+          ? { ...doc, view_count: (doc.view_count || 0) + 1 }
+          : doc
+      ));
+    } catch (err: any) {
+      console.error('Error incrementing view count:', err);
     }
   };
 
@@ -125,6 +147,7 @@ export const useDocuments = () => {
     fetchDocuments,
     searchDocuments,
     updateDocument,
-    deleteDocument
+    deleteDocument,
+    incrementViewCount
   };
 };

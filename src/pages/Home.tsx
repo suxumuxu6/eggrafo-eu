@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -15,7 +14,7 @@ import { Document } from '../utils/searchUtils';
 const Home: React.FC = () => {
   const { isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument } = useDocuments();
+  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -49,6 +48,11 @@ const Home: React.FC = () => {
       filtered = filtered.filter(doc => doc.category === selectedCategory);
     }
 
+    // Sort by popularity (view count) when "Όλες" (all) category is selected
+    if (selectedCategory === 'all') {
+      filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+    }
+
     setFilteredDocuments(filtered);
   };
 
@@ -61,6 +65,8 @@ const Home: React.FC = () => {
   };
 
   const handleViewDocument = (document: Document) => {
+    // Increment view count when document is viewed
+    incrementViewCount(document.id);
     setSelectedDocument(document);
   };
 
@@ -206,3 +212,5 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+}

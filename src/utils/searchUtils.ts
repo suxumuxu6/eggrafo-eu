@@ -1,3 +1,4 @@
+
 export interface Document {
   id: string;
   title: string;
@@ -5,6 +6,7 @@ export interface Document {
   tags: string[];
   category?: string;
   url: string;
+  view_count?: number;
 }
 
 export const searchDocuments = (documents: Document[], query: string): Document[] => {

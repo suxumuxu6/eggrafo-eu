@@ -20,6 +20,7 @@ export type Database = {
           tags: string[] | null
           title: string
           updated_at: string | null
+          view_count: number
         }
         Insert: {
           category?: string | null
@@ -31,6 +32,7 @@ export type Database = {
           tags?: string[] | null
           title: string
           updated_at?: string | null
+          view_count?: number
         }
         Update: {
           category?: string | null
@@ -42,6 +44,7 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string | null
+          view_count?: number
         }
         Relationships: []
       }
@@ -50,7 +53,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_document_views: {
+        Args: { document_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
