@@ -62,6 +62,8 @@ const Home: React.FC = () => {
   };
 
   const handleCategoryChange = (category: string) => {
+    // Clear search query when changing category to show all documents in that category
+    setSearchQuery('');
     setSelectedCategory(category);
   };
 
@@ -130,7 +132,7 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <main className="container mx-auto px-4 py-8 flex-1">
-        <DocumentsHeader onSearch={handleSearch} />
+        <DocumentsHeader onSearch={handleSearch} searchQuery={searchQuery} />
         <DocumentsSection
           allDocuments={allDocuments}
           filteredDocuments={filteredDocuments}

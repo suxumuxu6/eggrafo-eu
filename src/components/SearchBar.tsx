@@ -1,19 +1,25 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  searchQuery?: string;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch, searchQuery = '' }) => {
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  // Update local state when external searchQuery changes (e.g., when cleared)
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    onSearch(localSearchQuery);
   };
 
   return (
@@ -22,8 +28,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
         <Input
           type="text"
           placeholder="Αναζήτηση Εγγράφων..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={localSearchQuery}
+          onChange={(e) => setLocalSearchQuery(e.target.value)}
           className="w-full rounded-lg border-gray-200 py-3 pl-4 shadow-sm focus:border-kb-purple focus:ring-kb-purple"
         />
         <Button type="submit" className="bg-kb-purple hover:bg-kb-purple/90 text-white">
