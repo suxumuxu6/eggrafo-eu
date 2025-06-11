@@ -138,7 +138,7 @@ const Home: React.FC = () => {
             selectedCategory={selectedCategory}
             onCategoryChange={handleCategoryChange}
           />
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-6 auto-rows-fr">
             {filteredDocuments.map(doc => (
               <PDFCard 
                 key={doc.id} 
