@@ -53,9 +53,9 @@ serve(async (req) => {
 
     console.log('Created donation record:', donation.id);
 
-    // PayPal sandbox API endpoints
-    const tokenUrl = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
-    const paymentUrl = 'https://api-m.sandbox.paypal.com/v1/payments/payment';
+    // PayPal LIVE API endpoints
+    const tokenUrl = 'https://api-m.paypal.com/v1/oauth2/token';
+    const paymentUrl = 'https://api-m.paypal.com/v1/payments/payment';
 
     // Get PayPal access token
     console.log('Requesting PayPal access token...');

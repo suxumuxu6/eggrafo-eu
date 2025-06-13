@@ -26,8 +26,8 @@ serve(async (req) => {
       throw new Error('PayPal credentials not configured');
     }
 
-    // Get PayPal access token
-    const tokenResponse = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+    // Get PayPal access token (using LIVE endpoint)
+    const tokenResponse = await fetch('https://api-m.paypal.com/v1/oauth2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -41,8 +41,8 @@ serve(async (req) => {
 
     console.log('Got PayPal access token');
 
-    // Verify the payment
-    const paymentResponse = await fetch(`https://api-m.sandbox.paypal.com/v1/payments/payment/${paymentId}`, {
+    // Verify the payment (using LIVE endpoint)
+    const paymentResponse = await fetch(`https://api-m.paypal.com/v1/payments/payment/${paymentId}`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
