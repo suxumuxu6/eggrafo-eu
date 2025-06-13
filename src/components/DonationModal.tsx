@@ -52,8 +52,8 @@ const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, onSucces
       timestamp: Date.now()
     }));
 
-    // PayPal donation URL with the provided link
-    const paypalUrl = `https://paypal.me/Eggrafodesk?country.x=GR&locale.x=en_US`;
+    // PayPal donation URL with the new hosted button
+    const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U`;
     
     toast.success('Redirecting to PayPal for 20€ donation...');
     
