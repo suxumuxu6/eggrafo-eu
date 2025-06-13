@@ -54,21 +54,42 @@ const DonationModal: React.FC<DonationModalProps> = ({
     setIsProcessing(true);
     
     try {
-      // Redirect directly to the PayPal donation link
-      const paypalDonationUrl = 'https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U';
+      console.log('Creating PayPal payment...');
       
-      // Store user data for verification later
+      // Call the edge function to create PayPal payment
+      const { data, error } = await supabase.functions.invoke('create-paypal-payment', {
+        body: {
+          userData,
+          documentId,
+          documentTitle
+        }
+      });
+
+      if (error) {
+        console.error('PayPal payment creation error:', error);
+        throw new Error(error.message || 'Failed to create payment');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Payment creation failed');
+      }
+
+      console.log('PayPal payment created successfully:', data);
+
+      // Store user data and donation info for verification later
       localStorage.setItem('pendingDonation', JSON.stringify({
         ...userData,
         documentTitle,
         documentId,
+        donationId: data.donationId,
+        paymentId: data.paymentId,
         timestamp: Date.now()
       }));
 
       toast.success('Redirecting to PayPal for payment...');
       
-      // Redirect to PayPal
-      window.location.href = paypalDonationUrl;
+      // Redirect to PayPal approval URL
+      window.location.href = data.approvalUrl;
     } catch (error: any) {
       console.error('Payment creation error:', error);
       toast.error(`Payment creation failed: ${error.message}`);
@@ -156,7 +177,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
               disabled={isProcessing || !userData.name.trim() || !userData.email.trim()}
             >
               {isProcessing ? (
-                'Processing...'
+                'Creating Payment...'
               ) : (
                 <>
                   <ExternalLink className="h-4 w-4 mr-2" />
