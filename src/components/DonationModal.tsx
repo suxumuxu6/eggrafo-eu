@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Mail, User, CreditCard, ExternalLink } from 'lucide-react';
 import { toast } from "sonner";
 
@@ -17,14 +16,12 @@ interface DonationModalProps {
 interface UserData {
   name: string;
   email: string;
-  message: string;
 }
 
 const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, onSuccess, documentTitle }) => {
   const [userData, setUserData] = useState<UserData>({
     name: '',
-    email: '',
-    message: ''
+    email: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -55,15 +52,15 @@ const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, onSucces
       timestamp: Date.now()
     }));
 
-    // PayPal donation URL with 20 EUR amount
-    const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=YOUR_BUTTON_ID&amount=20&currency_code=EUR&item_name=Document Access - ${encodeURIComponent(documentTitle)}`;
+    // PayPal donation URL with the provided link
+    const paypalUrl = `https://paypal.me/Eggrafodesk?country.x=GR&locale.x=en_US`;
     
     toast.success('Redirecting to PayPal for 20€ donation...');
     
     // Open PayPal in new tab
     window.open(paypalUrl, '_blank');
     
-    // Simulate payment processing
+    // Simulate payment validation - in real implementation, you'd validate the payment
     setTimeout(() => {
       setIsProcessing(false);
       toast.success('Thank you for your donation! You can now access the document.');
@@ -74,7 +71,7 @@ const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, onSucces
 
   const handleClose = () => {
     if (!isProcessing) {
-      setUserData({ name: '', email: '', message: '' });
+      setUserData({ name: '', email: '' });
       onClose();
     }
   };
@@ -132,20 +129,6 @@ const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, onSucces
                   disabled={isProcessing}
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                Message (Optional)
-              </label>
-              <Textarea
-                id="message"
-                placeholder="Any additional message or comments..."
-                value={userData.message}
-                onChange={(e) => handleInputChange('message', e.target.value)}
-                className="min-h-[80px]"
-                disabled={isProcessing}
-              />
             </div>
           </div>
 
