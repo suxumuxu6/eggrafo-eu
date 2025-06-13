@@ -3,12 +3,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import FileUploadField from './FileUploadField';
 import UploadProgress from './UploadProgress';
 
-// Renamed the interface to avoid collision with browser's FormData
 interface UploadFormProps {
   onSubmit: (data: DocumentFormData) => Promise<boolean | void>; 
   isUploading: boolean;
@@ -16,7 +14,6 @@ interface UploadFormProps {
   errorMessage: string | null;
 }
 
-// Renamed from FormData to DocumentFormData
 interface DocumentFormData {
   title: string;
   description: string;
@@ -25,26 +22,16 @@ interface DocumentFormData {
   file: File | null;
 }
 
-const CATEGORIES = [
-  'ΥΜΣ',
-  'ΠΙΣΤΟΠΟΙΗΤΙΚΑ', 
-  'ΑΠΟΓΡΑΦΗ',
-  'ΜΕΤΑΒΟΛΕΣ',
-  'ΓΝΩΜΟΔΟΤΗΣΕΙΣ Ν.Υ.',
-  'ΝΟΜΟΙ'
-];
-
 const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadProgress, errorMessage }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
-  const [category, setCategory] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!file || !category) {
+    if (!file) {
       return;
     }
     
@@ -52,19 +39,15 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
       title,
       description,
       tags,
-      category,
+      category: '', // Set empty category since we're removing categories
       file
     });
-    
-    // Reset form on successful upload (this will be called by parent component)
-    // We keep the form state here for simplicity
   };
   
   const resetForm = () => {
     setTitle('');
     setDescription('');
     setTags('');
-    setCategory('');
     setFile(null);
   };
 
@@ -105,24 +88,6 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-          Category
-        </label>
-        <Select value={category} onValueChange={setCategory} disabled={isUploading}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
         <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
           Tags (comma separated)
         </label>
@@ -149,7 +114,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
       <Button 
         type="submit" 
         className="w-full bg-kb-purple hover:bg-kb-purple/90"
-        disabled={isUploading || !file || !category}
+        disabled={isUploading || !file}
       >
         {isUploading ? 'Uploading...' : 'Upload Document'}
       </Button>

@@ -14,7 +14,6 @@ const Home: React.FC = () => {
   const { isAdmin } = useAuth();
   const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -25,7 +24,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     filterDocuments();
-  }, [allDocuments, selectedCategory, searchQuery]);
+  }, [allDocuments, searchQuery]);
 
   const filterDocuments = () => {
     let filtered = allDocuments;
@@ -35,27 +34,14 @@ const Home: React.FC = () => {
       filtered = searchDocuments(searchQuery);
     }
 
-    // Apply category filter
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(doc => doc.category === selectedCategory);
-    }
-
-    // Sort by popularity (view count) when "Όλες" (all) category is selected
-    if (selectedCategory === 'all') {
-      filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
-    }
+    // Sort by popularity (view count)
+    filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
 
     setFilteredDocuments(filtered);
   };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-  };
-
-  const handleCategoryChange = (category: string) => {
-    // Clear search query when changing category to show all documents in that category
-    setSearchQuery('');
-    setSelectedCategory(category);
   };
 
   const handleViewDocument = (document: Document) => {
@@ -125,11 +111,8 @@ const Home: React.FC = () => {
       <main className="container mx-auto px-4 py-8 flex-1">
         <DocumentsHeader onSearch={handleSearch} searchQuery={searchQuery} />
         <DocumentsSection
-          allDocuments={allDocuments}
           filteredDocuments={filteredDocuments}
-          selectedCategory={selectedCategory}
           isAdmin={isAdmin}
-          onCategoryChange={handleCategoryChange}
           onViewDocument={handleViewDocument}
           onEditDocument={handleEditDocument}
           onDeleteDocument={handleDeleteDocument}
