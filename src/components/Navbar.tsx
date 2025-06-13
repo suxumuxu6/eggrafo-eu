@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-4">
               {!isAuthenticated ? <Button variant="ghost" className="text-kb-darkgray hover:text-kb-purple flex items-center space-x-2" onClick={() => setIsLoginModalOpen(true)}>
                   <Lock className="h-4 w-4" />
-                  <span>Admin</span>
+                  <span>Login</span>
                 </Button> : <>
                   {isAdmin && <Link to="/upload">
                       <Button variant="outline" className="flex items-center space-x-2">
