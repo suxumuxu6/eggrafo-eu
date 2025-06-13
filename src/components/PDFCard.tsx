@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { FileText, Edit, Trash2 } from 'lucide-react';
@@ -26,7 +27,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
       <CardContent className="p-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-3">
           <div className="p-2 rounded-lg bg-[#173c8f]/0">
-            <FileText className="h-5 w-5 text-kb-purple" />
+            <FileText className="h-5 w-5 text-blue-600" />
           </div>
           {category && <span className="px-2 py-1 bg-kb-blue text-white text-xs rounded-full font-medium">
               {category}

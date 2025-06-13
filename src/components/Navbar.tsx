@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +18,7 @@ const Navbar: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <BookOpen className="h-8 w-8 text-kb-purple" />
+                <BookOpen className="h-8 w-8 text-blue-600" />
                 <span className="font-bold text-xl text-kb-darkgray">eggrafo.eu</span>
               </Link>
             </div>
