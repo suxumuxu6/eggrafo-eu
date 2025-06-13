@@ -25,7 +25,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
   return <Card className="card-hover card-gradient transition-all duration-200 w-full h-full flex flex-col">
       <CardContent className="p-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-3">
-          <div className="p-2 bg-kb-purple/10 rounded-lg">
+          <div className="p-2 rounded-lg bg-[#173c8f]/0">
             <FileText className="h-5 w-5 text-kb-purple" />
           </div>
           {category && <span className="px-2 py-1 bg-kb-blue text-white text-xs rounded-full font-medium">
