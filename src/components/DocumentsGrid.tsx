@@ -26,6 +26,7 @@ const DocumentsGrid: React.FC<DocumentsGridProps> = ({
         {documents.map(doc => (
           <PDFCard 
             key={doc.id} 
+            id={doc.id}
             title={doc.title} 
             description={doc.description}
             tags={doc.tags}
