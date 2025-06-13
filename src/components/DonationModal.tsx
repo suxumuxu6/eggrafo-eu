@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -6,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Mail, User, CreditCard, ExternalLink } from 'lucide-react';
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
-
 interface DonationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,29 +12,28 @@ interface DonationModalProps {
   documentTitle: string;
   documentId?: string;
 }
-
 interface UserData {
   name: string;
   email: string;
 }
-
-const DonationModal: React.FC<DonationModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  documentTitle, 
-  documentId 
+const DonationModal: React.FC<DonationModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  documentTitle,
+  documentId
 }) => {
   const [userData, setUserData] = useState<UserData>({
     name: '',
     email: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
-
   const handleInputChange = (field: keyof UserData, value: string) => {
-    setUserData(prev => ({ ...prev, [field]: value }));
+    setUserData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
   const handlePayPalDonation = async () => {
     // Validate required fields
     if (!userData.name.trim() || !userData.email.trim()) {
@@ -50,30 +47,28 @@ const DonationModal: React.FC<DonationModalProps> = ({
       toast.error('Please enter a valid email address');
       return;
     }
-
     setIsProcessing(true);
-    
     try {
       console.log('Creating PayPal payment...');
-      
+
       // Call the edge function to create PayPal payment
-      const { data, error } = await supabase.functions.invoke('create-paypal-payment', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('create-paypal-payment', {
         body: {
           userData,
           documentId,
           documentTitle
         }
       });
-
       if (error) {
         console.error('PayPal payment creation error:', error);
         throw new Error(error.message || 'Failed to create payment');
       }
-
       if (!data.success) {
         throw new Error(data.error || 'Payment creation failed');
       }
-
       console.log('PayPal payment created successfully:', data);
 
       // Store user data and donation info for verification later
@@ -85,9 +80,8 @@ const DonationModal: React.FC<DonationModalProps> = ({
         paymentId: data.paymentId,
         timestamp: Date.now()
       }));
-
       toast.success('Redirecting to PayPal for payment...');
-      
+
       // Redirect to PayPal approval URL
       window.location.href = data.approvalUrl;
     } catch (error: any) {
@@ -96,16 +90,16 @@ const DonationModal: React.FC<DonationModalProps> = ({
       setIsProcessing(false);
     }
   };
-
   const handleClose = () => {
     if (!isProcessing) {
-      setUserData({ name: '', email: '' });
+      setUserData({
+        name: '',
+        email: ''
+      });
       onClose();
     }
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+  return <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -117,7 +111,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
         <div className="space-y-4">
           <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
             <p className="font-medium text-kb-blue mb-1">Access Document: {documentTitle}</p>
-            <p>To view this document, please register your details and make a 20€ donation via PayPal.</p>
+            <p>Προκειμένου να δείτε το έγγραφο θα θέλαμε να μας ενισχύσετε κάνοντας δωρεά 15€.</p>
           </div>
 
           <div className="space-y-4">
@@ -127,16 +121,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={userData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={isProcessing}
-                />
+                <Input id="name" type="text" placeholder="Enter your full name" value={userData.name} onChange={e => handleInputChange('name', e.target.value)} className="pl-10" required disabled={isProcessing} />
               </div>
             </div>
 
@@ -146,16 +131,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email address"
-                  value={userData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={isProcessing}
-                />
+                <Input id="email" type="email" placeholder="Enter your email address" value={userData.email} onChange={e => handleInputChange('email', e.target.value)} className="pl-10" required disabled={isProcessing} />
               </div>
             </div>
           </div>
@@ -171,26 +147,13 @@ const DonationModal: React.FC<DonationModalProps> = ({
           </div>
 
           <div className="flex gap-2 pt-2">
-            <Button
-              onClick={handlePayPalDonation}
-              className="flex-1 bg-kb-blue hover:bg-kb-blue/90 text-white"
-              disabled={isProcessing || !userData.name.trim() || !userData.email.trim()}
-            >
-              {isProcessing ? (
-                'Creating Payment...'
-              ) : (
-                <>
+            <Button onClick={handlePayPalDonation} className="flex-1 bg-kb-blue hover:bg-kb-blue/90 text-white" disabled={isProcessing || !userData.name.trim() || !userData.email.trim()}>
+              {isProcessing ? 'Creating Payment...' : <>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Donate 20€ via PayPal
-                </>
-              )}
+                </>}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isProcessing}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isProcessing}>
               Cancel
             </Button>
           </div>
@@ -200,8 +163,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
           </p>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default DonationModal;
