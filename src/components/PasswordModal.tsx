@@ -1,66 +1,71 @@
+
 import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Lock } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
-const PasswordModal: React.FC = () => {
+interface PasswordModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (password: string) => void;
+  isLoading?: boolean;
+}
+
+const PasswordModal: React.FC<PasswordModalProps> = ({ isOpen, onClose, onSubmit, isLoading = false }) => {
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const { login } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      await login(password, rememberMe);
-    } finally {
-      setIsLoading(false);
-    }
+    onSubmit(password);
+    setPassword('');
+  };
+
+  const handleClose = () => {
+    setPassword('');
+    onClose();
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 rounded-lg bg-white shadow-lg animate-fade-in w-full max-w-md mx-auto">
-      <div className="mb-8 p-3 bg-kb-purple/10 rounded-full">
-        <Lock className="h-8 w-8 text-kb-purple" />
-      </div>
-      <h2 className="text-2xl font-bold mb-2 text-center">Knowledge Portal ΟΕ/ΕΕ</h2>
-      <p className="text-gray-500 mb-6 text-center">Πληκτρολογήστε τον κωδικό πρόσβασης</p>
-      <form onSubmit={handleSubmit} className="w-full">
-        <div className="space-y-4">
-          <Input 
-            type="password" 
-            placeholder="Enter password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
-            className="w-full" 
-            required 
-          />
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="remember-me" 
-              checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-kb-purple" />
+            Password Required
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Input 
+              type="password" 
+              placeholder="Enter password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              required 
+              disabled={isLoading}
             />
-            <label 
-              htmlFor="remember-me" 
-              className="text-sm text-gray-700 cursor-pointer"
-            >
-              Remember me for 20 days
-            </label>
           </div>
-          <Button 
-            type="submit" 
-            className="w-full bg-kb-purple hover:bg-kb-purple/90" 
-            disabled={isLoading}
-          >
-            {isLoading ? 'Verifying...' : 'Access Knowledge Base'}
-          </Button>
-        </div>
-      </form>
-    </div>
+          <div className="flex gap-2">
+            <Button 
+              type="submit" 
+              className="flex-1 bg-kb-purple hover:bg-kb-purple/90" 
+              disabled={isLoading || !password}
+            >
+              {isLoading ? 'Verifying...' : 'Submit'}
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleClose}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
