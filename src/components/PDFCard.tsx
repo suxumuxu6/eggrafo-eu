@@ -35,7 +35,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
         <h3 className="text-sm font-medium text-kb-darkgray mb-2 line-clamp-2 min-h-[2.5rem] leading-tight">{title}</h3>
         <p className="text-gray-600 text-xs line-clamp-3 mb-3 flex-1 leading-relaxed">{description}</p>
         {tags && tags.length > 0 && <div className="flex flex-wrap gap-1 mb-3">
-            {tags.slice(0, 3).map((tag, index) => <span key={index} className="px-2 py-1 bg-kb-purple/10 text-kb-purple text-xs rounded-full">
+            {tags.slice(0, 3).map((tag, index) => <span key={index} className="px-2 py-1 bg-kb-purple/10 text-xs rounded-full text-blue-700">
                 {tag}
               </span>)}
             {tags.length > 3 && <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-full">
