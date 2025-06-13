@@ -1,6 +1,5 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 
 interface User {
@@ -18,15 +17,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// In a real application, you would use proper authentication
-// with a backend server, JWT tokens, etc.
-// This is a simplified example for demonstration purposes
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Check localStorage on initial load
@@ -45,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('kbAdmin');
       localStorage.removeItem('kbUserId');
       localStorage.removeItem('kbLoginExpiry');
-      setIsLoading(false);
       return;
     }
     
@@ -58,8 +51,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAdmin(true);
       }
     }
-    
-    setIsLoading(false);
   }, []);
 
   const login = async (password: string, rememberMe: boolean = false): Promise<boolean> => {
@@ -85,27 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(true);
       
       toast.success('Logged in as administrator');
-      navigate('/home');
-      return true;
-    } else if (password === 'tmimaoe-ee2025!') {
-      const userId = 'user-' + Date.now();
-      const expirationTime = rememberMe 
-        ? Date.now() + (20 * 24 * 60 * 60 * 1000) // 20 days
-        : Date.now() + (24 * 60 * 60 * 1000); // 1 day
-      
-      console.log('User login successful, expiration:', new Date(expirationTime));
-      
-      localStorage.setItem('kbUserId', userId);
-      localStorage.setItem('kbAuth', 'true');
-      localStorage.setItem('kbAdmin', 'false');
-      localStorage.setItem('kbLoginExpiry', expirationTime.toString());
-      
-      setUser({ id: userId });
-      setIsAuthenticated(true);
-      setIsAdmin(false);
-      
-      toast.success('Logged in as user');
-      navigate('/home');
       return true;
     } else {
       toast.error('Invalid password');
@@ -123,20 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('kbUserId');
     localStorage.removeItem('kbLoginExpiry');
     toast.info('Logged out successfully');
-    navigate('/');
   };
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-kb-purple"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, isAdmin, user, login, logout }}>

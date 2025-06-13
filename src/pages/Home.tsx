@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
@@ -11,8 +11,7 @@ import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
 
 const Home: React.FC = () => {
-  const { isAuthenticated, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -23,14 +22,6 @@ const Home: React.FC = () => {
   const [documentToEdit, setDocumentToEdit] = useState<Document | null>(null);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    // Only redirect if we're sure the user is not authenticated
-    // The AuthProvider will handle the loading state
-    if (isAuthenticated === false) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     filterDocuments();
