@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { FileText, Edit, Trash2 } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import DonationModal from './DonationModal';
 
 interface PDFCardProps {
+  id: string;
   title: string;
   description: string;
   tags: string[];
@@ -16,6 +18,7 @@ interface PDFCardProps {
 }
 
 const PDFCard: React.FC<PDFCardProps> = ({
+  id,
   title,
   description,
   tags,
@@ -27,18 +30,36 @@ const PDFCard: React.FC<PDFCardProps> = ({
 }) => {
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
 
+  const checkPaymentVerification = () => {
+    const verifiedPayment = localStorage.getItem('verifiedPayment');
+    if (verifiedPayment) {
+      const paymentData = JSON.parse(verifiedPayment);
+      // Check if payment is verified and not expired (valid for 7 days)
+      const isValid = paymentData.verified && 
+                     (Date.now() - paymentData.timestamp) < (7 * 24 * 60 * 60 * 1000);
+      return isValid;
+    }
+    return false;
+  };
+
   const handleViewClick = () => {
     if (isAdmin) {
       // Admins can view directly
       onView();
     } else {
-      // Regular users need to donate first - only show modal, don't open PDF
-      setIsDonationModalOpen(true);
+      // Check if user has valid payment verification
+      if (checkPaymentVerification()) {
+        onView();
+      } else {
+        // Show donation modal for payment
+        setIsDonationModalOpen(true);
+      }
     }
   };
 
   const handleDonationSuccess = () => {
-    // Only after successful donation, allow access to the document
+    // Payment verification is handled in PaymentSuccess component
+    // This will be called when returning from successful payment
     setIsDonationModalOpen(false);
     onView();
   };
@@ -112,6 +133,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
         onClose={() => setIsDonationModalOpen(false)}
         onSuccess={handleDonationSuccess}
         documentTitle={title}
+        documentId={id}
       />
     </>
   );
