@@ -11,7 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   user: User | null;
-  login: (password: string, rememberMe?: boolean) => Promise<boolean>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const adminStatus = localStorage.getItem('kbAdmin');
     const loginExpiry = localStorage.getItem('kbLoginExpiry');
     const userId = localStorage.getItem('kbUserId');
+    const userEmail = localStorage.getItem('kbUserEmail');
     
     console.log('Auth initialization - authStatus:', authStatus, 'loginExpiry:', loginExpiry);
     
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('kbAuth');
       localStorage.removeItem('kbAdmin');
       localStorage.removeItem('kbUserId');
+      localStorage.removeItem('kbUserEmail');
       localStorage.removeItem('kbLoginExpiry');
       return;
     }
@@ -45,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (authStatus === 'true' && userId && loginExpiry) {
       console.log('Restoring session for user:', userId);
       setIsAuthenticated(true);
-      setUser({ id: userId });
+      setUser({ id: userId, email: userEmail || undefined });
       
       if (adminStatus === 'true') {
         setIsAdmin(true);
@@ -53,12 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (password: string, rememberMe: boolean = false): Promise<boolean> => {
-    console.log('Login attempt with rememberMe:', rememberMe);
+  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<boolean> => {
+    console.log('Login attempt with email:', email, 'rememberMe:', rememberMe);
     
-    // In a real application, this would be a server request
-    // For demo purposes, we'll use simple hardcoded passwords
-    if (password === 'qazWSX86+!') {
+    // Check if email and password match admin credentials
+    if (email === 'dldigiweb@gmail.com' && password === 'qazWSX86+!') {
       const userId = 'admin-' + Date.now();
       const expirationTime = rememberMe 
         ? Date.now() + (20 * 24 * 60 * 60 * 1000) // 20 days
@@ -67,18 +68,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Admin login successful, expiration:', new Date(expirationTime));
       
       localStorage.setItem('kbUserId', userId);
+      localStorage.setItem('kbUserEmail', email);
       localStorage.setItem('kbAuth', 'true');
       localStorage.setItem('kbAdmin', 'true');
       localStorage.setItem('kbLoginExpiry', expirationTime.toString());
       
-      setUser({ id: userId });
+      setUser({ id: userId, email });
       setIsAuthenticated(true);
       setIsAdmin(true);
       
       toast.success('Logged in as administrator');
       return true;
     } else {
-      toast.error('Invalid password');
+      toast.error('Invalid email or password');
       return false;
     }
   };
@@ -91,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('kbAuth');
     localStorage.removeItem('kbAdmin');
     localStorage.removeItem('kbUserId');
+    localStorage.removeItem('kbUserEmail');
     localStorage.removeItem('kbLoginExpiry');
     toast.info('Logged out successfully');
   };

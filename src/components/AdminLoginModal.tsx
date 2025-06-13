@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Lock } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface AdminLoginModalProps {
@@ -12,6 +12,7 @@ interface AdminLoginModalProps {
 }
 
 const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -20,8 +21,9 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) =>
     e.preventDefault();
     setIsLoading(true);
     try {
-      const success = await login(password, false);
+      const success = await login(email, password, false);
       if (success) {
+        setEmail('');
         setPassword('');
         onClose();
       }
@@ -31,6 +33,7 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) =>
   };
 
   const handleClose = () => {
+    setEmail('');
     setPassword('');
     onClose();
   };
@@ -45,13 +48,32 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) =>
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input 
-            type="password" 
-            placeholder="Enter admin password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
-            required 
-          />
+          <div className="space-y-2">
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input 
+                type="email" 
+                placeholder="Enter admin email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                className="pl-10"
+                required 
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input 
+                type="password" 
+                placeholder="Enter admin password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                className="pl-10"
+                required 
+              />
+            </div>
+          </div>
           <div className="flex gap-2">
             <Button 
               type="submit" 
