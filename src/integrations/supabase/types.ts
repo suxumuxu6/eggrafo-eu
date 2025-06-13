@@ -9,54 +9,13 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      documents: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          created_by: string
-          description: string | null
-          file_url: string
-          id: string
-          tags: string[] | null
-          title: string
-          updated_at: string | null
-          view_count: number
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          created_by: string
-          description?: string | null
-          file_url: string
-          id?: string
-          tags?: string[] | null
-          title: string
-          updated_at?: string | null
-          view_count?: number
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          created_by?: string
-          description?: string | null
-          file_url?: string
-          id?: string
-          tags?: string[] | null
-          title?: string
-          updated_at?: string | null
-          view_count?: number
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      increment_document_views: {
-        Args: { document_id: string }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
