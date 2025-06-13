@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { FileText, Edit, Trash2 } from 'lucide-react';
@@ -33,13 +32,14 @@ const PDFCard: React.FC<PDFCardProps> = ({
       // Admins can view directly
       onView();
     } else {
-      // Regular users need to donate first
+      // Regular users need to donate first - only show modal, don't open PDF
       setIsDonationModalOpen(true);
     }
   };
 
   const handleDonationSuccess = () => {
-    // After successful donation, allow access to the document
+    // Only after successful donation, allow access to the document
+    setIsDonationModalOpen(false);
     onView();
   };
 
