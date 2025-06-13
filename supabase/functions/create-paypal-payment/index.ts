@@ -79,27 +79,42 @@ serve(async (req) => {
     const accessToken = tokenData.access_token;
     console.log('Got PayPal access token successfully');
 
-    // Create PayPal payment
+    // Get the origin for return URLs
+    const origin = req.headers.get('origin') || 'https://c6e46c6a-7177-4585-90f1-39fed8809a34.lovableproject.com';
+
+    // Create PayPal payment with improved structure
     const payment = {
       intent: 'sale',
       payer: {
         payment_method: 'paypal'
       },
       redirect_urls: {
-        return_url: `${req.headers.get('origin')}/payment-success?donationId=${donation.id}`,
-        cancel_url: `${req.headers.get('origin')}/payment-cancel`
+        return_url: `${origin}/payment-success?donationId=${donation.id}`,
+        cancel_url: `${origin}/payment-cancel`
       },
       transactions: [{
         amount: {
           total: '20.00',
-          currency: 'EUR'
+          currency: 'EUR',
+          details: {
+            subtotal: '20.00'
+          }
         },
-        description: `Access to document: ${documentTitle}`,
-        custom: donation.id // Store donation ID for verification
+        description: `Document Access: ${documentTitle}`,
+        custom: donation.id,
+        item_list: {
+          items: [{
+            name: `Access to: ${documentTitle}`,
+            description: 'Document access fee',
+            quantity: '1',
+            price: '20.00',
+            currency: 'EUR'
+          }]
+        }
       }]
     };
 
-    console.log('Creating PayPal payment with payload:', JSON.stringify(payment, null, 2));
+    console.log('Creating PayPal payment with improved payload:', JSON.stringify(payment, null, 2));
 
     const paymentResponse = await fetch(paymentUrl, {
       method: 'POST',
