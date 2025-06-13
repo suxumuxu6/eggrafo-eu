@@ -23,8 +23,11 @@ serve(async (req) => {
     const clientSecret = Deno.env.get('PAYPAL_CLIENT_SECRET');
     
     if (!clientId || !clientSecret) {
+      console.error('PayPal credentials missing:', { clientId: !!clientId, clientSecret: !!clientSecret });
       throw new Error('PayPal credentials not configured');
     }
+
+    console.log('PayPal credentials available:', { clientId: clientId.substring(0, 10) + '...' });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -50,8 +53,13 @@ serve(async (req) => {
 
     console.log('Created donation record:', donation.id);
 
+    // PayPal sandbox API endpoints
+    const tokenUrl = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
+    const paymentUrl = 'https://api-m.sandbox.paypal.com/v1/payments/payment';
+
     // Get PayPal access token
-    const tokenResponse = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+    console.log('Requesting PayPal access token...');
+    const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -61,9 +69,15 @@ serve(async (req) => {
     });
 
     const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
+    console.log('Token response status:', tokenResponse.status);
+    
+    if (!tokenResponse.ok) {
+      console.error('Token request failed:', tokenData);
+      throw new Error(`PayPal authentication failed: ${tokenData.error_description || tokenData.error}`);
+    }
 
-    console.log('Got PayPal access token');
+    const accessToken = tokenData.access_token;
+    console.log('Got PayPal access token successfully');
 
     // Create PayPal payment
     const payment = {
@@ -80,11 +94,14 @@ serve(async (req) => {
           total: '20.00',
           currency: 'EUR'
         },
-        description: `Access to document: ${documentTitle}`
+        description: `Access to document: ${documentTitle}`,
+        custom: donation.id // Store donation ID for verification
       }]
     };
 
-    const paymentResponse = await fetch('https://api-m.sandbox.paypal.com/v1/payments/payment', {
+    console.log('Creating PayPal payment with payload:', JSON.stringify(payment, null, 2));
+
+    const paymentResponse = await fetch(paymentUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -94,18 +111,27 @@ serve(async (req) => {
     });
 
     const paymentData = await paymentResponse.json();
-    console.log('PayPal payment created:', paymentData);
+    console.log('Payment response status:', paymentResponse.status);
+    console.log('PayPal payment response:', JSON.stringify(paymentData, null, 2));
+
+    if (!paymentResponse.ok) {
+      console.error('Payment creation failed:', paymentData);
+      throw new Error(`PayPal payment creation failed: ${paymentData.message || paymentData.error_description || 'Unknown error'}`);
+    }
 
     if (!paymentData.id) {
-      throw new Error('Failed to create PayPal payment');
+      throw new Error('No payment ID returned from PayPal');
     }
 
     // Find approval URL
     const approvalUrl = paymentData.links?.find((link: any) => link.rel === 'approval_url')?.href;
 
     if (!approvalUrl) {
+      console.error('No approval URL found in links:', paymentData.links);
       throw new Error('No approval URL returned from PayPal');
     }
+
+    console.log('Payment created successfully:', { paymentId: paymentData.id, approvalUrl });
 
     return new Response(
       JSON.stringify({ 
