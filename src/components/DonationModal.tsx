@@ -5,12 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, User, CreditCard, ExternalLink } from 'lucide-react';
 import { toast } from "sonner";
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/integrations/supabase/client';
 
 interface DonationModalProps {
   isOpen: boolean;
@@ -59,35 +54,21 @@ const DonationModal: React.FC<DonationModalProps> = ({
     setIsProcessing(true);
     
     try {
-      // Create PayPal payment through Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('create-paypal-payment', {
-        body: {
-          userData,
-          documentId,
-          documentTitle
-        }
-      });
+      // Redirect directly to the PayPal donation link
+      const paypalDonationUrl = 'https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U';
+      
+      // Store user data for verification later
+      localStorage.setItem('pendingDonation', JSON.stringify({
+        ...userData,
+        documentTitle,
+        documentId,
+        timestamp: Date.now()
+      }));
 
-      if (error) throw error;
-
-      if (data.success) {
-        // Store user data and donation info for verification
-        localStorage.setItem('pendingDonation', JSON.stringify({
-          ...userData,
-          documentTitle,
-          documentId,
-          donationId: data.donationId,
-          paymentId: data.paymentId,
-          timestamp: Date.now()
-        }));
-
-        toast.success('Redirecting to PayPal for payment...');
-        
-        // Redirect to PayPal
-        window.location.href = data.approvalUrl;
-      } else {
-        throw new Error(data.error || 'Failed to create payment');
-      }
+      toast.success('Redirecting to PayPal for payment...');
+      
+      // Redirect to PayPal
+      window.location.href = paypalDonationUrl;
     } catch (error: any) {
       console.error('Payment creation error:', error);
       toast.error(`Payment creation failed: ${error.message}`);
