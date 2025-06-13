@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DocumentsHeader from '../components/DocumentsHeader';
@@ -81,7 +80,7 @@ const Home: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-blue-50">
         <Navbar />
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
@@ -94,7 +93,7 @@ const Home: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-blue-50">
         <Navbar />
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
@@ -106,7 +105,7 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-blue-50 flex flex-col">
       <Navbar />
       <main className="container mx-auto px-4 py-8 flex-1">
         <DocumentsHeader onSearch={handleSearch} searchQuery={searchQuery} />
@@ -122,7 +121,7 @@ const Home: React.FC = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-gray-500">© D. Lamprou</p>
+          <p className="text-sm text-gray-500">© Eggrafo.eu 2025</p>
         </div>
       </footer>
 

@@ -113,7 +113,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
 
       <Button 
         type="submit" 
-        className="w-full bg-kb-purple hover:bg-kb-purple/90"
+        className="w-full bg-blue-600 hover:bg-blue-700"
         disabled={isUploading || !file}
       >
         {isUploading ? 'Uploading...' : 'Upload Document'}

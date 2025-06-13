@@ -21,11 +21,6 @@ export const useFileUpload = () => {
       return false;
     }
     
-    if (!category) {
-      toast.error('Please select a category');
-      return false;
-    }
-    
     setIsUploading(true);
     setUploadProgress(0);
     setErrorMessage(null);
@@ -101,14 +96,13 @@ export const useFileUpload = () => {
       const anonId = user.id || 'admin';
       console.log('Inserting document with user ID:', anonId);
       
-      // Save document metadata to database
+      // Save document metadata to database (removed category requirement)
       const { error: metadataError, data: insertData } = await supabase
         .from('documents')
         .insert({
           title, 
           description, 
           tags: tagsArray, 
-          category,
           file_url: fileUrl,
           created_by: anonId
         });
