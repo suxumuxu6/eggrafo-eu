@@ -13,7 +13,8 @@ import FeaturedDocumentsSection from '../components/FeaturedDocumentsSection';
 const EXCLUDED_TITLES = [
   "ν. 4072/2012 Προσωπικές Εταιρείες",
   "Πρότυπα Καταστατικά Σύστασης",
-  "Ν. 4601/2019 Μετασχηματισμοί"
+  "Ν. 4601/2019 Μετασχηματισμοί",
+  "ν. 4919/2022 ΓΕΜΗ" // NEW: exclude this doc from "Παραδείγματα Εγγράφων για λήψη"
 ];
 
 const Home: React.FC = () => {
