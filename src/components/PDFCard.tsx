@@ -1,8 +1,10 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { FileText, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DonationModal from './DonationModal';
+import { toast } from "sonner"; // ADD import for toast!
 
 interface PDFCardProps {
   id: string;
@@ -50,6 +52,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
   const triggerDirectDownload = async () => {
     if (!url) {
       console.log('[PDFCard]', title, 'No URL provided for download');
+      toast.error('Δεν υπάρχει διαθέσιμη διεύθυνση λήψης για αυτό το έγγραφο.');
       return;
     }
     setDownloading(true);
@@ -60,6 +63,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
         downloadLinkRef.current.click();
       } else {
         console.log('[PDFCard]', title, 'Download link ref not available');
+        toast.error('Υπήρξε τεχνικό πρόβλημα στην λήψη του εγγράφου.');
       }
     } finally {
       setDownloading(false);
@@ -71,6 +75,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
     if (isAdmin || checkPaymentVerification()) {
       triggerDirectDownload();
     } else {
+      // We allow the modal even if there is no url, and will show error on download attempt.
       setIsDonationModalOpen(true);
     }
   };
@@ -122,7 +127,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
             variant="secondary"
             className="flex-1 text-white bg-kb-blue hover:bg-kb-blue/90 text-xs h-8"
             onClick={handleDownloadClick}
-            disabled={downloading || !url}
+            disabled={downloading}
           >
             {downloading ? 'Downloading...' : 'Download'}
           </Button>
@@ -164,3 +169,4 @@ const PDFCard: React.FC<PDFCardProps> = ({
 };
 
 export default PDFCard;
+
