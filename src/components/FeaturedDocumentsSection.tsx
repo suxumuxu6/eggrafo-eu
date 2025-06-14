@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,73 +48,70 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   return (
     <section className="w-full mb-12">
       <div className="h-20 md:h-24" />
-      {/* Make sure the max-w-5xl, mx-auto, and w-full match DocumentsSection */}
-      <div className="max-w-5xl mx-auto w-full">
-        {/* Match the header box design with DocumentsSection */}
-        <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
-          <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
-            Νόμοι Εταιρειών
-          </h2>
-        </div>
-        {/* Below is the GRID, make grid/gap match DocumentsGrid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {featured.map(({ name, imageUrl, doc }) => (
-            <div
-              key={name}
-              className="bg-white rounded-xl shadow card-hover p-6 flex flex-col items-center border border-gray-100 transition-all w-full"
-            >
-              <div className="overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg transition-all w-32 h-32 mb-4">
-                <img
-                  src={imageUrl}
-                  alt={name}
-                  className="object-cover w-full h-full"
-                  loading="lazy"
-                />
-              </div>
-              <div className="text-center flex flex-col flex-1 w-full">
-                <h3
-                  className="font-bold text-[14px] mb-4 text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
-                  style={{
-                    fontSize: "14px",
-                    display: "-webkit-box",
-                    WebkitBoxOrient: "vertical",
-                    WebkitLineClamp: 2,
-                    overflow: "hidden",
-                  }}
-                  title={name}
-                >
-                  {name}
-                </h3>
-                <Button
-                  variant="secondary"
-                  className="flex items-center gap-2 mx-auto mt-auto"
-                  asChild
-                  disabled={!doc}
-                >
-                  {doc ? (
-                    <a
-                      href={doc.url}
-                      download
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-6 w-6 md:h-8 md:w-8 mr-2" />
-                      Λήψη PDF
-                    </a>
-                  ) : (
-                    <span>
-                      <Download className="h-5 w-5 mr-1" />
-                      Δεν υπάρχει διαθέσιμο
-                    </span>
-                  )}
-                </Button>
-              </div>
+      {/* This section now matches outer layout constraints exactly with DocumentsSection */}
+      <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
+        <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
+          Νόμοι Εταιρειών
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {featured.map(({ name, imageUrl, doc }) => (
+          <div
+            key={name}
+            className="bg-white rounded-xl shadow card-hover p-6 flex flex-col items-center border border-gray-100 transition-all w-full"
+          >
+            <div className="overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg transition-all w-32 h-32 mb-4">
+              <img
+                src={imageUrl}
+                alt={name}
+                className="object-cover w-full h-full"
+                loading="lazy"
+              />
             </div>
-          ))}
-        </div>
+            <div className="text-center flex flex-col flex-1 w-full">
+              <h3
+                className="font-bold text-[14px] mb-4 text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
+                style={{
+                  fontSize: "14px",
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical",
+                  WebkitLineClamp: 2,
+                  overflow: "hidden",
+                }}
+                title={name}
+              >
+                {name}
+              </h3>
+              <Button
+                variant="secondary"
+                className="flex items-center gap-2 mx-auto mt-auto"
+                asChild
+                disabled={!doc}
+              >
+                {doc ? (
+                  <a
+                    href={doc.url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-6 w-6 md:h-8 md:w-8 mr-2" />
+                    Λήψη PDF
+                  </a>
+                ) : (
+                  <span>
+                    <Download className="h-5 w-5 mr-1" />
+                    Δεν υπάρχει διαθέσιμο
+                  </span>
+                )}
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
 };
 export default FeaturedDocumentsSection;
+
