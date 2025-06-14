@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,109 +55,64 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {featured.map(({ name, imageUrl, doc }) => {
-            const isSpecial = name === "Παράδειγμα Τροποποίησης Καταστατικού";
-            return (
-              <div
-                key={name}
-                className={
-                  "bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100 transition-all " +
-                  (isSpecial
-                    ? "md:col-span-3 lg:col-span-4 row-span-2 w-full min-h-[520px] lg:min-h-[640px] 2xl:min-h-[700px] relative"
-                    : "w-full")
-                }
-                style={
-                  isSpecial
-                    ? {
-                        minHeight: 520,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }
-                    : undefined
-                }
-              >
-                <div
-                  className={
-                    "overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg transition-all " +
-                    (isSpecial
-                      ? "w-64 h-64 lg:w-80 lg:h-80 mb-10 shadow-lg"
-                      : "w-32 h-32 mb-4")
-                  }
-                >
-                  <img
-                    src={imageUrl}
-                    alt={name}
-                    className="object-cover w-full h-full"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="text-center flex flex-col flex-1 w-full">
-                  <h3
-                    className={
-                      (isSpecial
-                        ? "font-extrabold leading-tight mb-8 text-[17px]"
-                        : "font-bold text-[14px] mb-4") +
-                      " text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
-                    }
-                    style={
-                      isSpecial
-                        ? {
-                            fontSize: "17px",
-                            display: "-webkit-box",
-                            WebkitBoxOrient: "vertical",
-                            WebkitLineClamp: 2,
-                            overflow: "hidden",
-                          }
-                        : {
-                            fontSize: "14px",
-                            display: "-webkit-box",
-                            WebkitBoxOrient: "vertical",
-                            WebkitLineClamp: 2,
-                            overflow: "hidden",
-                          }
-                    }
-                    title={name}
-                  >
-                    {name}
-                  </h3>
-                  <Button
-                    variant="secondary"
-                    className={
-                      "flex items-center gap-2 mx-auto mt-auto " +
-                      (isSpecial
-                        ? "text-2xl md:text-3xl px-16 py-6 lg:px-24 lg:py-8 font-extrabold rounded-lg"
-                        : "")
-                    }
-                    asChild
-                    disabled={!doc}
-                  >
-                    {doc ? (
-                      <a
-                        href={doc.url}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2"
-                      >
-                        <Download className="h-6 w-6 md:h-8 md:w-8 mr-2" />
-                        Λήψη PDF
-                      </a>
-                    ) : (
-                      <span>
-                        <Download className="h-5 w-5 mr-1" />
-                        Δεν υπάρχει διαθέσιμο
-                      </span>
-                    )}
-                  </Button>
-                </div>
+          {featured.map(({ name, imageUrl, doc }) => (
+            <div
+              key={name}
+              className="bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100 transition-all w-full"
+            >
+              <div className="overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg transition-all w-32 h-32 mb-4">
+                <img
+                  src={imageUrl}
+                  alt={name}
+                  className="object-cover w-full h-full"
+                  loading="lazy"
+                />
               </div>
-            );
-          })}
+              <div className="text-center flex flex-col flex-1 w-full">
+                <h3
+                  className="font-bold text-[14px] mb-4 text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
+                  style={{
+                    fontSize: "14px",
+                    display: "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: 2,
+                    overflow: "hidden",
+                  }}
+                  title={name}
+                >
+                  {name}
+                </h3>
+                <Button
+                  variant="secondary"
+                  className="flex items-center gap-2 mx-auto mt-auto"
+                  asChild
+                  disabled={!doc}
+                >
+                  {doc ? (
+                    <a
+                      href={doc.url}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-6 w-6 md:h-8 md:w-8 mr-2" />
+                      Λήψη PDF
+                    </a>
+                  ) : (
+                    <span>
+                      <Download className="h-5 w-5 mr-1" />
+                      Δεν υπάρχει διαθέσιμο
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
   );
 };
 export default FeaturedDocumentsSection;
+
