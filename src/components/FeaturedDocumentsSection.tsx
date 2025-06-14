@@ -48,30 +48,34 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
 
   return (
     <section className="w-full mb-12">
-      <div className="h-12 md:h-16" />
-      <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
-        <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
-          Νόμοι Εταιρειών
-        </h2>
-      </div>
+      <div className="h-20 md:h-24" />
       <div className="max-w-5xl mx-auto w-full">
+        <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
+          <h2 className="text-2xl md:text-3xl font-semibold text-white text-center py-4 px-2 m-0">
+            Νόμοι Εταιρειών
+          </h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {featured.map(({ name, imageUrl, doc }) => {
             const isSpecial = name === "Παράδειγμα Τροποποίησης Καταστατικού";
             return (
               <div
                 key={name}
-                className={`bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100 ${
-                  isSpecial ? "md:col-span-1 md:row-span-2 md:h-[420px] lg:h-[470px]" : ""
-                }`}
-                style={isSpecial ? { minHeight: 340 } : {}}
+                className={`bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100 ${isSpecial
+                  ? "md:col-span-2 md:row-span-2 md:h-[520px] lg:h-[540px] w-full"
+                  : "w-full"
+                  }`}
+                style={
+                  isSpecial
+                    ? { minHeight: 420 }
+                    : {}
+                }
               >
                 <div
-                  className={`${
-                    isSpecial
-                      ? "w-40 h-40 mb-6"
-                      : "w-32 h-32 mb-4"
-                  } rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center`}
+                  className={`overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg ${isSpecial
+                    ? "w-56 h-56 mb-8" // Bigger image for special card
+                    : "w-32 h-32 mb-4"
+                    }`}
                 >
                   <img
                     src={imageUrl}
@@ -82,12 +86,11 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                 </div>
                 <div className="text-center flex flex-col flex-1 w-full">
                   <h3
-                    className={`font-bold ${
-                      isSpecial
-                        ? "text-3xl md:text-4xl"
-                        : "text-base md:text-lg"
-                    } text-kb-darkgray mb-4 mx-auto w-full
-                      line-clamp-2 break-words leading-tight min-h-[48px] flex items-center justify-center`}
+                    className={`font-bold ${isSpecial
+                      ? "text-3xl md:text-5xl leading-tight mb-8"
+                      : "text-base md:text-lg mb-4"
+                      } text-kb-darkgray mx-auto w-full 
+                    line-clamp-2 break-words min-h-[48px] flex items-center justify-center`}
                     style={{
                       display: "-webkit-box",
                       WebkitBoxOrient: "vertical",
@@ -100,7 +103,9 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                   </h3>
                   <Button
                     variant="secondary"
-                    className={`flex items-center gap-2 mx-auto mt-auto ${isSpecial ? "text-lg md:text-xl px-8 py-4" : ""}`}
+                    className={`flex items-center gap-2 mx-auto mt-auto ${isSpecial
+                      ? "text-xl md:text-2xl px-12 py-5 font-bold"
+                      : ""}`}
                     asChild
                     disabled={!doc}
                   >
@@ -112,12 +117,12 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                         rel="noopener noreferrer"
                         className="flex items-center gap-2"
                       >
-                        <Download className={`h-4 w-4 mr-1`} />
+                        <Download className={`h-5 w-5 mr-1`} />
                         Λήψη PDF
                       </a>
                     ) : (
                       <span>
-                        <Download className="h-4 w-4 mr-1" />
+                        <Download className="h-5 w-5 mr-1" />
                         Δεν υπάρχει διαθέσιμο
                       </span>
                     )}
