@@ -45,7 +45,15 @@ const PDFCard: React.FC<PDFCardProps> = ({
           {title}
         </h3>
       </div>
-      {/* Removed PDF PNG Image below the title */}
+      {/* PDF PNG Image below the title */}
+      <div className="flex justify-center mb-3">
+        <img
+          src="/lovable-uploads/23947156-2cff-4699-8724-cf7c3852423d.png"
+          alt="PDF document"
+          className="w-16 h-16 object-contain"
+          style={{ marginTop: 0 }}
+        />
+      </div>
       <p className="text-gray-600 text-sm line-clamp-3 mb-4">{description}</p>
       {tags && tags.length > 0 && <div className="flex flex-wrap mb-4">
         {tags.map((tag, index) => (
