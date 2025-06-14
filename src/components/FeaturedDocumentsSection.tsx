@@ -97,7 +97,7 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                   <h3
                     className={
                       (isSpecial
-                        ? "text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-8"
+                        ? "text-[17px] font-extrabold leading-tight mb-8"
                         : "text-base md:text-lg mb-4 font-bold") +
                       " text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
                     }
