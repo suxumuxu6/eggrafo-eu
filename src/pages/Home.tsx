@@ -29,20 +29,19 @@ const Home: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    console.log('searchQuery updated:', searchQuery); // DEBUG
     filterDocuments();
   }, [allDocuments, searchQuery]);
 
   const filterDocuments = () => {
     let filtered = allDocuments;
 
-    // Exclude the featured titles
     filtered = filtered.filter(
       doc => !EXCLUDED_TITLES.some(
         t => doc.title.trim().toLowerCase() === t.trim().toLowerCase()
       )
     );
 
-    // Apply search filter
     if (searchQuery) {
       filtered = searchDocuments(searchQuery).filter(
         doc => !EXCLUDED_TITLES.some(
@@ -51,9 +50,9 @@ const Home: React.FC = () => {
       );
     }
 
-    // Sort by popularity (view count)
     filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
 
+    console.log('filterDocuments: filtered result count:', filtered.length, 'query:', searchQuery); // DEBUG
     setFilteredDocuments(filtered);
   };
 

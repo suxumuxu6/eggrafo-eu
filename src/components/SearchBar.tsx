@@ -19,6 +19,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, [searchQuery]);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Submitting search for:', localSearchQuery); // DEBUG
     onSearch(localSearchQuery);
   };
   return (
