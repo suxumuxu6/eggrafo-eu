@@ -96,20 +96,21 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                   <h3
                     className={
                       (isSpecial
-                        ? "font-extrabold leading-tight mb-8"
-                        : "text-base md:text-lg mb-4 font-bold") +
+                        ? "font-extrabold leading-tight mb-8 text-[17px]"
+                        : "font-bold text-[14px] mb-4") +
                       " text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
                     }
                     style={
                       isSpecial
                         ? {
-                            fontSize: '17px',
+                            fontSize: "17px",
                             display: "-webkit-box",
                             WebkitBoxOrient: "vertical",
                             WebkitLineClamp: 2,
                             overflow: "hidden",
                           }
                         : {
+                            fontSize: "14px",
                             display: "-webkit-box",
                             WebkitBoxOrient: "vertical",
                             WebkitLineClamp: 2,
