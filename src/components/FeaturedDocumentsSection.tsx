@@ -49,8 +49,9 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
     <section className="w-full mb-12">
       <div className="h-20 md:h-24" />
       <div className="max-w-5xl mx-auto w-full">
+        {/* Updated header to match styling and width of DocumentsSection */}
         <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
-          <h2 className="text-2xl md:text-3xl font-semibold text-white text-center py-4 px-2 m-0">
+          <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
             Νόμοι Εταιρειών
           </h2>
         </div>
