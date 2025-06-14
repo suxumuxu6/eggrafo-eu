@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DocumentsHeader from '../components/DocumentsHeader';
@@ -10,6 +9,12 @@ import { useAuth } from '../context/AuthContext';
 import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
 import FeaturedDocumentsSection from '../components/FeaturedDocumentsSection';
+
+const EXCLUDED_TITLES = [
+  "ν. 4072/2012 Προσωπικές Εταιρείες",
+  "Πρότυπα Καταστατικά Σύστασης",
+  "Ν. 4601/2019 Μετασχηματισμοί"
+];
 
 const Home: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -30,9 +35,20 @@ const Home: React.FC = () => {
   const filterDocuments = () => {
     let filtered = allDocuments;
 
+    // Exclude the featured titles
+    filtered = filtered.filter(
+      doc => !EXCLUDED_TITLES.some(
+        t => doc.title.trim().toLowerCase() === t.trim().toLowerCase()
+      )
+    );
+
     // Apply search filter
     if (searchQuery) {
-      filtered = searchDocuments(searchQuery);
+      filtered = searchDocuments(searchQuery).filter(
+        doc => !EXCLUDED_TITLES.some(
+          t => doc.title.trim().toLowerCase() === t.trim().toLowerCase()
+        )
+      );
     }
 
     // Sort by popularity (view count)
@@ -161,4 +177,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-
