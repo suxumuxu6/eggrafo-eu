@@ -48,7 +48,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
       {/* PDF PNG Image below the title */}
       <div className="flex justify-center mb-3">
         <img
-          src="/lovable-uploads/pdf-icon.png"
+          src="/lovable-uploads/8a3b18a2-4def-4c00-b852-0a6be30a071b.png"
           alt="PDF document"
           className="w-16 h-16 object-contain"
           style={{ marginTop: 0 }}
