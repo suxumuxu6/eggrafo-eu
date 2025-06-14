@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -20,11 +19,11 @@ const Navbar: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                {/* Add logo image here */}
+                {/* Logo image */}
                 <img
                   src="/lovable-uploads/6e155ba5-d73d-4a6b-94f6-a6c56b4e33c4.png"
                   alt="Logo"
-                  className="h-8 w-8 object-contain rounded-md border border-gray-200 bg-white"
+                  className="h-10 w-10 object-contain rounded-md border border-gray-200 bg-white"
                   style={{ background: "white" }}
                 />
                 <span className="font-bold text-xl text-kb-darkgray">eggrafo.eu</span>
