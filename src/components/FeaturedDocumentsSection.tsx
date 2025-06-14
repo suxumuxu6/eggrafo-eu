@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,11 +20,6 @@ const featuredDocs = [
   },
   {
     name: "Ν. 4601/2019 Μετασχηματισμοί",
-    imageUrl:
-      "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    name: "Παράδειγμα Τροποποίησης Καταστατικού",
     imageUrl:
       "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=400&q=80",
   },
@@ -114,4 +108,3 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   );
 };
 export default FeaturedDocumentsSection;
-
