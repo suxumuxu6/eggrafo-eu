@@ -126,8 +126,7 @@ const Home: React.FC = () => {
       <Navbar />
       <main className="container mx-auto px-4 py-8 flex-1">
         <DocumentsHeader onSearch={handleSearch} searchQuery={searchQuery} />
-        {/* Featured Documents Section */}
-        <FeaturedDocumentsSection documents={allDocuments} />
+        {/* Documents Section moved above Featured Documents Section */}
         <DocumentsSection
           filteredDocuments={filteredDocuments}
           isAdmin={isAdmin}
@@ -135,8 +134,9 @@ const Home: React.FC = () => {
           onEditDocument={handleEditDocument}
           onDeleteDocument={handleDeleteDocument}
         />
+        {/* Featured Documents Section is now below DocumentsSection */}
+        <FeaturedDocumentsSection documents={allDocuments} />
       </main>
-
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4">
         <div className="container mx-auto px-4 text-center">
