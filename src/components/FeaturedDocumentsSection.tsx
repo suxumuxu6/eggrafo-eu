@@ -33,10 +33,10 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
     <section className="w-full mb-12">
       <div className="max-w-5xl mx-auto w-full mb-8">
         {/* Full width, with border and background */}
-        <div className="w-full border-2 border-kb-blue bg-white/80 rounded-xl shadow-sm animate-fade-in mb-6">
+        <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
           <h2
             className="
-              text-2xl font-semibold text-kb-darkgray
+              text-2xl font-semibold text-white
               text-center
               py-4
               px-2
