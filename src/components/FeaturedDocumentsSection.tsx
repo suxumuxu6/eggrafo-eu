@@ -49,13 +49,26 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
         </h2>
       </div>
       <div className="flex justify-center w-full">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-[980px] mx-auto w-full">
+        <div
+          className="
+            grid
+            grid-cols-1
+            md:grid-cols-3
+            gap-8
+            max-w-[1100px]
+            mx-auto
+            w-full
+          "
+        >
           {featured.map(({ name, imageUrl, doc }) => (
             <div
               key={name}
-              className="bg-white rounded-xl shadow card-hover p-6 flex flex-col items-center border border-gray-100 transition-all w-full"
+              className="bg-white rounded-xl shadow card-hover p-8 flex flex-col items-center border border-gray-100 transition-all w-full min-w-[260px] max-w-[340px]"
+              style={{
+                minHeight: "370px",
+              }}
             >
-              <div className="overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg transition-all w-32 h-32 mb-4">
+              <div className="overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg transition-all w-36 h-36 mb-5">
                 <img
                   src={imageUrl}
                   alt={name}
@@ -65,9 +78,9 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
               </div>
               <div className="text-center flex flex-col flex-1 w-full">
                 <h3
-                  className="font-bold text-[14px] mb-4 text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
+                  className="font-bold text-[15px] mb-6 text-kb-darkgray mx-auto w-full line-clamp-2 break-words min-h-[48px] flex items-center justify-center"
                   style={{
-                    fontSize: "14px",
+                    fontSize: "15px",
                     display: "-webkit-box",
                     WebkitBoxOrient: "vertical",
                     WebkitLineClamp: 2,
@@ -79,7 +92,7 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                 </h3>
                 <Button
                   variant="secondary"
-                  className="flex items-center gap-2 mx-auto mt-auto"
+                  className="flex items-center gap-2 mx-auto mt-auto text-base px-6 py-3"
                   asChild
                   disabled={!doc}
                 >
@@ -91,7 +104,7 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                       rel="noopener noreferrer"
                       className="flex items-center gap-2"
                     >
-                      <Download className="h-6 w-6 md:h-8 md:w-8 mr-2" />
+                      <Download className="h-6 w-6 md:h-7 md:w-7 mr-2" />
                       Λήψη PDF
                     </a>
                   ) : (
@@ -110,3 +123,4 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   );
 };
 export default FeaturedDocumentsSection;
+
