@@ -1,23 +1,24 @@
+
 import React from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document } from "../utils/searchUtils";
+
 interface FeaturedDocumentsSectionProps {
   documents: Document[];
 }
+
 const featuredDocs = [{
   name: "ν. 4072/2012 Προσωπικές Εταιρείες",
-  // White courthouse with columns (law/justice)
   imageUrl: "https://images.unsplash.com/photo-1466442929976-97f336a657be?auto=format&fit=crop&w=400&q=80"
 }, {
   name: "Πρότυπα Καταστατικά Σύστασης",
-  // Law books close-up
   imageUrl: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=400&q=80"
 }, {
   name: "Ν. 4601/2019 Μετασχηματισμοί",
-  // Courtroom/judge's gavel - use another suitable "law" image
   imageUrl: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=400&q=80"
 }];
+
 export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> = ({
   documents
 }) => {
@@ -29,27 +30,31 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
       doc: match
     };
   });
+
   return (
     <section className="w-full mb-12">
+      {/* Add more space above the blue square */}
+      <div className="h-12 md:h-16" />
+      {/* The blue square matches the full width of the container */}
+      <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
+        <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
+          Νόμοι Εταιρειών
+        </h2>
+      </div>
       <div className="max-w-5xl mx-auto w-full">
-        {/* ADD MORE SPACE ABOVE THE BLUE SQUARE */}
-        <div className="h-10 md:h-12" />
-        {/* Match width with other section */}
-        <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
-          <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
-            Νόμοι Εταιρειών
-          </h2>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featured.map(({ name, imageUrl, doc }, idx) => 
+          {featured.map(({ name, imageUrl, doc }) => 
             <div key={name} className="bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100">
               <div className="w-32 h-32 mb-4 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                 <img src={imageUrl} alt={name} className="object-cover w-full h-full" loading="lazy" />
               </div>
               <div className="text-center flex flex-col flex-1 w-full">
-                {/* Title: allow up to 2 lines, elide if needed, increase special one */}
                 <h3
-                  className={`font-bold ${name === "Παράδειγμα Τροποποίησης Καταστατικού" ? "text-xl md:text-2xl" : "text-base md:text-lg"} text-kb-darkgray mb-3 mx-auto w-full
+                  className={`font-bold ${
+                    name === "Παράδειγμα Τροποποίησης Καταστατικού"
+                      ? "text-2xl md:text-3xl"
+                      : "text-base md:text-lg"
+                  } text-kb-darkgray mb-3 mx-auto w-full
                     line-clamp-2 break-words leading-tight min-h-[48px] flex items-center justify-center`}
                   style={{
                     display: "-webkit-box",
@@ -79,3 +84,4 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   );
 };
 export default FeaturedDocumentsSection;
+
