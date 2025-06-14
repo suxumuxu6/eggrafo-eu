@@ -34,11 +34,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
   return (
     <div className="bg-white rounded-xl shadow p-6 flex flex-col border border-gray-100 transition-all card-hover">
       <div className="flex items-center mb-4">
-        {/* PDF Icon */}
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-kb-blue mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8h-4a2 2 0 01-2-2V6a2 2 0 012-2h4l6 6v10a2 2 0 01-2 2z" />
-        </svg>
-        {/* Document Title */}
+        {/* Removed blue PDF icon from left of title */}
         <h3 className={"font-semibold text-kb-darkgray line-clamp-2 break-words min-h-[40px] flex items-center" + (isSpecial ? " mb-2" : " text-base md:text-lg mb-2")} style={isSpecial ? {
           fontSize: '17px'
         } : undefined} title={title}>
@@ -83,3 +79,4 @@ const PDFCard: React.FC<PDFCardProps> = ({
   );
 };
 export default PDFCard;
+
