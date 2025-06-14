@@ -17,8 +17,8 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
       <img
         src="/lovable-uploads/b1b6e120-07f2-44d4-badf-84273ddb82f8.png"
         alt="Εggrafo Header"
-        className="w-full max-h-64 object-cover rounded-xl mb-8 shadow"
-        style={{ objectPosition: 'center' }}
+        className="w-full h-auto object-contain rounded-xl mb-8 shadow"
+        style={{ maxHeight: '500px', objectPosition: 'center' }}
       />
       {/* Removed: <h1>Eggrafo.eu</h1> */}
       <p className="text-gray-600 max-w-2xl mx-auto mb-8">
