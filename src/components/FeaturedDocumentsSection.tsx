@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,8 +31,10 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   });
   return (
     <section className="w-full mb-12">
-      <div className="max-w-5xl mx-auto w-full mb-8">
-        {/* Full width, with border and background */}
+      <div className="max-w-5xl mx-auto w-full">
+        {/* ADD MORE SPACE ABOVE THE BLUE SQUARE */}
+        <div className="h-10 md:h-12" />
+        {/* Match width with other section */}
         <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
           <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
             Νόμοι Εταιρειών
@@ -46,14 +47,18 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                 <img src={imageUrl} alt={name} className="object-cover w-full h-full" loading="lazy" />
               </div>
               <div className="text-center flex flex-col flex-1 w-full">
-                {/* Title: allow up to 2 lines, elide if needed */}
-                <h3 className="font-bold text-base text-kb-darkgray mb-3 mx-auto w-full
-                  line-clamp-2 break-words leading-tight min-h-[48px] flex items-center justify-center" style={{
-              display: "-webkit-box",
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: 2,
-              overflow: "hidden"
-            }} title={name}>
+                {/* Title: allow up to 2 lines, elide if needed, increase special one */}
+                <h3
+                  className={`font-bold ${name === "Παράδειγμα Τροποποίησης Καταστατικού" ? "text-xl md:text-2xl" : "text-base md:text-lg"} text-kb-darkgray mb-3 mx-auto w-full
+                    line-clamp-2 break-words leading-tight min-h-[48px] flex items-center justify-center`}
+                  style={{
+                    display: "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: 2,
+                    overflow: "hidden"
+                  }}
+                  title={name}
+                >
                   {name}
                 </h3>
                 <Button variant="secondary" className="flex items-center gap-2 mx-auto mt-auto" asChild disabled={!doc}>
@@ -74,4 +79,3 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   );
 };
 export default FeaturedDocumentsSection;
-

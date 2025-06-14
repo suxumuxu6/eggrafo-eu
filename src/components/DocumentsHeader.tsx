@@ -21,7 +21,10 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
         style={{ maxHeight: '500px', objectPosition: 'center' }}
       />
       {/* Removed: <h1>Eggrafo.eu</h1> */}
-      <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+      <p
+        className="max-w-2xl mx-auto mb-8 font-medium"
+        style={{ fontSize: "1.25rem", color: "#111111" }}
+      >
         Μέσα στο site μπορείτε βρείτε παραδείγματα εγγράφων για τροποποιήσεις και άλλες αιτήσεις για ΟΕ-ΕΕ στο ΓΕΜΗ. Στηρίξτε την προσπάθειά μας.
       </p>
       <SearchBar onSearch={onSearch} searchQuery={searchQuery} />
