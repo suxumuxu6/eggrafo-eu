@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,18 +47,20 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   return (
     <section className="w-full mb-12">
       <div className="h-20 md:h-24" />
+      {/* Make sure the max-w-5xl, mx-auto, and w-full match DocumentsSection */}
       <div className="max-w-5xl mx-auto w-full">
-        {/* Updated header to match styling and width of DocumentsSection */}
+        {/* Match the header box design with DocumentsSection */}
         <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
           <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
             Νόμοι Εταιρειών
           </h2>
         </div>
+        {/* Below is the GRID, make grid/gap match DocumentsGrid */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {featured.map(({ name, imageUrl, doc }) => (
             <div
               key={name}
-              className="bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100 transition-all w-full"
+              className="bg-white rounded-xl shadow card-hover p-6 flex flex-col items-center border border-gray-100 transition-all w-full"
             >
               <div className="overflow-hidden bg-gray-100 flex items-center justify-center rounded-lg transition-all w-32 h-32 mb-4">
                 <img
@@ -116,4 +117,3 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   );
 };
 export default FeaturedDocumentsSection;
-
