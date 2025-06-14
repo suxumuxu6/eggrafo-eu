@@ -29,17 +29,23 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
       doc: match
     };
   });
-  return <section className="w-full mb-12">
+  return (
+    <section className="w-full mb-12">
       <div className="max-w-5xl mx-auto w-full mb-8">
-
-        <h2
-          className="text-2xl font-semibold text-kb-darkgray mb-4 text-center 
-          border-2 border-kb-blue bg-white/80 rounded-xl py-3 px-8 max-w-fit mx-auto shadow-sm
-          animate-fade-in"
-        >
-          Νόμοι Εταιρειών
-        </h2>
-
+        {/* Full width, with border and background */}
+        <div className="w-full border-2 border-kb-blue bg-white/80 rounded-xl shadow-sm animate-fade-in mb-6">
+          <h2
+            className="
+              text-2xl font-semibold text-kb-darkgray
+              text-center
+              py-4
+              px-2
+              m-0
+            "
+          >
+            Νόμοι Εταιρειών
+          </h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {featured.map(({ name, imageUrl, doc }, idx) => 
             <div key={name} className="bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100">
@@ -71,6 +77,7 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
           )}
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
 export default FeaturedDocumentsSection;
