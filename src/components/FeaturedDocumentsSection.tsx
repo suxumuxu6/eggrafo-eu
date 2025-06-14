@@ -31,13 +31,18 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
   });
   return <section className="w-full mb-12">
       <div className="max-w-5xl mx-auto w-full mb-8">
-        <h2 className="text-2xl font-semibold text-kb-darkgray mb-4 text-center">Νόμοι Εταιρειών</h2>
+
+        <h2
+          className="text-2xl font-semibold text-kb-darkgray mb-4 text-center 
+          border-2 border-kb-blue bg-white/80 rounded-xl py-3 px-8 max-w-fit mx-auto shadow-sm
+          animate-fade-in"
+        >
+          Νόμοι Εταιρειών
+        </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featured.map(({
-          name,
-          imageUrl,
-          doc
-        }, idx) => <div key={name} className="bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100">
+          {featured.map(({ name, imageUrl, doc }, idx) => 
+            <div key={name} className="bg-white rounded-xl shadow card-hover p-5 flex flex-col items-center border border-gray-100">
               <div className="w-32 h-32 mb-4 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                 <img src={imageUrl} alt={name} className="object-cover w-full h-full" loading="lazy" />
               </div>
@@ -62,7 +67,8 @@ export const FeaturedDocumentsSection: React.FC<FeaturedDocumentsSectionProps> =
                     </span>}
                 </Button>
               </div>
-            </div>)}
+            </div>
+          )}
         </div>
       </div>
     </section>;
