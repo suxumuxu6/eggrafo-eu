@@ -1,3 +1,4 @@
+
 import React from 'react';
 interface PDFCardProps {
   id: string;
@@ -30,7 +31,8 @@ const PDFCard: React.FC<PDFCardProps> = ({
 
   /* Detect if this is the special case */
   const isSpecial = title.trim().toLowerCase() === "παράδειγμα τροποποίησης καταστατικού";
-  return <div className="bg-white rounded-xl shadow p-6 flex flex-col border border-gray-100 transition-all card-hover">
+  return (
+    <div className="bg-white rounded-xl shadow p-6 flex flex-col border border-gray-100 transition-all card-hover">
       <div className="flex items-center mb-4">
         {/* PDF Icon */}
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-kb-blue mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -38,34 +40,46 @@ const PDFCard: React.FC<PDFCardProps> = ({
         </svg>
         {/* Document Title */}
         <h3 className={"font-semibold text-kb-darkgray line-clamp-2 break-words min-h-[40px] flex items-center" + (isSpecial ? " mb-2" : " text-base md:text-lg mb-2")} style={isSpecial ? {
-        fontSize: '17px'
-      } : undefined} title={title}>
+          fontSize: '17px'
+        } : undefined} title={title}>
           {title}
         </h3>
       </div>
+      {/* PDF PNG Image below the title */}
+      <div className="flex justify-center mb-3">
+        <img
+          src="/lovable-uploads/pdf-icon.png"
+          alt="PDF document"
+          className="w-16 h-16 object-contain"
+          style={{ marginTop: 0 }}
+        />
+      </div>
       <p className="text-gray-600 text-sm line-clamp-3 mb-4">{description}</p>
       {tags && tags.length > 0 && <div className="flex flex-wrap mb-4">
-          {tags.map((tag, index) => <span key={index} className="bg-gray-200 text-gray-700 rounded-full px-2 py-1 text-xs mr-2 mb-2">
-              {tag}
-            </span>)}
-        </div>}
+        {tags.map((tag, index) => (
+          <span key={index} className="bg-gray-200 text-gray-700 rounded-full px-2 py-1 text-xs mr-2 mb-2">
+            {tag}
+          </span>
+        ))}
+      </div>}
       <div className="mt-auto">
         <button onClick={handleCardClick} className="bg-kb-blue text-white rounded-md px-4 py-2 hover:bg-kb-blue-dark transition-colors w-full mb-2">Download</button>
         {isAdmin && <div className="flex justify-between">
-            <button onClick={e => {
-          stopPropagation(e);
-          onEdit();
-        }} className="text-sm text-blue-500 hover:underline">
-              Edit
-            </button>
-            <button onClick={e => {
-          stopPropagation(e);
-          onDelete();
-        }} className="text-sm text-red-500 hover:underline">
-              Delete
-            </button>
-          </div>}
+          <button onClick={e => {
+            stopPropagation(e);
+            onEdit();
+          }} className="text-sm text-blue-500 hover:underline">
+            Edit
+          </button>
+          <button onClick={e => {
+            stopPropagation(e);
+            onDelete();
+          }} className="text-sm text-red-500 hover:underline">
+            Delete
+          </button>
+        </div>}
       </div>
-    </div>;
+    </div>
+  );
 };
 export default PDFCard;
