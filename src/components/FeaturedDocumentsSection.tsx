@@ -14,15 +14,16 @@ const featuredDocs = [
     imageUrl:
       "https://images.unsplash.com/photo-1466442929976-97f336a657be?auto=format&fit=crop&w=400&q=80",
   },
-  {
-    name: "Πρότυπα Καταστατικά Σύστασης",
-    imageUrl:
-      "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=400&q=80",
-  },
+  // Removed "Πρότυπα Καταστατικά Σύστασης"
   {
     name: "Ν. 4601/2019 Μετασχηματισμοί",
     imageUrl:
       "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=400&q=80",
+  },
+  // Added new GE.MH card
+  {
+    name: "ν. 4919/2022 ΓΕΜΗ",
+    imageUrl: "/lovable-uploads/86eecd5e-4f60-42f5-9b4e-1ae0cb5853e3.png",
   },
 ];
 
