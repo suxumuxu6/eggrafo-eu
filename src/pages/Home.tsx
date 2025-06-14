@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DocumentsHeader from '../components/DocumentsHeader';
@@ -8,6 +9,7 @@ import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
+import FeaturedDocumentsSection from '../components/FeaturedDocumentsSection';
 
 const Home: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -44,7 +46,6 @@ const Home: React.FC = () => {
   };
 
   const handleViewDocument = (document: Document) => {
-    // Increment view count when document is viewed
     incrementViewCount(document.id);
     setSelectedDocument(document);
   };
@@ -109,6 +110,8 @@ const Home: React.FC = () => {
       <Navbar />
       <main className="container mx-auto px-4 py-8 flex-1">
         <DocumentsHeader onSearch={handleSearch} searchQuery={searchQuery} />
+        {/* Featured Documents Section */}
+        <FeaturedDocumentsSection documents={allDocuments} />
         <DocumentsSection
           filteredDocuments={filteredDocuments}
           isAdmin={isAdmin}
@@ -158,3 +161,4 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
