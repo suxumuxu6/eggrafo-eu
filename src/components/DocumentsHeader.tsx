@@ -13,9 +13,9 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
 }) => {
   return (
     <div className="mb-12 text-center">
-      {/* Header image */}
+      {/* Header image replaced with uploaded image */}
       <img
-        src="/lovable-uploads/b1b6e120-07f2-44d4-badf-84273ddb82f8.png"
+        src="/lovable-uploads/75c28a96-9985-490d-a769-b17a111dcf10.png"
         alt="Εggrafo Header"
         className="w-full h-auto object-contain rounded-xl mb-8 shadow"
         style={{ maxHeight: '500px', objectPosition: 'center' }}
@@ -36,3 +36,4 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
 };
 
 export default DocumentsHeader;
+
