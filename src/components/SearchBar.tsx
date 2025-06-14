@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -20,14 +21,31 @@ const SearchBar: React.FC<SearchBarProps> = ({
     e.preventDefault();
     onSearch(localSearchQuery);
   };
-  return <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
+  return (
+    <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
       <div className="flex w-full max-w-3xl items-center space-x-2">
-        <Input type="text" placeholder="Αναζήτηση Εγγράφων..." value={localSearchQuery} onChange={e => setLocalSearchQuery(e.target.value)} className="w-full rounded-lg border-gray-200 py-3 pl-4 shadow-sm focus:border-kb-purple focus:ring-kb-purple" />
-        <Button type="submit" className="text-white bg-blue-700 hover:bg-blue-600">
-          <Search className="h-4 w-4 mr-2" />
+        <Input
+          type="text"
+          placeholder="Αναζήτηση Εγγράφων..."
+          value={localSearchQuery}
+          onChange={e => setLocalSearchQuery(e.target.value)}
+          className="w-full rounded-xl border-2 border-kb-purple/80 py-4 pl-4 shadow-md focus:border-kb-blue focus:ring-2 focus:ring-kb-blue transition-all
+            bg-white
+            outline-none
+            ring-2 ring-offset-1 ring-kb-purple/20
+            focus:outline-none
+            hover:border-kb-blue"
+          style={{
+            borderStyle: 'double',
+            borderWidth: '3px'
+          }}
+        />
+        <Button type="submit" className="text-white bg-blue-700 hover:bg-blue-600 h-[50px] rounded-xl px-6 flex items-center transition-all shadow">
+          <Search className="h-5 w-5 mr-2" />
           Αναζήτηση
         </Button>
       </div>
-    </form>;
+    </form>
+  );
 };
 export default SearchBar;

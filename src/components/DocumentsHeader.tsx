@@ -27,7 +27,10 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
       >
         Μέσα στο site μπορείτε βρείτε παραδείγματα εγγράφων για τροποποιήσεις και άλλες αιτήσεις για ΟΕ-ΕΕ στο ΓΕΜΗ. Στηρίξτε την προσπάθειά μας.
       </p>
-      <SearchBar onSearch={onSearch} searchQuery={searchQuery} />
+      {/* Added more space above and below the search bar */}
+      <div className="my-14 flex justify-center items-center">
+        <SearchBar onSearch={onSearch} searchQuery={searchQuery} />
+      </div>
     </div>
   );
 };
