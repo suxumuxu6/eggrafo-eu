@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { FileText, Edit, Trash2 } from 'lucide-react';
@@ -40,19 +39,27 @@ const PDFCard: React.FC<PDFCardProps> = ({
       const paymentData = JSON.parse(verifiedPayment);
       // Check if payment is verified and not expired (valid for 7 days)
       const isValid = paymentData.verified && Date.now() - paymentData.timestamp < 7 * 24 * 60 * 60 * 1000;
+      console.log('[PDFCard]', title, 'Payment verification found:', paymentData, '| isValid:', isValid);
       return isValid;
     }
+    console.log('[PDFCard]', title, 'No payment verification found');
     return false;
   };
 
   // Download PDF directly from a URL
   const triggerDirectDownload = async () => {
-    if (!url) return;
+    if (!url) {
+      console.log('[PDFCard]', title, 'No URL provided for download');
+      return;
+    }
     setDownloading(true);
     try {
       // Use a hidden anchor for download
       if (downloadLinkRef.current) {
+        console.log('[PDFCard]', title, 'Triggering anchor download');
         downloadLinkRef.current.click();
+      } else {
+        console.log('[PDFCard]', title, 'Download link ref not available');
       }
     } finally {
       setDownloading(false);
@@ -60,6 +67,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
   };
 
   const handleDownloadClick = () => {
+    console.log('[PDFCard]', title, 'Download button clicked. isAdmin:', isAdmin, '| PaymentVerified:', checkPaymentVerification());
     if (isAdmin || checkPaymentVerification()) {
       triggerDirectDownload();
     } else {
@@ -69,6 +77,7 @@ const PDFCard: React.FC<PDFCardProps> = ({
 
   const handleDonationSuccess = () => {
     setIsDonationModalOpen(false);
+    console.log('[PDFCard]', title, 'Donation succeeded, starting download...');
     // After payment, directly download the PDF
     setTimeout(triggerDirectDownload, 300); // Short delay to let modal close
   };
@@ -155,4 +164,3 @@ const PDFCard: React.FC<PDFCardProps> = ({
 };
 
 export default PDFCard;
-
