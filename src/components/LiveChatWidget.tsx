@@ -230,7 +230,7 @@ export const LiveChatWidget: React.FC = () => {
                   variant="secondary"
                   onClick={handleUserContinueDetail}
                 >
-                  Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε
+                  Συνέχεια μηνύματος
                 </Button>
                 <form onSubmit={handleUserProvideEmail} className="flex gap-2 mt-2">
                   <input
