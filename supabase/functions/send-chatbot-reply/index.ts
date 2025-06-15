@@ -11,35 +11,51 @@ const corsHeaders = {
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 
 serve(async (req: Request) => {
+  console.log("Received request:", req.method);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const formData = await req.formData();
+    console.log("FormData received");
 
     const email = formData.get("email")?.toString();
     const subject = formData.get("subject")?.toString();
     const message = formData.get("message")?.toString();
     const file = formData.get("file") as File | undefined;
 
+    console.log("Parsed data:", { email, subject, messageLength: message?.length, hasFile: !!file });
+
     if (!email || !subject || !message) {
+      console.error("Missing required fields:", { email: !!email, subject: !!subject, message: !!message });
       return new Response(
-        JSON.stringify({ error: "Missing fields" }),
+        JSON.stringify({ error: "Missing required fields: email, subject, or message" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
     const attachments: any[] = [];
-    if (file) {
-      const arrayBuffer = await file.arrayBuffer();
-      attachments.push({
-        filename: file.name,
-        content: Buffer.from(arrayBuffer),
-        contentType: file.type || "application/pdf",
-      });
+    if (file && file.size > 0) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        attachments.push({
+          filename: file.name,
+          content: Buffer.from(arrayBuffer),
+          contentType: file.type || "application/pdf",
+        });
+        console.log("File attachment prepared:", file.name);
+      } catch (fileError) {
+        console.error("Error processing file:", fileError);
+        return new Response(
+          JSON.stringify({ error: "Error processing file attachment" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
     }
 
+    console.log("Sending email with Resend...");
     const sendResult = await resend.emails.send({
       from: "Eggrafo Chatbot <onboarding@resend.dev>",
       to: [email],
@@ -48,21 +64,31 @@ serve(async (req: Request) => {
       attachments: attachments.length ? attachments : undefined,
     });
 
+    console.log("Resend response:", sendResult);
+
     if (sendResult.error) {
-      return new Response(JSON.stringify({ error: sendResult.error }), {
+      console.error("Resend error:", sendResult.error);
+      return new Response(JSON.stringify({ 
+        error: `Email sending failed: ${sendResult.error.message || sendResult.error}` 
+      }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    console.log("Email sent successfully:", sendResult.data?.id);
+    return new Response(JSON.stringify({ 
+      success: true, 
+      id: sendResult.data?.id 
+    }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (e) {
     console.error("send-chatbot-reply error:", e);
+    const errorMessage = e instanceof Error ? e.message : "Unknown server error";
     return new Response(
-      JSON.stringify({ error: "Server error" }),
+      JSON.stringify({ error: `Server error: ${errorMessage}` }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

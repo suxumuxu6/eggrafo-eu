@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,10 +28,14 @@ const ChatbotMessagesModal: React.FC<ChatbotMessagesModalProps> = ({
   conversation,
   onConversationUpdate,
 }) => {
+  const hasMarkedAsRead = useRef(false);
+
   useEffect(() => {
     const markAsRead = async () => {
-      if (open && conversation && conversation.status === "unread") {
+      if (open && conversation && conversation.status === "unread" && !hasMarkedAsRead.current) {
+        hasMarkedAsRead.current = true;
         try {
+          console.log("Marking conversation as read:", conversation.id);
           const { error } = await supabase
             .from("chatbot_messages")
             .update({ status: "read" })
@@ -48,7 +52,10 @@ const ChatbotMessagesModal: React.FC<ChatbotMessagesModalProps> = ({
       }
     };
 
-    markAsRead();
+    if (open) {
+      hasMarkedAsRead.current = false;
+      markAsRead();
+    }
   }, [open, conversation?.id, conversation?.status, onConversationUpdate]);
 
   return (

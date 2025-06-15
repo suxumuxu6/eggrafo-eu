@@ -86,8 +86,15 @@ const AdminChatbot: React.FC = () => {
       toast.error("No email address specified.");
       return;
     }
+    
+    if (!replyBody.trim()) {
+      toast.error("Please enter a message.");
+      return;
+    }
+
     setSendingReply(true);
     try {
+      console.log("Sending reply to:", replyTo.email);
       const formData = new FormData();
       formData.append("email", replyTo.email);
       formData.append("subject", replySubject);
@@ -101,8 +108,22 @@ const AdminChatbot: React.FC = () => {
           body: formData,
         }
       );
-      if (res.ok) {
+      
+      const responseText = await res.text();
+      console.log("Response status:", res.status);
+      console.log("Response text:", responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse response:", parseError);
+        throw new Error("Invalid response from server");
+      }
+
+      if (res.ok && responseData.success) {
         toast.success("Απάντηση εστάλη επιτυχώς.");
+        
         // Update database to mark as read and increment reply count
         const currentMsg = data.find(msg => msg.id === replyTo.chatId);
         const newReplyCount = (currentMsg?.admin_reply_count || 0) + 1;
@@ -115,6 +136,7 @@ const AdminChatbot: React.FC = () => {
             last_admin_reply_at: new Date().toISOString(),
           })
           .eq("id", replyTo.chatId);
+          
         // Insert reply row
         let fileUrl = null;
         if (replyFile) {
@@ -127,14 +149,17 @@ const AdminChatbot: React.FC = () => {
           body: replyBody,
           file_url: fileUrl,
         });
+        
         fetchMessages();
+        setReplyTo(null);
       } else {
-        const resp = await res.json();
-        toast.error("Σφάλμα αποστολής: " + (resp?.error || "Unknown"));
+        const errorMessage = responseData?.error || "Unknown error occurred";
+        console.error("Server error:", errorMessage);
+        toast.error("Σφάλμα αποστολής: " + errorMessage);
       }
-      setReplyTo(null);
     } catch (err: any) {
-      toast.error("Αποτυχία αποστολής.");
+      console.error("Network/fetch error:", err);
+      toast.error("Αποτυχία αποστολής: " + (err.message || "Network error"));
     } finally {
       setSendingReply(false);
       setReplyFile(null);
