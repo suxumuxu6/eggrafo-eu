@@ -42,6 +42,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
   const PAYPAL_DONATION_AMOUNT = 12; // Set this to your intended amount in EUR
 
   const handlePayPalDonation = async () => {
+    console.log('[DonationModal] handlePayPalDonation triggered');
     // Validate required fields before redirecting
     if (!userData.name.trim() || !userData.email.trim()) {
       toast.error('Please fill in your name and email address');
@@ -80,6 +81,8 @@ const DonationModal: React.FC<DonationModalProps> = ({
         }
       }
 
+      console.log('[DonationModal] PayPal API response:', parsedData);
+
       if (!parsedData.success) {
         throw new Error(parsedData.error || 'Payment creation failed');
       }
@@ -95,7 +98,9 @@ const DonationModal: React.FC<DonationModalProps> = ({
       }));
 
       toast.success('Redirecting to PayPal for payment...');
+      console.log('[DonationModal] Redirecting to:', parsedData.approvalUrl);
       window.location.href = parsedData.approvalUrl;
+      console.log('[DonationModal] Redirect call should have triggered');
     } catch (error: any) {
       console.error('Payment creation error:', error);
       toast.error(`Payment creation failed: ${error.message}`);
