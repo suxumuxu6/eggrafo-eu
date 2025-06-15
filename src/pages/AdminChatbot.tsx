@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -95,16 +96,28 @@ const AdminChatbot: React.FC = () => {
     setSendingReply(true);
     try {
       console.log("Sending reply to:", replyTo.email);
+      
+      // Get the current session to include authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const formData = new FormData();
       formData.append("email", replyTo.email);
       formData.append("subject", replySubject);
       formData.append("message", replyBody);
       if (replyFile) formData.append("file", replyFile);
 
+      const headers: Record<string, string> = {};
+      
+      // Add authorization header if session exists
+      if (session?.access_token) {
+        headers.authorization = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch(
         "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
         {
           method: "POST",
+          headers,
           body: formData,
         }
       );
