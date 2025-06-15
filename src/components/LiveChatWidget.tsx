@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,28 @@ const initialMessage = "Γεια σας, επιλέξτε από τις παρα
 const options = ["Θέλω ένα άλλο παράδειγμα εγγράφου", "Τεχνικό Θέμα με την λήψη αρχείου"];
 type ChatStep = "awaitingOption" | "waitingForLegalType" | "waitingForDetail" | "awaitingDetailsOrEmail" | "waitingForEmail" | "ended" | "techIssue" | "techIssue_waitingForEmail" | "techIssue_ended";
 const legalTypeOptions = ["ΟΕ-ΕΕ", "ΑΕ", "ΙΚΕ"];
+const MAX_IMAGE_SIZE_MB = 10;
+const STORAGE_BUCKET = "chatbot-images";
+
+// Helper to upload image to Supabase Storage and get a public URL
+const uploadImageToSupabase = async (file: File): Promise<string | null> => {
+  // Ensure bucket exists (no-op if already exists)
+  await supabase.storage.createBucket(STORAGE_BUCKET, { public: true }).catch(() => {});
+  // Make unique filename
+  const ext = file.name.split('.').pop();
+  const filePath = `${Date.now()}-${Math.random().toString(36).substr(2, 8)}.${ext}`;
+  const { error: uploadErr } = await supabase.storage.from(STORAGE_BUCKET).upload(filePath, file, {
+    upsert: false,
+    cacheControl: "3600",
+  });
+  if (uploadErr) {
+    alert("Αποτυχία αποστολής αρχείου εικόνας.");
+    return null;
+  }
+  // Get public URL
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+  return data?.publicUrl || null;
+};
 
 export const LiveChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -94,13 +115,17 @@ export const LiveChatWidget: React.FC = () => {
   };
 
   // Send message handler (image + text)
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const trimmed = messageInput.trim();
     if (!trimmed && !imageFile) return;
-    let userMessage: ChatMessage = { sender: "user", text: trimmed };
-    if (imageFile && imagePreviewUrl) {
-      userMessage.imageUrl = imagePreviewUrl;
+    let imageUrl: string | undefined;
+    if (imageFile) {
+      // Upload image to Supabase
+      imageUrl = await uploadImageToSupabase(imageFile);
+      if (!imageUrl) return;
     }
+    let userMessage: ChatMessage = { sender: "user", text: trimmed };
+    if (imageUrl) userMessage.imageUrl = imageUrl;
     setMessages(msgs => [...msgs, userMessage]);
     setMessageInput("");
     setImageFile(null);
@@ -196,13 +221,12 @@ export const LiveChatWidget: React.FC = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
-      // Limit to images only and max 5MB
       if (!selected.type.startsWith("image/")) {
         alert("Μόνο εικόνες επιτρέπονται.");
         return;
       }
-      if (selected.size > 5 * 1024 * 1024) {
-        alert("Μέγιστο μέγεθος εικόνας 5MB.");
+      if (selected.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        alert(`Μέγιστο μέγεθος εικόνας ${MAX_IMAGE_SIZE_MB}MB.`);
         return;
       }
       setImageFile(selected);
@@ -262,7 +286,7 @@ export const LiveChatWidget: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <input
                     type="file"
-                    accept="image/png,image/jpeg"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     id="chat-image-upload"
                     style={{ display: "none" }}
                     onChange={handleImageChange}
@@ -307,7 +331,7 @@ export const LiveChatWidget: React.FC = () => {
               <div className="flex items-center gap-2">
                 <input
                   type="file"
-                  accept="image/png,image/jpeg"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
                   id="chat-image-upload-tech"
                   style={{ display: "none" }}
                   onChange={handleImageChange}

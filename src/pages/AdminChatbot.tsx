@@ -12,7 +12,7 @@ import { toast } from "sonner";
 interface ChatbotMessage {
   id: string;
   email: string | null;
-  messages: Array<{ sender: "user" | "bot"; text: string }>;
+  messages: Array<{ sender: "user" | "bot"; text: string; imageUrl?: string }>;
   submitted_at: string;
 }
 
@@ -197,7 +197,19 @@ const AdminChatbot: React.FC = () => {
                             {msg.messages.map((m, i) => (
                               <div key={i}>
                                 <span className="font-semibold">{m.sender === "user" ? "User" : "Bot"}:</span>{" "}
-                                <span>{m.text}</span>
+                                <span>
+                                  {m.text}
+                                  {m.imageUrl && (
+                                    <div className='mt-1'>
+                                      <img
+                                        src={m.imageUrl}
+                                        alt="user upload"
+                                        className="max-w-[160px] border rounded shadow"
+                                        style={{ display: "block", marginTop: 4 }}
+                                      />
+                                    </div>
+                                  )}
+                                </span>
                               </div>
                             ))}
                           </div>
