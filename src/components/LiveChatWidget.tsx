@@ -21,7 +21,9 @@ type ChatStep =
   | "awaitingDetailsOrEmail"
   | "waitingForEmail"
   | "ended"
-  | "techIssue"; // tech flow
+  | "techIssue"
+  | "techIssue_waitingForEmail"
+  | "techIssue_ended"; // NEW steps for tech issue flow
 
 const legalTypeOptions = [
   "ΟΕ-ΕΕ", "ΑΕ", "ΙΚΕ"
@@ -117,7 +119,7 @@ export const LiveChatWidget: React.FC = () => {
     ]);
     setMessageInput("");
     if (step === "waitingForLegalType") {
-      // Old: should not happen now with new flow, keep for safety
+      // Old: shouldn't happen, keep for safety
       setTimeout(() => {
         setMessages(msgs =>
           [
@@ -134,11 +136,20 @@ export const LiveChatWidget: React.FC = () => {
         setCanSendMessage(false);
       }, 400);
     } else if (step === "techIssue") {
-      // After techIssue send, ask for details or email
+      // User described technical problem, now ask for email
       setTimeout(() => {
-        setStep("awaitingDetailsOrEmail");
+        setMessages(msgs =>
+          [
+            ...msgs,
+            {
+              sender: "bot",
+              text: "Συμπληρώστε το email σας για να έρθουμε σε επικοινωνία μαζί σας."
+            }
+          ]
+        );
+        setStep("techIssue_waitingForEmail");
         setCanSendMessage(false);
-      }, 400);
+      }, 500);
     }
   };
 
@@ -152,6 +163,7 @@ export const LiveChatWidget: React.FC = () => {
     ]);
   };
 
+  // Reuse for both main and techIssue flow, select correct "ended" step
   const handleUserProvideEmail = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!isEmailValid) return;
@@ -165,7 +177,8 @@ export const LiveChatWidget: React.FC = () => {
         ...msgs,
         { sender: "bot", text: "Τέλος συζήτησης" }
       ]);
-      setStep("ended");
+      const nextStep = step === "techIssue_waitingForEmail" ? "techIssue_ended" : "ended";
+      setStep(nextStep as ChatStep);
     }, 500);
   };
 
@@ -308,8 +321,27 @@ export const LiveChatWidget: React.FC = () => {
                 </form>
               </div>
             )}
+            {/* Tech Issue: ask for email after user sends issue description */}
+            {step === "techIssue_waitingForEmail" && (
+              <form onSubmit={handleUserProvideEmail} className="flex gap-2 mt-2">
+                <input
+                  type="email"
+                  className="flex-1 min-w-0 rounded px-2 py-1 border border-gray-300 text-sm"
+                  placeholder="Συμπληρώστε το email σας"
+                  value={emailInput}
+                  onChange={e => setEmailInput(e.target.value)}
+                  onKeyDown={handleEmailInputKeyDown}
+                  required
+                />
+                <Button
+                  className="self-end"
+                  type="submit"
+                  disabled={!isEmailValid}
+                >OK</Button>
+              </form>
+            )}
             {/* Ended: show 'Τέλος συζήτησης' button */}
-            {step === "ended" && (
+            {(step === "ended" || step === "techIssue_ended") && (
               <div className="flex flex-col gap-2 mt-2 items-center">
                 <Button className="w-full" onClick={handleEndChat} variant="secondary">
                   Τέλος συζήτησης
