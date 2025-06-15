@@ -12,8 +12,6 @@ interface Message {
 const firstTimeGemhPrompt =
   "Εάν χρειάζεστε κάποιο διαφορετικό παράδειγμα εγγράφου για ΓΕΜΗ, γράψτε μας εδώ και θα σας βοηθήσουμε!";
 
-const greetingPrompt = "Γεια σας, πείτε μας τι χρειάζεστε?";
-
 const PdfAiChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,9 +19,8 @@ const PdfAiChatWidget: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Show the prompt and greeting as the first set of messages,
-  // only if the user hasn't started chatting
-  const shouldShowInitialPrompts = messages.length === 0 && open;
+  // Only show the GEMH prompt as the first message if the user hasn't started chatting
+  const shouldShowGemhPrompt = messages.length === 0 && open;
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -96,16 +93,11 @@ const PdfAiChatWidget: React.FC = () => {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 h-60">
-            {/* Initial Greeting and GEMH prompt */}
-            {shouldShowInitialPrompts && (
-              <>
-                <div className="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg px-3 py-2 mb-2 text-center font-semibold">
-                  {greetingPrompt}
-                </div>
-                <div className="bg-red-50 border border-red-200 text-black text-sm rounded-lg px-3 py-2 mb-2 text-center font-semibold">
-                  {firstTimeGemhPrompt}
-                </div>
-              </>
+            {/* Only show GEMH prompt if no messages */}
+            {shouldShowGemhPrompt && (
+              <div className="bg-red-50 border border-red-200 text-black text-sm rounded-lg px-3 py-2 mb-2 text-center font-semibold">
+                {firstTimeGemhPrompt}
+              </div>
             )}
             {messages.map((msg, i) => (
               <div
