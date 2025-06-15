@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 
-const RECAPTCHA_SITEKEY = "6Lck5GErAAAAAIPdHSSOQkIW0TlS-hagKB5Pugbd"; // Use your provided reCAPTCHA key directly.
+const RECAPTCHA_SITEKEY = "6Lck5GErAAAAAERBttICInYZ6FA1w2Dz_CQCSs5E"; // Updated site key
 
 const AdminAuthPage: React.FC = () => {
   const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
