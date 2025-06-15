@@ -1,8 +1,10 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Upload, LogOut, Lock } from "lucide-react";
+import { BookOpen, Upload, LogOut, Lock, Bot } from "lucide-react";
+
 const Navbar: React.FC = () => {
   const {
     isAuthenticated,
@@ -29,7 +31,15 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
-            {loading ? null : isAuthenticated && isAdmin ? <>
+            {loading ? null : isAuthenticated && isAdmin ? (
+              <>
+                {/* Chatbot link before upload */}
+                <Link to="/admin-chatbot">
+                  <Button variant="outline" className="flex items-center space-x-2">
+                    <Bot className="h-4 w-4" />
+                    <span>Chatbot</span>
+                  </Button>
+                </Link>
                 <Link to="/upload">
                   <Button variant="outline" className="flex items-center space-x-2">
                     <Upload className="h-4 w-4" />
@@ -40,10 +50,12 @@ const Navbar: React.FC = () => {
                   <LogOut className="h-4 w-4" />
                   <span>Έξοδος</span>
                 </Button>
-              </> : null}
+              </>
+            ) : null}
           </div>
         </div>
       </div>
     </nav>;
 };
+
 export default Navbar;
