@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
 import FeaturedDocumentsSection from '../components/FeaturedDocumentsSection';
+import OdfAiChatWidget from '../components/OdfAiChatWidget';
 
 const EXCLUDED_TITLES = [
   "ν. 4072/2012 Προσωπικές Εταιρείες",
@@ -143,7 +144,6 @@ const Home: React.FC = () => {
           <p className="text-sm text-gray-500">© Eggrafo.eu 2025</p>
         </div>
       </footer>
-
       {/* Modals */}
       {selectedDocument && (
         <InlinePDFViewer 
@@ -151,7 +151,6 @@ const Home: React.FC = () => {
           onClose={() => setSelectedDocument(null)}
         />
       )}
-
       <EditDocumentModal
         isOpen={isEditModalOpen}
         onClose={() => {
@@ -161,7 +160,6 @@ const Home: React.FC = () => {
         document={documentToEdit}
         onSave={handleSaveEdit}
       />
-
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
@@ -172,6 +170,8 @@ const Home: React.FC = () => {
         documentTitle={documentToDelete?.title || ''}
         isDeleting={isDeleting}
       />
+      {/* ODF AI Chat Widget */}
+      <OdfAiChatWidget />
     </div>
   );
 };
