@@ -69,7 +69,11 @@ serve(async (req) => {
       ? Number(donationAmount).toFixed(2)
       : "12.00";
 
-    // PayPal LIVE API endpoints
+    // --- DEBUG: Log credentials, environment, and endpoints ---
+    console.log('PayPal credentials:', { clientId: clientId?.slice(0, 8), clientSecret: clientSecret ? '****' : null });
+    console.log('PayPal endpoint:', tokenUrl, paymentUrl);
+
+    // --- [PayPal LIVE API endpoints] ---
     const tokenUrl = 'https://api-m.paypal.com/v1/oauth2/token';
     const paymentUrl = 'https://api-m.paypal.com/v1/payments/payment';
 
@@ -85,15 +89,23 @@ serve(async (req) => {
     });
 
     const tokenData = await tokenResponse.json();
-    console.log('Token response status:', tokenResponse.status);
-    
-    if (!tokenResponse.ok) {
-      console.error('Token request failed:', tokenData);
-      throw new Error(`PayPal authentication failed: ${tokenData.error_description || tokenData.error}`);
+    console.log('Token response:', tokenResponse.status, tokenData);
+
+    if (!tokenResponse.ok || !tokenData.access_token) {
+      // Expose all error info!
+      return new Response(
+        JSON.stringify({
+          success: false,
+          step: 'token',
+          error: tokenData.error_description || tokenData.error || 'PayPal authentication failed',
+          details: tokenData
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const accessToken = tokenData.access_token;
-    console.log('Got PayPal access token successfully');
+    console.log('PayPal access token acquired');
 
     // Get the origin for return URLs
     const origin = req.headers.get('origin') || 'https://c6e46c6a-7177-4585-90f1-39fed8809a34.lovableproject.com';
@@ -129,6 +141,7 @@ serve(async (req) => {
 
     console.log('Creating PayPal payment with improved payload:', JSON.stringify(payment, null, 2));
 
+    // --- Payment creation with robust error details ---
     const paymentResponse = await fetch(paymentUrl, {
       method: 'POST',
       headers: {
@@ -139,16 +152,33 @@ serve(async (req) => {
     });
 
     const paymentData = await paymentResponse.json();
-    console.log('Payment response status:', paymentResponse.status);
-    console.log('PayPal payment response:', JSON.stringify(paymentData, null, 2));
+    console.log('CreatePayment status:', paymentResponse.status);
+    console.log('CreatePayment response:', paymentData);
 
     if (!paymentResponse.ok) {
-      console.error('Payment creation failed:', paymentData);
-      throw new Error(`PayPal payment creation failed: ${paymentData.message || paymentData.error_description || 'Unknown error'}`);
+      // Expose detailed error
+      return new Response(
+        JSON.stringify({
+          success: false,
+          step: 'payment',
+          error: paymentData.message || paymentData.error_description || 'PayPal payment creation error',
+          name: paymentData.name,
+          details: paymentData
+        }),
+        { status: paymentResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     if (!paymentData.id) {
-      throw new Error('No payment ID returned from PayPal');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          step: 'payment-missing-id',
+          error: 'No payment ID returned from PayPal',
+          details: paymentData
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Find approval URL
@@ -181,11 +211,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error creating PayPal payment:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ success: false, error: error.message, stack: error.stack }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
