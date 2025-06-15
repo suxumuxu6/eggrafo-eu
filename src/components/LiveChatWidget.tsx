@@ -21,8 +21,7 @@ type ChatStep =
   | "awaitingDetailsOrEmail"
   | "waitingForEmail"
   | "ended"
-  | "techIssue" // tech flow
-  ;
+  | "techIssue"; // tech flow
 
 const legalTypeOptions = [
   "ΟΕ-ΕΕ", "ΑΕ", "ΙΚΕ"
@@ -70,14 +69,13 @@ export const LiveChatWidget: React.FC = () => {
     ]);
     let reply = "";
     if (option === options[0]) {
-      // Instead of free text, prompt for legal type (new options).
       reply = "επιλέξτε μία από τις παρακάτω νομικές μορφές:";
       setTimeout(() => {
         setMessages(msgs =>
           [...msgs, { sender: "bot", text: reply }]
         );
         setStep("waitingForLegalType");
-        setCanSendMessage(false); // Don't show textbox, show buttons for legal types
+        setCanSendMessage(false); // Show legal options only
       }, 500);
     } else if (option === options[1]) {
       reply = "Περιγράψτε το τεχνικό πρόβλημα που αντιμετωπίζετε με τη λήψη αρχείου και θα βοηθήσουμε άμεσα.";
@@ -91,7 +89,7 @@ export const LiveChatWidget: React.FC = () => {
     }
   };
 
-  // Handle user selecting a legal type from the bots new options
+  // After legal type selection, ask for detail only (no email field yet)
   const handleLegalTypeOption = (legalType: string) => {
     setMessages(msgs => [
       ...msgs,
@@ -104,12 +102,12 @@ export const LiveChatWidget: React.FC = () => {
           { sender: "bot", text: "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε" }
         ]
       );
-      setStep("awaitingDetailsOrEmail"); // prompt for details/email next
-      setCanSendMessage(false);
+      setStep("waitingForDetail");
+      setCanSendMessage(true); // Show textarea to type detail
     }, 700);
   };
 
-  // Handle sending main message depending on the flow step
+  // From "waitingForDetail", on send, ask for "Συνέχεια μηνύματος" or "Συμπληρώστε το email σας"
   const handleSendMessage = () => {
     const trimmed = messageInput.trim();
     if (!trimmed) return;
@@ -118,8 +116,8 @@ export const LiveChatWidget: React.FC = () => {
       { sender: "user", text: trimmed }
     ]);
     setMessageInput("");
-    // Bot response logic based on the step
     if (step === "waitingForLegalType") {
+      // Old: should not happen now with new flow, keep for safety
       setTimeout(() => {
         setMessages(msgs =>
           [
@@ -127,24 +125,24 @@ export const LiveChatWidget: React.FC = () => {
             { sender: "bot", text: "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε" }
           ]
         );
-        setStep("awaitingDetailsOrEmail");
-        setCanSendMessage(false);
+        setStep("waitingForDetail");
+        setCanSendMessage(true);
       }, 700);
-    } else if (step === "waitingForDetail" || step === "techIssue") {
-      // After extra detail in extra flow, or after tech issue
+    } else if (step === "waitingForDetail") {
       setTimeout(() => {
-        setMessages(msgs =>
-          [
-            ...msgs,
-            { sender: "bot", text: "Συμπληρώστε το email σας για να επικοινωνήσουμε μαζί σας ή προσθέστε περισσότερες λεπτομέρειες." }
-          ]
-        );
         setStep("awaitingDetailsOrEmail");
         setCanSendMessage(false);
-      }, 700);
+      }, 400);
+    } else if (step === "techIssue") {
+      // After techIssue send, ask for details or email
+      setTimeout(() => {
+        setStep("awaitingDetailsOrEmail");
+        setCanSendMessage(false);
+      }, 400);
     }
   };
 
+  // User wants to continue with another detail
   const handleUserContinueDetail = () => {
     setStep("waitingForDetail");
     setCanSendMessage(true);
@@ -171,7 +169,6 @@ export const LiveChatWidget: React.FC = () => {
     }, 500);
   };
 
-  // Optionally allow closing the chat on the "end" step
   const handleEndChat = () => {
     setOpen(false);
     setTimeout(() => {
@@ -244,7 +241,7 @@ export const LiveChatWidget: React.FC = () => {
                 ))}
               </div>
             )}
-            {/* New legal type options for 'waitingForLegalType' */}
+            {/* Legal type options */}
             {step === "waitingForLegalType" && (
               <div className="flex flex-col gap-2 mt-2">
                 {legalTypeOptions.map(opt => (
@@ -259,7 +256,31 @@ export const LiveChatWidget: React.FC = () => {
                 ))}
               </div>
             )}
-            {/* If user needs to add more detail OR submit email */}
+            {/* Textarea to let user type the detail */}
+            {(step === "waitingForDetail" && canSendMessage) && (
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+                className="px-0 py-2 flex gap-2"
+              >
+                <Textarea
+                  className="flex-1 min-h-[40px] max-h-24 resize-none text-sm"
+                  placeholder="Γράψτε το μήνυμά σας…"
+                  value={messageInput}
+                  onChange={e => setMessageInput(e.target.value)}
+                  onKeyDown={handleTextareaKeyDown}
+                  rows={1}
+                />
+                <Button
+                  type="submit"
+                  className="self-end"
+                  disabled={!messageInput.trim()}
+                >Αποστολή</Button>
+              </form>
+            )}
+            {/* After detail: show Συνέχεια μηνύματος or email */}
             {step === "awaitingDetailsOrEmail" && (
               <div className="flex flex-col gap-2 mt-2">
                 <Button
@@ -297,8 +318,8 @@ export const LiveChatWidget: React.FC = () => {
             )}
             <div ref={bottomRef}></div>
           </div>
-          {/* Message input area: only appears for details */}
-          {(step === "waitingForLegalType" || step === "waitingForDetail" || step === "techIssue") && canSendMessage && (
+          {/* Only show message input for detail or techIssue */}
+          {(step === "techIssue" && canSendMessage) && (
             <form
               onSubmit={e => {
                 e.preventDefault();
