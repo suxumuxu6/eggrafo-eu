@@ -54,7 +54,7 @@ const PdfAiChatWidget: React.FC = () => {
       {/* Floating Button */}
       {!open && (
         <button
-          className="fixed bottom-6 right-24 z-50 bg-red-600 text-white rounded-full shadow-lg p-4 hover:bg-red-700 flex items-center justify-center transition-all"
+          className="fixed bottom-6 right-32 z-50 bg-red-600 text-white rounded-full shadow-lg p-4 hover:bg-red-700 flex items-center justify-center transition-all"
           onClick={() => setOpen(true)}
           aria-label="Άνοιγμα συνομιλίας PDF AI"
         >
@@ -64,7 +64,7 @@ const PdfAiChatWidget: React.FC = () => {
 
       {/* Chat Drawer */}
       {open && (
-        <div className="fixed bottom-8 right-8 z-50 bg-white shadow-xl rounded-xl w-80 max-w-[95vw] flex flex-col border border-red-100 animate-fade-in">
+        <div className="fixed bottom-8 right-16 z-50 bg-white shadow-xl rounded-xl w-80 max-w-[95vw] flex flex-col border border-red-100 animate-fade-in">
           <div className="flex items-center px-4 py-2 border-b border-gray-200 justify-between">
             <span className="font-semibold text-red-700">AI Βοηθός PDF</span>
             <button
