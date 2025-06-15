@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import FileUploadField from './FileUploadField';
 import UploadProgress from './UploadProgress';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface UploadFormProps {
   onSubmit: (data: DocumentFormData) => Promise<boolean | void>; 
@@ -22,32 +23,47 @@ interface DocumentFormData {
   file: File | null;
 }
 
+const CATEGORIES = [
+  {
+    value: "download_example",
+    label: "Παραδείγματα Εγγράφων για λήψη (διαθέσιμο μόνο με δωρεά)"
+  },
+  {
+    value: "company_laws",
+    label: "Νόμοι Εταιρειών (δωρεάν λήψη)"
+  }
+];
+
 const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadProgress, errorMessage }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
+  const [category, setCategory] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!file) {
       return;
     }
-    
+    if (!category) {
+      return;
+    }
     await onSubmit({
       title,
       description,
       tags,
-      category: '', // Set empty category since we're removing categories
+      category,
       file
     });
   };
-  
+
   const resetForm = () => {
     setTitle('');
     setDescription('');
     setTags('');
+    setCategory('');
     setFile(null);
   };
 
@@ -58,7 +74,30 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
-      
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Πού θέλετε να ανέβει το έγγραφο;
+          <span className="text-red-500 text-base">*</span>
+        </label>
+        <RadioGroup
+          value={category}
+          onValueChange={setCategory}
+          disabled={isUploading}
+          className="flex flex-col gap-3"
+        >
+          {CATEGORIES.map(option => (
+            <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+              <RadioGroupItem value={option.value} id={option.value} disabled={isUploading} />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
+        </RadioGroup>
+        {!category && (
+          <div className="text-xs text-red-600 mt-1">Παρακαλώ επιλέξτε μία επιλογή</div>
+        )}
+      </div>
+
       <div className="space-y-2">
         <label htmlFor="title" className="block text-sm font-medium text-gray-700">
           Document Title
@@ -114,7 +153,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
       <Button 
         type="submit" 
         className="w-full bg-blue-600 hover:bg-blue-700"
-        disabled={isUploading || !file}
+        disabled={isUploading || !file || !category}
       >
         {isUploading ? 'Uploading...' : 'Upload Document'}
       </Button>

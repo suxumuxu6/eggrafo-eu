@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -24,6 +23,11 @@ export const useFileUpload = () => {
 
     if (!file) {
       toast.error('Please select a PDF file');
+      return false;
+    }
+    if (!category) {
+      toast.error('Παρακαλώ επιλέξτε πού θέλετε να ανέβει το αρχείο.');
+      setErrorMessage('Παρακαλώ επιλέξτε πού θέλετε να ανέβει το αρχείο.');
       return false;
     }
 
@@ -94,13 +98,14 @@ export const useFileUpload = () => {
 
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
-      // Save document metadata (category optional/empty)
+      // Save document metadata (category now set properly)
       const { error: metadataError, data: insertData } = await supabase
         .from('documents')
         .insert({
           title, 
           description,
           tags: tagsArray, 
+          category, // set the category from form
           file_url: fileUrl,
           created_by: user.id,
         });
