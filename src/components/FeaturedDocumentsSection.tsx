@@ -12,7 +12,7 @@ const featuredDocs = [
   {
     name: "ν. 4072/2012 Προσωπικές Εταιρείες",
     imageUrl:
-      "https://images.unsplash.com/photo-1466442929976-97f336a657be?auto=format&fit=crop&w=400&q=80",
+      "/lovable-uploads/2a456a05-73e4-4aa4-92d4-b70aaa8bcca6.png",
   },
   // Removed "Πρότυπα Καταστατικά Σύστασης"
   {
