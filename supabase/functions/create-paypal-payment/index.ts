@@ -111,10 +111,7 @@ serve(async (req) => {
       transactions: [{
         amount: {
           total: donationAmountStr,
-          currency: 'EUR',
-          details: {
-            subtotal: donationAmountStr
-          }
+          currency: 'EUR'
         },
         description: `Document Access: ${documentTitle}`,
         custom: donationData.id,
@@ -122,7 +119,7 @@ serve(async (req) => {
           items: [{
             name: `Access to: ${documentTitle}`,
             description: 'Document access fee',
-            quantity: '1',
+            quantity: 1, // Make sure this is integer!
             price: donationAmountStr,
             currency: 'EUR'
           }]
