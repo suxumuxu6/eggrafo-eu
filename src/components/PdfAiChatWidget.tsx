@@ -1,5 +1,6 @@
+
 import React, { useState, useRef } from "react";
-import { FileText } from "lucide-react";
+import { Sparkle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const API_URL = "https://vcxwikgasrttbngdygig.functions.supabase.co/pdf-ai-chat";
@@ -58,7 +59,7 @@ const PdfAiChatWidget: React.FC = () => {
           onClick={() => setOpen(true)}
           aria-label="Άνοιγμα συνομιλίας PDF AI"
         >
-          <FileText className="w-7 h-7" />
+          <Sparkle className="w-7 h-7" />
         </button>
       )}
 
@@ -66,7 +67,7 @@ const PdfAiChatWidget: React.FC = () => {
       {open && (
         <div className="fixed bottom-8 right-6 z-50 bg-white shadow-xl rounded-xl w-80 max-w-[95vw] flex flex-col border border-red-100 animate-fade-in">
           <div className="flex items-center px-4 py-2 border-b border-gray-200 justify-between">
-            <span className="font-semibold text-red-700">AI Βοηθός PDF</span>
+            <span className="font-semibold text-black">Chat</span>
             <button
               onClick={() => setOpen(false)}
               className="ml-2 text-kb-darkgray hover:text-red-500"
