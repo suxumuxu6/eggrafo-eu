@@ -1,6 +1,33 @@
+
 import React, { useState, useRef } from "react";
 import { Bot, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// === CUSTOM AI ANSWERS SECTION ===
+const customAnswers = [
+  // Example: exact match
+  {
+    trigger: "παράδειγμα καταστατικού",
+    reply: "Το τυπικό καταστατικό για ΙΚΕ περιλαμβάνει τα εξής στοιχεία: [Εισάγετε τα στοιχεία σας εδώ].",
+  },
+  // Example: keyword match
+  {
+    trigger: "ΓΕΜΗ",
+    reply: "Για όλες τις ανάγκες σχετικές με το ΓΕΜΗ, μπορείτε να επικοινωνήσετε άμεσα με το αρμόδιο τμήμα, αλλά μπορώ να σας παρέχω και οδηγίες για τα βήματα που πρέπει να ακολουθήσετε.",
+  },
+  // Example: add more custom triggers as you wish!
+];
+
+// Simple matching function: returns the reply if the input contains any trigger (case-insensitive)
+function matchCustomAnswer(input: string): string | null {
+  const normalizedInput = input.toLowerCase();
+  for (const c of customAnswers) {
+    if (normalizedInput.includes(c.trigger.toLowerCase())) {
+      return c.reply;
+    }
+  }
+  return null;
+}
 
 const API_URL = "https://vcxwikgasrttbngdygig.functions.supabase.co/pdf-ai-chat";
 
@@ -24,9 +51,24 @@ const PdfAiChatWidget: React.FC = () => {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+
     setMessages((msgs) => [...msgs, { sender: "user", text: input }]);
     setLoading(true);
 
+    // === Check for custom answer before calling the API ===
+    const customReply = matchCustomAnswer(input);
+    if (customReply) {
+      setMessages((msgs) => [
+        ...msgs,
+        { sender: "ai", text: customReply },
+      ]);
+      setInput("");
+      setLoading(false);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 500);
+      return;
+    }
+
+    // No custom answer, use AI backend as usual
     try {
       const res = await fetch(API_URL, {
         method: "POST",
