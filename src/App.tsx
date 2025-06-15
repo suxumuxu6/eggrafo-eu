@@ -9,6 +9,7 @@ import PaymentSuccess from "./components/PaymentSuccess";
 import PaymentCancel from "./components/PaymentCancel";
 import { AuthProvider } from "./context/AuthContext";
 import AdminAuthPage from "./pages/AdminAuth";
+import AdminChatbot from "./pages/AdminChatbot";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/auth" element={<AdminAuthPage />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-cancel" element={<PaymentCancel />} />
+          <Route path="/admin-chatbot" element={<AdminChatbot />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>

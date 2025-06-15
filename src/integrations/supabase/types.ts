@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chatbot_messages: {
+        Row: {
+          email: string | null
+          id: string
+          messages: Json
+          submitted_at: string | null
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          messages: Json
+          submitted_at?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          messages?: Json
+          submitted_at?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           category: string | null

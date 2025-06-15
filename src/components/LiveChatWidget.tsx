@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatMessage {
   sender: "bot" | "user";
@@ -167,9 +168,10 @@ export const LiveChatWidget: React.FC = () => {
   const handleUserProvideEmail = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!isEmailValid) return;
+    const userEmail = emailInput;
     setMessages(msgs => [
       ...msgs,
-      { sender: "user", text: emailInput }
+      { sender: "user", text: userEmail }
     ]);
     setEmailInput("");
     setTimeout(() => {
@@ -177,9 +179,26 @@ export const LiveChatWidget: React.FC = () => {
         ...msgs,
         { sender: "bot", text: "Τέλος συζήτησης" }
       ]);
+      // Save the conversation when email provided
+      saveChatToSupabase([...messages, { sender: "user", text: userEmail }, { sender: "bot", text: "Τέλος συζήτησης" }], userEmail);
       const nextStep = step === "techIssue_waitingForEmail" ? "techIssue_ended" : "ended";
       setStep(nextStep as ChatStep);
     }, 500);
+  };
+
+  const saveChatToSupabase = async (finalMessages: ChatMessage[], email: string) => {
+    try {
+      // Only save if email is provided, at end of flow
+      await supabase
+        .from("chatbot_messages")
+        .insert({
+          email: email || null,
+          messages: finalMessages,
+        });
+    } catch (err) {
+      // Just log, do not block UI
+      console.error("Failed to save chatbot conversation:", err);
+    }
   };
 
   const handleEndChat = () => {
