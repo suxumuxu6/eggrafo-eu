@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+import ReCAPTCHA from "react-google-recaptcha";
 
-const HCAPTCHA_SITEKEY = "10000000-ffff-ffff-ffff-000000000001"; // <-- REPLACE ME!
+const RECAPTCHA_SITEKEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google's test key; replace with your own for production.
 
 const AdminAuthPage: React.FC = () => {
   const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
@@ -18,7 +18,7 @@ const AdminAuthPage: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
-  const captchaRef = React.useRef<HCaptcha>(null);
+  const captchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -30,37 +30,29 @@ const AdminAuthPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!captchaToken) {
-      setCaptchaError("Παρακαλώ λύστε το hCaptcha.");
+      setCaptchaError("Παρακαλώ ολοκληρώστε το reCAPTCHA.");
       return;
     }
     setFormLoading(true);
     setCaptchaError(null);
     try {
-      // Pass the captchaToken in the options object
-      // Supabase expects { captchaToken }
-      // Your context AuthContext must also be updated if needed,
-      // but by default, supabase-js handles it as an extra param.
+      // Pass the captchaToken in the options object if desired (your AuthContext handles this as before)
       const success = await signIn(email, password, captchaToken);
       if (success) {
         setEmail("");
         setPassword("");
         setCaptchaToken(null);
-        if (captchaRef.current) captchaRef.current.resetCaptcha();
+        if (captchaRef.current) captchaRef.current.reset();
       }
     } finally {
       setFormLoading(false);
     }
   };
 
-  // hCaptcha callback handlers
-  const handleCaptchaVerify = (token: string) => {
+  // reCAPTCHA callback handlers
+  const handleCaptchaChange = (token: string | null) => {
     setCaptchaToken(token);
     setCaptchaError(null);
-  };
-
-  const handleCaptchaExpire = () => {
-    setCaptchaToken(null);
-    setCaptchaError("Το hCaptcha έληξε. Παρακαλώ δοκιμάστε ξανά.");
   };
 
   return (
@@ -109,12 +101,12 @@ const AdminAuthPage: React.FC = () => {
               />
             </div>
             <div className="flex justify-center">
-              <HCaptcha
-                sitekey={HCAPTCHA_SITEKEY}
-                onVerify={handleCaptchaVerify}
-                onExpire={handleCaptchaExpire}
+              <ReCAPTCHA
                 ref={captchaRef}
+                sitekey={RECAPTCHA_SITEKEY}
+                onChange={handleCaptchaChange}
                 theme="light"
+                size="normal"
               />
             </div>
             {captchaError && (
