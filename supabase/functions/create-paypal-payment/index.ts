@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -157,7 +158,10 @@ serve(async (req) => {
       throw new Error('No approval URL returned from PayPal');
     }
 
-    console.log('Payment created successfully:', { paymentId: paymentData.id, approvalUrl });
+    // *** FIX: Define paymentId variable here ***
+    const paymentId = paymentData.id;
+
+    console.log('Payment created successfully:', { paymentId, approvalUrl });
 
     // Return donation link in the API response
     const donationLink = `https://${Deno.env.get("SUPABASE_PROJECT_REF") || "YOUR_PROJECT_REF"}.lovableproject.com/donation-link?token=${link_token}`;
