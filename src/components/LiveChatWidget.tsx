@@ -8,26 +8,40 @@ interface ChatMessage {
   sender: "bot" | "user";
   text: string;
 }
+
 const initialMessage = "Γεια σας, επιλέξτε από τις παρακάτω επιλογές:";
 const options = [
   "Θέλω ένα άλλο παράδειγμα εγγράφου",
   "Τεχνικό Θέμα με την λήψη αρχείου"
 ];
 
+type ChatStep =
+  | "awaitingOption"
+  | "waitingForLegalType"
+  | "waitingForDetail"
+  | "awaitingDetailsOrEmail"
+  | "waitingForEmail"
+  | "ended"
+  | "techIssue" // tech flow
+  ;
+
 export const LiveChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [awaitingOption, setAwaitingOption] = useState(true);
+  const [step, setStep] = useState<ChatStep>("awaitingOption");
   const [canSendMessage, setCanSendMessage] = useState(false);
   const [messageInput, setMessageInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [isEmailValid, setIsEmailValid] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open && messages.length === 0) {
       setMessages([{ sender: "bot", text: initialMessage }]);
-      setAwaitingOption(true);
+      setStep("awaitingOption");
       setCanSendMessage(false);
       setMessageInput("");
+      setEmailInput("");
     }
   }, [open]);
 
@@ -37,6 +51,15 @@ export const LiveChatWidget: React.FC = () => {
     }
   }, [messages, open]);
 
+  useEffect(() => {
+    setIsEmailValid(validateEmail(emailInput));
+  }, [emailInput]);
+
+  function validateEmail(email: string) {
+    // basic email validation
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }
+
   const handleOption = (option: string) => {
     setMessages(msgs => [
       ...msgs,
@@ -45,18 +68,26 @@ export const LiveChatWidget: React.FC = () => {
     let reply = "";
     if (option === options[0]) {
       reply = "Γράψτε την νομική μορφή";
+      setTimeout(() => {
+        setMessages(msgs =>
+          [...msgs, { sender: "bot", text: reply }]
+        );
+        setStep("waitingForLegalType");
+        setCanSendMessage(true);
+      }, 500);
     } else if (option === options[1]) {
       reply = "Περιγράψτε το τεχνικό πρόβλημα που αντιμετωπίζετε με τη λήψη αρχείου και θα βοηθήσουμε άμεσα.";
+      setTimeout(() => {
+        setMessages(msgs =>
+          [...msgs, { sender: "bot", text: reply }]
+        );
+        setStep("techIssue");
+        setCanSendMessage(true);
+      }, 500);
     }
-    setTimeout(() => {
-      setMessages(msgs =>
-        [...msgs, { sender: "bot", text: reply }]
-      );
-      setCanSendMessage(true);
-    }, 500);
-    setAwaitingOption(false);
   };
 
+  // Handle sending main message depending on the flow step
   const handleSendMessage = () => {
     const trimmed = messageInput.trim();
     if (!trimmed) return;
@@ -64,21 +95,70 @@ export const LiveChatWidget: React.FC = () => {
       ...msgs,
       { sender: "user", text: trimmed }
     ]);
-    // Determine next bot reply contextually
+    setMessageInput("");
+    // Bot response logic based on the step
+    if (step === "waitingForLegalType") {
+      setTimeout(() => {
+        setMessages(msgs =>
+          [
+            ...msgs,
+            { sender: "bot", text: "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε" }
+          ]
+        );
+        setStep("awaitingDetailsOrEmail");
+        setCanSendMessage(false);
+      }, 700);
+    } else if (step === "waitingForDetail" || step === "techIssue") {
+      // After extra detail in extra flow, or after tech issue
+      setTimeout(() => {
+        setMessages(msgs =>
+          [
+            ...msgs,
+            { sender: "bot", text: "Συμπληρώστε το email σας για να επικοινωνήσουμε μαζί σας ή προσθέστε περισσότερες λεπτομέρειες." }
+          ]
+        );
+        setStep("awaitingDetailsOrEmail");
+        setCanSendMessage(false);
+      }, 700);
+    }
+  };
+
+  const handleUserContinueDetail = () => {
+    setStep("waitingForDetail");
+    setCanSendMessage(true);
+    setMessages(msgs => [
+      ...msgs,
+      { sender: "bot", text: "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε" }
+    ]);
+  };
+
+  const handleUserProvideEmail = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!isEmailValid) return;
+    setMessages(msgs => [
+      ...msgs,
+      { sender: "user", text: emailInput }
+    ]);
+    setEmailInput("");
     setTimeout(() => {
-      let nextBotMessage = "Ευχαριστούμε, λάβαμε το αίτημά σας. Θα επικοινωνήσουμε σύντομα!";
-      // Check previous bot message for context
-      // Find last bot message before this (last in messages array)
-      const prevBotMessage = [...messages].reverse().find(msg => msg.sender === "bot")?.text;
-      if (prevBotMessage === "Γράψτε την νομική μορφή") {
-        nextBotMessage = "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε";
-      }
       setMessages(msgs => [
         ...msgs,
-        { sender: "bot", text: nextBotMessage }
+        { sender: "bot", text: "Τέλος συζήτησης" }
       ]);
-    }, 700);
-    setMessageInput("");
+      setStep("ended");
+    }, 500);
+  };
+
+  // Optionally allow closing the chat on the "end" step
+  const handleEndChat = () => {
+    setOpen(false);
+    setTimeout(() => {
+      setMessages([]);
+      setStep("awaitingOption");
+      setCanSendMessage(false);
+      setMessageInput("");
+      setEmailInput("");
+    }, 300);
   };
 
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -88,14 +168,11 @@ export const LiveChatWidget: React.FC = () => {
     }
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    setTimeout(() => {
-      setMessages([]);
-      setAwaitingOption(true);
-      setCanSendMessage(false);
-      setMessageInput("");
-    }, 300);
+  const handleEmailInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleUserProvideEmail();
+    }
   };
 
   return (
@@ -114,7 +191,7 @@ export const LiveChatWidget: React.FC = () => {
           <div className="flex items-center px-4 py-2 border-b border-gray-200 justify-between">
             <span className="font-semibold text-black">Ζωντανό Chat</span>
             <button
-              onClick={handleClose}
+              onClick={handleEndChat}
               className="ml-2 text-gray-500 hover:text-blue-500 text-lg font-bold"
               aria-label="Κλείσιμο"
             >
@@ -131,7 +208,7 @@ export const LiveChatWidget: React.FC = () => {
                 </div>
               </div>
             ))}
-            {awaitingOption && (
+            {step === "awaitingOption" && (
               <div className="flex flex-col gap-2 mt-2">
                 {options.map(opt => (
                   <Button
@@ -145,10 +222,46 @@ export const LiveChatWidget: React.FC = () => {
                 ))}
               </div>
             )}
+            {/* If user needs to add more detail OR submit email */}
+            {step === "awaitingDetailsOrEmail" && (
+              <div className="flex flex-col gap-2 mt-2">
+                <Button
+                  className="w-full"
+                  variant="secondary"
+                  onClick={handleUserContinueDetail}
+                >
+                  Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε
+                </Button>
+                <form onSubmit={handleUserProvideEmail} className="flex gap-2 mt-2">
+                  <input
+                    type="email"
+                    className="flex-1 min-w-0 rounded px-2 py-1 border border-gray-300 text-sm"
+                    placeholder="Συμπληρώστε το email σας"
+                    value={emailInput}
+                    onChange={e => setEmailInput(e.target.value)}
+                    onKeyDown={handleEmailInputKeyDown}
+                    required
+                  />
+                  <Button
+                    className="self-end"
+                    type="submit"
+                    disabled={!isEmailValid}
+                  >OK</Button>
+                </form>
+              </div>
+            )}
+            {/* Ended: show 'Τέλος συζήτησης' button */}
+            {step === "ended" && (
+              <div className="flex flex-col gap-2 mt-2 items-center">
+                <Button className="w-full" onClick={handleEndChat} variant="secondary">
+                  Τέλος συζήτησης
+                </Button>
+              </div>
+            )}
             <div ref={bottomRef}></div>
           </div>
-          {/* Message input area: only appears after option is picked */}
-          {canSendMessage && (
+          {/* Message input area: only appears for details */}
+          {(step === "waitingForLegalType" || step === "waitingForDetail" || step === "techIssue") && canSendMessage && (
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -178,4 +291,3 @@ export const LiveChatWidget: React.FC = () => {
 };
 
 export default LiveChatWidget;
-
