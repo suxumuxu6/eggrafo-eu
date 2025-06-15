@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, User, CreditCard, ExternalLink } from 'lucide-react';
 import { toast } from "sonner";
-import { supabase } from '@/integrations/supabase/client';
+
 interface DonationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,6 +17,8 @@ interface UserData {
   name: string;
   email: string;
 }
+const PAYPAL_DONATION_URL = "https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U";
+
 const DonationModal: React.FC<DonationModalProps> = ({
   isOpen,
   onClose,
@@ -34,8 +37,9 @@ const DonationModal: React.FC<DonationModalProps> = ({
       [field]: value
     }));
   };
+
   const handlePayPalDonation = async () => {
-    // Validate required fields
+    // Validate required fields before redirecting (optional, can remove if not needed)
     if (!userData.name.trim() || !userData.email.trim()) {
       toast.error('Please fill in your name and email address');
       return;
@@ -47,49 +51,14 @@ const DonationModal: React.FC<DonationModalProps> = ({
       toast.error('Please enter a valid email address');
       return;
     }
+
     setIsProcessing(true);
-    try {
-      console.log('Creating PayPal payment...');
-
-      // Call the edge function to create PayPal payment
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('create-paypal-payment', {
-        body: {
-          userData,
-          documentId,
-          documentTitle
-        }
-      });
-      if (error) {
-        console.error('PayPal payment creation error:', error);
-        throw new Error(error.message || 'Failed to create payment');
-      }
-      if (!data.success) {
-        throw new Error(data.error || 'Payment creation failed');
-      }
-      console.log('PayPal payment created successfully:', data);
-
-      // Store user data and donation info for verification later
-      localStorage.setItem('pendingDonation', JSON.stringify({
-        ...userData,
-        documentTitle,
-        documentId,
-        donationId: data.donationId,
-        paymentId: data.paymentId,
-        timestamp: Date.now()
-      }));
-      toast.success('Redirecting to PayPal for payment...');
-
-      // Redirect to PayPal approval URL
-      window.location.href = data.approvalUrl;
-    } catch (error: any) {
-      console.error('Payment creation error:', error);
-      toast.error(`Payment creation failed: ${error.message}`);
-      setIsProcessing(false);
-    }
+    // Open PayPal donation url in new tab
+    window.open(PAYPAL_DONATION_URL, '_blank', 'noopener,noreferrer');
+    setIsProcessing(false);
+    onClose();
   };
+
   const handleClose = () => {
     if (!isProcessing) {
       setUserData({
@@ -148,7 +117,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
 
           <div className="flex gap-2 pt-2">
             <Button onClick={handlePayPalDonation} className="flex-1 bg-kb-blue hover:bg-kb-blue/90 text-white" disabled={isProcessing || !userData.name.trim() || !userData.email.trim()}>
-              {isProcessing ? 'Creating Payment...' : <>
+              {isProcessing ? 'Redirecting...' : <>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Δωρεά μέσω Paypal
                 </>}
