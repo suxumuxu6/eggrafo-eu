@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { BadgeCheck, Edit, Trash2 } from "lucide-react";
+import { BadgeCheck, Trash2 } from "lucide-react";
 import ChatbotRepliesModal from "./ChatbotRepliesModal";
 
 interface ChatbotMessage {
@@ -104,11 +104,14 @@ const AdminChatbot: React.FC = () => {
       if (res.ok) {
         toast.success("Απάντηση εστάλη επιτυχώς.");
         // Update database to mark as read and increment reply count
+        const currentMsg = data.find(msg => msg.id === replyTo.chatId);
+        const newReplyCount = (currentMsg?.admin_reply_count || 0) + 1;
+        
         await supabase
           .from("chatbot_messages")
           .update({
             status: "read",
-            admin_reply_count: supabase.rpc("increment_admin_reply_count", { chat_id: replyTo.chatId }),
+            admin_reply_count: newReplyCount,
             last_admin_reply_at: new Date().toISOString(),
           })
           .eq("id", replyTo.chatId);
@@ -171,10 +174,6 @@ const AdminChatbot: React.FC = () => {
       toast.error("Αποτυχία διαγραφής.");
     }
     setDeleting(false);
-  };
-
-  const handleEdit = (email: string, chatId: string) => {
-    handleReplyOpen(email, chatId);
   };
 
   if (!isAdmin) {
@@ -322,9 +321,6 @@ const AdminChatbot: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="icon" title="Edit/Reply" onClick={() => handleEdit(msg.email!, msg.id)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
                           <Button variant="outline" size="icon" title="Delete" onClick={() => setConfirmDeleteId(msg.id)}>
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
