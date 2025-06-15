@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,10 @@ type ChatStep =
   | "ended"
   | "techIssue" // tech flow
   ;
+
+const legalTypeOptions = [
+  "ΟΕ-ΕΕ", "ΑΕ", "ΙΚΕ"
+];
 
 export const LiveChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -67,13 +70,14 @@ export const LiveChatWidget: React.FC = () => {
     ]);
     let reply = "";
     if (option === options[0]) {
-      reply = "Γράψτε την νομική μορφή";
+      // Instead of free text, prompt for legal type (new options).
+      reply = "επιλέξτε μία από τις παρακάτω νομικές μορφές:";
       setTimeout(() => {
         setMessages(msgs =>
           [...msgs, { sender: "bot", text: reply }]
         );
         setStep("waitingForLegalType");
-        setCanSendMessage(true);
+        setCanSendMessage(false); // Don't show textbox, show buttons for legal types
       }, 500);
     } else if (option === options[1]) {
       reply = "Περιγράψτε το τεχνικό πρόβλημα που αντιμετωπίζετε με τη λήψη αρχείου και θα βοηθήσουμε άμεσα.";
@@ -85,6 +89,24 @@ export const LiveChatWidget: React.FC = () => {
         setCanSendMessage(true);
       }, 500);
     }
+  };
+
+  // Handle user selecting a legal type from the bots new options
+  const handleLegalTypeOption = (legalType: string) => {
+    setMessages(msgs => [
+      ...msgs,
+      { sender: "user", text: legalType }
+    ]);
+    setTimeout(() => {
+      setMessages(msgs =>
+        [
+          ...msgs,
+          { sender: "bot", text: "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε" }
+        ]
+      );
+      setStep("awaitingDetailsOrEmail"); // prompt for details/email next
+      setCanSendMessage(false);
+    }, 700);
   };
 
   // Handle sending main message depending on the flow step
@@ -215,6 +237,21 @@ export const LiveChatWidget: React.FC = () => {
                     key={opt}
                     className="w-full"
                     onClick={() => handleOption(opt)}
+                    variant="secondary"
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {/* New legal type options for 'waitingForLegalType' */}
+            {step === "waitingForLegalType" && (
+              <div className="flex flex-col gap-2 mt-2">
+                {legalTypeOptions.map(opt => (
+                  <Button
+                    key={opt}
+                    className="w-full"
+                    onClick={() => handleLegalTypeOption(opt)}
                     variant="secondary"
                   >
                     {opt}
