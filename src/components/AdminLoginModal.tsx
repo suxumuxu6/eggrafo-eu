@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Lock, Mail } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Lock, Mail } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -12,19 +13,35 @@ interface AdminLoginModalProps {
 }
 
 const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { signIn, signUp } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const success = await login(email, password, false);
+      const success = await signIn(email, password);
       if (success) {
-        setEmail('');
-        setPassword('');
+        setEmail("");
+        setPassword("");
+        onClose();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const created = await signUp(email, password);
+      if (created) {
+        setEmail("");
+        setPassword("");
         onClose();
       }
     } finally {
@@ -33,8 +50,8 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) =>
   };
 
   const handleClose = () => {
-    setEmail('');
-    setPassword('');
+    setEmail("");
+    setPassword("");
     onClose();
   };
 
@@ -44,48 +61,57 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose }) =>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-kb-purple" />
-            Admin Login
+            Admin Login (ή εγγραφή)
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input 
-                type="email" 
-                placeholder="Enter admin email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
+              <Input
+                type="email"
+                placeholder="Enter admin email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 className="pl-10"
-                required 
+                required
               />
             </div>
           </div>
           <div className="space-y-2">
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input 
-                type="password" 
-                placeholder="Enter admin password" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
+              <Input
+                type="password"
+                placeholder="Enter password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 className="pl-10"
-                required 
+                required
               />
             </div>
           </div>
           <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              className="flex-1 bg-kb-purple hover:bg-kb-purple/90" 
+            <Button
+              type="submit"
+              className="flex-1 bg-kb-purple hover:bg-kb-purple/90"
               disabled={isLoading}
             >
-              {isLoading ? 'Verifying...' : 'Login'}
+              {isLoading ? "Verifying..." : "Login"}
             </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSignUp}
+              disabled={isLoading}
+            >
+              Register
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={handleClose}
+              disabled={isLoading}
             >
               Cancel
             </Button>
