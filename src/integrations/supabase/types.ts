@@ -11,24 +11,71 @@ export type Database = {
     Tables: {
       chatbot_messages: {
         Row: {
+          admin_reply_count: number
           email: string | null
           id: string
+          last_admin_reply_at: string | null
           messages: Json
+          status: string
           submitted_at: string | null
         }
         Insert: {
+          admin_reply_count?: number
           email?: string | null
           id?: string
+          last_admin_reply_at?: string | null
           messages: Json
+          status?: string
           submitted_at?: string | null
         }
         Update: {
+          admin_reply_count?: number
           email?: string | null
           id?: string
+          last_admin_reply_at?: string | null
           messages?: Json
+          status?: string
           submitted_at?: string | null
         }
         Relationships: []
+      }
+      chatbot_replies: {
+        Row: {
+          body: string | null
+          chatbot_message_id: string
+          created_at: string
+          email: string
+          file_url: string | null
+          id: string
+          subject: string
+        }
+        Insert: {
+          body?: string | null
+          chatbot_message_id: string
+          created_at?: string
+          email: string
+          file_url?: string | null
+          id?: string
+          subject: string
+        }
+        Update: {
+          body?: string | null
+          chatbot_message_id?: string
+          created_at?: string
+          email?: string
+          file_url?: string | null
+          id?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_replies_chatbot_message_id_fkey"
+            columns: ["chatbot_message_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
