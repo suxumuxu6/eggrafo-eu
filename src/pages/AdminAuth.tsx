@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,18 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import ReCAPTCHA from "react-google-recaptcha";
-
-const RECAPTCHA_SITEKEY = "6Lck5GErAAAAAERBttICInYZ6FA1w2Dz_CQCSs5E"; // Updated site key
 
 const AdminAuthPage: React.FC = () => {
   const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formLoading, setFormLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaError, setCaptchaError] = useState<string | null>(null);
-  const captchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -28,30 +23,17 @@ const AdminAuthPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!captchaToken) {
-      setCaptchaError("Παρακαλώ ολοκληρώστε το reCAPTCHA.");
-      return;
-    }
     setFormLoading(true);
-    setCaptchaError(null);
     try {
-      // Pass the captchaToken in the options object if desired (your AuthContext handles this as before)
-      const success = await signIn(email, password, captchaToken);
+      // No captchaToken required anymore
+      const success = await signIn(email, password);
       if (success) {
         setEmail("");
         setPassword("");
-        setCaptchaToken(null);
-        if (captchaRef.current) captchaRef.current.reset();
       }
     } finally {
       setFormLoading(false);
     }
-  };
-
-  // reCAPTCHA callback handlers
-  const handleCaptchaChange = (token: string | null) => {
-    setCaptchaToken(token);
-    setCaptchaError(null);
   };
 
   return (
@@ -99,18 +81,6 @@ const AdminAuthPage: React.FC = () => {
                 disabled={formLoading}
               />
             </div>
-            <div className="flex justify-center">
-              <ReCAPTCHA
-                ref={captchaRef}
-                sitekey={RECAPTCHA_SITEKEY}
-                onChange={handleCaptchaChange}
-                theme="light"
-                size="normal"
-              />
-            </div>
-            {captchaError && (
-              <div className="text-xs text-red-500 text-center">{captchaError}</div>
-            )}
             <div className="flex gap-2">
               <Button
                 type="submit"
@@ -131,3 +101,4 @@ const AdminAuthPage: React.FC = () => {
 };
 
 export default AdminAuthPage;
+
