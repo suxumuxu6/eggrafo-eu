@@ -270,9 +270,7 @@ export const LiveChatWidget: React.FC = () => {
               </form>}
             {/* Ended: show 'Τέλος συζήτησης' button */}
             {(step === "ended" || step === "techIssue_ended") && <div className="flex flex-col gap-2 mt-2 items-center">
-                <Button className="w-full" onClick={handleEndChat} variant="secondary">
-                  Τέλος συζήτησης
-                </Button>
+                <Button className="w-full" onClick={handleEndChat} variant="secondary">Τέλος - Αποστολή</Button>
               </div>}
             <div ref={bottomRef}></div>
           </div>
