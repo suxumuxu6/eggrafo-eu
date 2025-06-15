@@ -78,13 +78,8 @@ const PdfAiChatWidget: React.FC = () => {
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 h-60">
             {/* Custom GEMH prompt */}
             {shouldShowGemhPrompt && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 mb-2 text-center font-semibold">
+              <div className="bg-red-50 border border-red-200 text-black text-sm rounded-lg px-3 py-2 mb-2 text-center font-semibold">
                 {firstTimeGemhPrompt}
-              </div>
-            )}
-            {messages.length === 0 && (
-              <div className="text-gray-400 text-sm text-center pt-4">
-                Κάντε ερωτήσεις σχετικά με PDF αρχεία!
               </div>
             )}
             {messages.map((msg, i) => (
