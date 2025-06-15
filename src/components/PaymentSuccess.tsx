@@ -14,9 +14,17 @@ const PaymentSuccess: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Retrieve params
-  const paymentId = searchParams.get('paymentId');
-  const payerId = searchParams.get('PayerID');
+  let paymentId = searchParams.get('paymentId');
+  let payerId = searchParams.get('PayerID');
   let donationId = searchParams.get('donationId');
+
+  // PayPal sometimes returns only token, not paymentId, so fallback to token
+  if (!paymentId) {
+    const token = searchParams.get('token');
+    if (token) {
+      paymentId = token;
+    }
+  }
 
   // If donationId is missing, try to get from localStorage ("pendingDonation")
   if (!donationId) {
@@ -131,4 +139,3 @@ const PaymentSuccess: React.FC = () => {
 };
 
 export default PaymentSuccess;
-
