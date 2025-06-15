@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,7 +37,6 @@ const UploadPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-blue-50">
-      <Navbar />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2 text-blue-900">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
 import InlinePDFViewer from '../components/InlinePDFViewer';
@@ -99,7 +98,7 @@ const Home: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-blue-50">
-        <Navbar />
+        {/* Navbar REMOVED */}
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <p className="text-gray-500">Loading documents...</p>
@@ -112,7 +111,7 @@ const Home: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-blue-50">
-        <Navbar />
+        {/* Navbar REMOVED */}
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <p className="text-red-500">Error loading documents: {error}</p>
@@ -124,7 +123,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col">
-      <Navbar />
+      {/* Navbar REMOVED */}
       <main className="container mx-auto px-4 py-8 flex-1">
         <DocumentsHeader onSearch={handleSearch} searchQuery={searchQuery} />
         {/* Documents Section moved above Featured Documents Section */}
