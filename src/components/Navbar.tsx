@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Upload, LogOut, Lock, Bot } from "lucide-react";
+import { Upload, LogOut, Bot } from "lucide-react";
 
 const Navbar: React.FC = () => {
   const {
@@ -35,18 +35,18 @@ const Navbar: React.FC = () => {
               <>
                 {/* Chatbot link before upload */}
                 <Link to="/admin-chatbot">
-                  <Button variant="outline" className="flex items-center space-x-2">
+                  <Button variant="outline" className="flex items-center gap-2">
                     <Bot className="h-4 w-4" />
                     <span>Chatbot</span>
                   </Button>
                 </Link>
                 <Link to="/upload">
-                  <Button variant="outline" className="flex items-center space-x-2">
+                  <Button variant="outline" className="flex items-center gap-2">
                     <Upload className="h-4 w-4" />
                     <span>Upload</span>
                   </Button>
                 </Link>
-                <Button variant="ghost" className="text-kb-darkgray hover:text-kb-purple flex items-center space-x-2" onClick={signOut}>
+                <Button variant="ghost" className="text-kb-darkgray hover:text-kb-purple flex items-center gap-2" onClick={signOut}>
                   <LogOut className="h-4 w-4" />
                   <span>Έξοδος</span>
                 </Button>
