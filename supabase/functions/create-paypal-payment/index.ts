@@ -105,7 +105,7 @@ serve(async (req) => {
         payment_method: 'paypal'
       },
       redirect_urls: {
-        return_url: `${origin}/payment-success?donationId=${donationData.id}`,
+        return_url: `${origin}/payment-success`,
         cancel_url: `${origin}/payment-cancel`
       },
       transactions: [{
