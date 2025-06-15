@@ -10,6 +10,7 @@ import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
 import FeaturedDocumentsSection from '../components/FeaturedDocumentsSection';
 import OdfAiChatWidget from '../components/OdfAiChatWidget';
+import PdfAiChatWidget from "../components/PdfAiChatWidget";
 
 const EXCLUDED_TITLES = [
   "ν. 4072/2012 Προσωπικές Εταιρείες",
@@ -172,6 +173,8 @@ const Home: React.FC = () => {
       />
       {/* ODF AI Chat Widget */}
       <OdfAiChatWidget />
+      {/* PDF AI Chat Widget */}
+      <PdfAiChatWidget />
     </div>
   );
 };
