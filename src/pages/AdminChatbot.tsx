@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -37,7 +36,7 @@ const AdminChatbot: React.FC = () => {
   
   // Reply modal state
   const [replyTo, setReplyTo] = useState<{ email: string; chatId: string } | null>(null);
-  const [replySubject, setReplySubject] = useState("Απάντηση από την ομάδα eggrafo.eu");
+  const [replySubject, setReplySubject] = useState("Απάντηση από την ομάδα eggrafo.work");
   const [replyBody, setReplyBody] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
   const [sendingReply, setSendingReply] = useState(false);
@@ -72,7 +71,7 @@ const AdminChatbot: React.FC = () => {
 
   const handleReplyOpen = (email: string | null, chatId: string) => {
     if (email) {
-      setReplySubject("Απάντηση από την ομάδα eggrafo.eu");
+      setReplySubject("Απάντηση από την ομάδα eggrafo.work");
       setReplyBody("");
       setReplyFile(null);
       setReplyTo({ email, chatId });
@@ -177,7 +176,7 @@ const AdminChatbot: React.FC = () => {
       setSendingReply(false);
       setReplyFile(null);
       setReplyBody("");
-      setReplySubject("Απάντηση από την ομάδα eggrafo.eu");
+      setReplySubject("Απάντηση από την ομάδα eggrafo.work");
     }
   };
 

@@ -59,12 +59,15 @@ serve(async (req: Request) => {
     // Replace "gemhdesk@gmail.com" with your verified domain email
     const fromEmail = Deno.env.get("FROM_EMAIL") || "gemhdesk@gmail.com";
     
+    // Add signature to the message
+    const messageWithSignature = `${message}\n\n---\nSupport Team - Eggrafo.work`;
+    
     console.log("Sending email with Resend...");
     const sendResult = await resend.emails.send({
       from: `Eggrafo Support <${fromEmail}>`,
       to: [email],
       subject,
-      html: `<p>${message.replace(/\n/g, "<br />")}</p>`,
+      html: `<p>${messageWithSignature.replace(/\n/g, "<br />")}</p>`,
       attachments: attachments.length ? attachments : undefined,
     });
 
