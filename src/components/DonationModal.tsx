@@ -31,6 +31,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
     email: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<{step?: string, error?: string, details?: any} | null>(null);
 
   const handleInputChange = (field: keyof UserData, value: string) => {
     setUserData(prev => ({
@@ -43,6 +44,8 @@ const DonationModal: React.FC<DonationModalProps> = ({
 
   const handlePayPalDonation = async () => {
     console.log('[DonationModal] handlePayPalDonation triggered');
+    setErrorDetails(null);
+
     // Validate required fields before redirecting
     if (!userData.name.trim() || !userData.email.trim()) {
       toast.error('Please fill in your name and email address');
@@ -84,7 +87,14 @@ const DonationModal: React.FC<DonationModalProps> = ({
       console.log('[DonationModal] PayPal API response:', parsedData);
 
       if (!parsedData.success) {
-        throw new Error(parsedData.error || 'Payment creation failed');
+        setIsProcessing(false);
+        setErrorDetails({
+          step: parsedData.step,
+          error: parsedData.error,
+          details: parsedData.details
+        });
+        toast.error(`Payment creation failed: ${parsedData.error || 'Unknown error'}`);
+        return;
       }
 
       // Store user data and donation info for later verification
@@ -103,8 +113,13 @@ const DonationModal: React.FC<DonationModalProps> = ({
       console.log('[DonationModal] Redirect call should have triggered');
     } catch (error: any) {
       console.error('Payment creation error:', error);
-      toast.error(`Payment creation failed: ${error.message}`);
       setIsProcessing(false);
+      if (error?.response?.data) {
+        setErrorDetails(error.response.data);
+      } else {
+        setErrorDetails({ error: error.message });
+      }
+      toast.error(`Payment creation failed: ${error.message}`);
     }
   };
 
@@ -114,6 +129,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
         name: '',
         email: ''
       });
+      setErrorDetails(null);
       onClose();
     }
   };
@@ -161,6 +177,20 @@ const DonationModal: React.FC<DonationModalProps> = ({
               Θα μεταφερθείτε στο PayPal για να ολοκληρώσετε την δωρεά.
             </p>
           </div>
+          {/* Detailed error panel if PayPal fails */}
+          {errorDetails && (
+            <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded text-sm">
+              <div className="font-semibold mb-1">Αποτυχία δημιουργίας πληρωμής</div>
+              {errorDetails.step && <div><span className="font-semibold">Βήμα:</span> {errorDetails.step}</div>}
+              {errorDetails.error && <div><span className="font-semibold">Σφάλμα:</span> {errorDetails.error}</div>}
+              {errorDetails.details && (
+                <details className="mt-1 max-h-48 overflow-auto text-xs">
+                  <summary>Λεπτομέρειες σφάλματος</summary>
+                  <pre>{JSON.stringify(errorDetails.details, null, 2)}</pre>
+                </details>
+              )}
+            </div>
+          )}
           <div className="flex gap-2 pt-2">
             <Button onClick={handlePayPalDonation} className="flex-1 bg-kb-blue hover:bg-kb-blue/90 text-white" disabled={isProcessing || !userData.name.trim() || !userData.email.trim()}>
               {isProcessing ? 'Creating Payment...' : <>
