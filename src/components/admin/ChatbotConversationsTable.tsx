@@ -2,7 +2,7 @@
 import React from "react";
 import { Table, TableHead, TableRow, TableHeader, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, Trash2 } from "lucide-react";
+import { BadgeCheck, Trash2, Eye } from "lucide-react";
 
 interface ChatbotMessage {
   id: string;
@@ -20,6 +20,7 @@ interface ChatbotConversationsTableProps {
   onReplyOpen: (email: string | null, chatId: string) => void;
   onDeleteConfirm: (id: string) => void;
   onViewReplies: (chatId: string) => void;
+  onShowMessages: (conversation: ChatbotMessage) => void;
 }
 
 const ChatbotConversationsTable: React.FC<ChatbotConversationsTableProps> = ({
@@ -28,6 +29,7 @@ const ChatbotConversationsTable: React.FC<ChatbotConversationsTableProps> = ({
   onReplyOpen,
   onDeleteConfirm,
   onViewReplies,
+  onShowMessages,
 }) => {
   return (
     <Table>
@@ -91,6 +93,9 @@ const ChatbotConversationsTable: React.FC<ChatbotConversationsTableProps> = ({
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
+                  <Button variant="outline" size="icon" title="Show Messages" onClick={() => onShowMessages(msg)}>
+                    <Eye className="w-4 h-4" />
+                  </Button>
                   <Button variant="outline" size="icon" title="Delete" onClick={() => onDeleteConfirm(msg.id)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
@@ -102,32 +107,6 @@ const ChatbotConversationsTable: React.FC<ChatbotConversationsTableProps> = ({
                 </div>
               </TableCell>
             </TableRow>
-            {expandedId === msg.id && (
-              <TableRow>
-                <TableCell colSpan={6}>
-                  <div className="space-y-1">
-                    {msg.messages.map((m, i) => (
-                      <div key={i}>
-                        <span className="font-semibold">{m.sender === "user" ? "User" : "Bot"}:</span>{" "}
-                        <span>
-                          {m.text}
-                          {m.imageUrl && (
-                            <div className='mt-1'>
-                              <img
-                                src={m.imageUrl}
-                                alt="user upload"
-                                className="max-w-[160px] border rounded shadow"
-                                style={{ display: "block", marginTop: 4 }}
-                              />
-                            </div>
-                          )}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
           </React.Fragment>
         ))}
       </TableBody>

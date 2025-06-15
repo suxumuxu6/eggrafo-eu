@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -7,6 +6,7 @@ import { toast } from "sonner";
 import ChatbotConversationsTable from "@/components/admin/ChatbotConversationsTable";
 import ChatbotReplyDialog from "@/components/admin/ChatbotReplyDialog";
 import ChatbotDeleteDialog from "@/components/admin/ChatbotDeleteDialog";
+import ChatbotMessagesModal from "@/components/admin/ChatbotMessagesModal";
 import ChatbotRepliesModal from "./ChatbotRepliesModal";
 
 interface ChatbotMessage {
@@ -40,6 +40,10 @@ const AdminChatbot: React.FC = () => {
   const [replyBody, setReplyBody] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
   const [sendingReply, setSendingReply] = useState(false);
+
+  // Messages Modal state
+  const [messagesModalOpen, setMessagesModalOpen] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<ChatbotMessage | null>(null);
 
   // Replies Modal state
   const [repliesModalOpen, setRepliesModalOpen] = useState(false);
@@ -172,6 +176,11 @@ const AdminChatbot: React.FC = () => {
     setDeleting(false);
   };
 
+  const handleShowMessages = (conversation: ChatbotMessage) => {
+    setSelectedConversation(conversation);
+    setMessagesModalOpen(true);
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex flex-col justify-center items-center h-screen text-gray-400">Admin access only</div>
@@ -193,6 +202,13 @@ const AdminChatbot: React.FC = () => {
         setReplyFile={setReplyFile}
         sendingReply={sendingReply}
         onSubmit={handleReplySend}
+      />
+
+      {/* Messages Modal */}
+      <ChatbotMessagesModal
+        open={messagesModalOpen}
+        onOpenChange={setMessagesModalOpen}
+        conversation={selectedConversation}
       />
 
       {/* Replies Modal */}
@@ -226,6 +242,7 @@ const AdminChatbot: React.FC = () => {
               onReplyOpen={handleReplyOpen}
               onDeleteConfirm={setConfirmDeleteId}
               onViewReplies={openRepliesModal}
+              onShowMessages={handleShowMessages}
             />
           )}
         </CardContent>
