@@ -171,8 +171,6 @@ const Home: React.FC = () => {
         documentTitle={documentToDelete?.title || ''}
         isDeleting={isDeleting}
       />
-      {/* ODF AI Chat Widget */}
-      <OdfAiChatWidget />
       {/* PDF AI Chat Widget */}
       <PdfAiChatWidget />
     </div>
