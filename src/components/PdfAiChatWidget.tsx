@@ -1,6 +1,5 @@
-
 import React, { useState, useRef } from "react";
-import { Sparkle } from "lucide-react";
+import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const API_URL = "https://vcxwikgasrttbngdygig.functions.supabase.co/pdf-ai-chat";
@@ -59,7 +58,7 @@ const PdfAiChatWidget: React.FC = () => {
           onClick={() => setOpen(true)}
           aria-label="Άνοιγμα συνομιλίας PDF AI"
         >
-          <Sparkle className="w-7 h-7" />
+          <Bot className="w-7 h-7" />
         </button>
       )}
 
