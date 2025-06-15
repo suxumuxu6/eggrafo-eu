@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -40,6 +39,8 @@ const DonationModal: React.FC<DonationModalProps> = ({
     }));
   };
 
+  const PAYPAL_DONATION_AMOUNT = 12; // Set this to your intended amount in EUR
+
   const handlePayPalDonation = async () => {
     // Validate required fields before redirecting
     if (!userData.name.trim() || !userData.email.trim()) {
@@ -59,7 +60,8 @@ const DonationModal: React.FC<DonationModalProps> = ({
         body: {
           userData,
           documentId,
-          documentTitle
+          documentTitle,
+          donationAmount: PAYPAL_DONATION_AMOUNT, // Add amount here
         }
       });
 
