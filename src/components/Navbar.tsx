@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -33,25 +32,14 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
-            {loading ? null : !isAuthenticated ? (
-              <Button
-                variant="ghost"
-                className="text-kb-darkgray hover:text-kb-purple flex items-center space-x-2"
-                onClick={handleOpenLogin}
-              >
-                <Lock className="h-4 w-4" />
-                <span>Login</span>
-              </Button>
-            ) : (
+            {loading ? null : isAuthenticated && isAdmin ? (
               <>
-                {isAdmin && (
-                  <Link to="/upload">
-                    <Button variant="outline" className="flex items-center space-x-2">
-                      <Upload className="h-4 w-4" />
-                      <span>Upload</span>
-                    </Button>
-                  </Link>
-                )}
+                <Link to="/upload">
+                  <Button variant="outline" className="flex items-center space-x-2">
+                    <Upload className="h-4 w-4" />
+                    <span>Upload</span>
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   className="text-kb-darkgray hover:text-kb-purple flex items-center space-x-2"
@@ -61,7 +49,7 @@ const Navbar: React.FC = () => {
                   <span>Έξοδος</span>
                 </Button>
               </>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

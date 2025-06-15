@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./components/PaymentSuccess";
 import PaymentCancel from "./components/PaymentCancel";
 import { AuthProvider } from "./context/AuthContext";
+import AdminAuthPage from "./pages/AdminAuth";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/upload" element={<Upload />} />
+          <Route path="/auth" element={<AdminAuthPage />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-cancel" element={<PaymentCancel />} />
           <Route path="*" element={<NotFound />} />
