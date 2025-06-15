@@ -1,5 +1,6 @@
+
 import React, { useState, useRef } from "react";
-import { Bot } from "lucide-react";
+import { Bot, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const API_URL = "https://vcxwikgasrttbngdygig.functions.supabase.co/pdf-ai-chat";
@@ -49,6 +50,11 @@ const PdfAiChatWidget: React.FC = () => {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 500);
   };
 
+  const handleClearConversation = () => {
+    setMessages([]);
+    setInput("");
+  };
+
   return (
     <>
       {/* Floating Button */}
@@ -67,13 +73,25 @@ const PdfAiChatWidget: React.FC = () => {
         <div className="fixed bottom-8 right-6 z-50 bg-white shadow-xl rounded-xl w-80 max-w-[95vw] flex flex-col border border-red-100 animate-fade-in">
           <div className="flex items-center px-4 py-2 border-b border-gray-200 justify-between">
             <span className="font-semibold text-black">Chat</span>
-            <button
-              onClick={() => setOpen(false)}
-              className="ml-2 text-kb-darkgray hover:text-red-500"
-              aria-label="Κλείσιμο"
-            >
-              ×
-            </button>
+            <div className="flex gap-2 items-center">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Διαγραφή συνομιλίας"
+                onClick={handleClearConversation}
+                disabled={messages.length === 0 && !input}
+              >
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </Button>
+              <button
+                onClick={() => setOpen(false)}
+                className="ml-2 text-kb-darkgray hover:text-red-500 text-lg font-bold"
+                aria-label="Κλείσιμο"
+              >
+                ×
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 h-60">
             {/* Custom GEMH prompt */}
