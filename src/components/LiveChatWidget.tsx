@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ChatMessage {
   sender: "bot" | "user";
@@ -17,12 +18,16 @@ export const LiveChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [awaitingOption, setAwaitingOption] = useState(true);
+  const [canSendMessage, setCanSendMessage] = useState(false);
+  const [messageInput, setMessageInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open && messages.length === 0) {
       setMessages([{ sender: "bot", text: initialMessage }]);
       setAwaitingOption(true);
+      setCanSendMessage(false);
+      setMessageInput("");
     }
   }, [open]);
 
@@ -37,7 +42,6 @@ export const LiveChatWidget: React.FC = () => {
       ...msgs,
       { sender: "user", text: option }
     ]);
-    // Basic bot response placeholders
     let reply = "";
     if (option === options[0]) {
       reply = "Παρακαλώ περιγράψτε τι παράδειγμα εγγράφου χρειάζεστε ή το σκοπό χρήσης.";
@@ -48,8 +52,33 @@ export const LiveChatWidget: React.FC = () => {
       setMessages(msgs =>
         [...msgs, { sender: "bot", text: reply }]
       );
+      setCanSendMessage(true);
     }, 500);
     setAwaitingOption(false);
+  };
+
+  const handleSendMessage = () => {
+    const trimmed = messageInput.trim();
+    if (!trimmed) return;
+    setMessages(msgs => [
+      ...msgs,
+      { sender: "user", text: trimmed }
+    ]);
+    // Placeholder "bot" reply
+    setTimeout(() => {
+      setMessages(msgs => [
+        ...msgs,
+        { sender: "bot", text: "Ευχαριστούμε, λάβαμε το αίτημά σας. Θα επικοινωνήσουμε σύντομα!" }
+      ]);
+    }, 700);
+    setMessageInput("");
+  };
+
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   const handleClose = () => {
@@ -57,6 +86,8 @@ export const LiveChatWidget: React.FC = () => {
     setTimeout(() => {
       setMessages([]);
       setAwaitingOption(true);
+      setCanSendMessage(false);
+      setMessageInput("");
     }, 300);
   };
 
@@ -109,6 +140,30 @@ export const LiveChatWidget: React.FC = () => {
             )}
             <div ref={bottomRef}></div>
           </div>
+          {/* Message input area: only appears after option is picked */}
+          {canSendMessage && (
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              className="px-3 py-2 border-t border-gray-100 bg-white flex gap-2"
+            >
+              <Textarea
+                className="flex-1 min-h-[40px] max-h-24 resize-none text-sm"
+                placeholder="Γράψτε το μήνυμά σας…"
+                value={messageInput}
+                onChange={e => setMessageInput(e.target.value)}
+                onKeyDown={handleTextareaKeyDown}
+                rows={1}
+              />
+              <Button
+                type="submit"
+                className="self-end"
+                disabled={!messageInput.trim()}
+              >Αποστολή</Button>
+            </form>
+          )}
         </div>
       )}
     </>
