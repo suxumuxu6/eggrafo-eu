@@ -69,8 +69,19 @@ const DonationModal: React.FC<DonationModalProps> = ({
         console.error('PayPal payment creation error:', error);
         throw new Error(error.message || 'Failed to create payment');
       }
-      if (!data.success) {
-        throw new Error(data.error || 'Payment creation failed');
+
+      // Handle if data is a string (sometimes returned by supabase.functions.invoke for edge functions)
+      let parsedData: any = data;
+      if (typeof data === 'string') {
+        try {
+          parsedData = JSON.parse(data);
+        } catch (e) {
+          throw new Error("Could not parse server response");
+        }
+      }
+
+      if (!parsedData.success) {
+        throw new Error(parsedData.error || 'Payment creation failed');
       }
 
       // Store user data and donation info for later verification
@@ -78,14 +89,13 @@ const DonationModal: React.FC<DonationModalProps> = ({
         ...userData,
         documentTitle,
         documentId,
-        donationId: data.donationId,
-        paymentId: data.paymentId,
+        donationId: parsedData.donationId,
+        paymentId: parsedData.paymentId,
         timestamp: Date.now()
       }));
 
       toast.success('Redirecting to PayPal for payment...');
-      // Redirect user to PayPal approval URL
-      window.location.href = data.approvalUrl;
+      window.location.href = parsedData.approvalUrl;
     } catch (error: any) {
       console.error('Payment creation error:', error);
       toast.error(`Payment creation failed: ${error.message}`);
