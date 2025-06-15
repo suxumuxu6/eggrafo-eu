@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -65,6 +64,11 @@ serve(async (req) => {
 
     console.log('Created donation record:', donationData.id);
 
+    // Prepare amount as a string in xx.00 format (PayPal expects string, e.g. '12.00')
+    const donationAmountStr = Number.isFinite(donationAmount)
+      ? Number(donationAmount).toFixed(2)
+      : "12.00";
+
     // PayPal LIVE API endpoints
     const tokenUrl = 'https://api-m.paypal.com/v1/oauth2/token';
     const paymentUrl = 'https://api-m.paypal.com/v1/payments/payment';
@@ -94,7 +98,7 @@ serve(async (req) => {
     // Get the origin for return URLs
     const origin = req.headers.get('origin') || 'https://c6e46c6a-7177-4585-90f1-39fed8809a34.lovableproject.com';
 
-    // Create PayPal payment with improved structure
+    // Create PayPal payment with dynamic amount from user input
     const payment = {
       intent: 'sale',
       payer: {
@@ -106,10 +110,10 @@ serve(async (req) => {
       },
       transactions: [{
         amount: {
-          total: '20.00',
+          total: donationAmountStr,
           currency: 'EUR',
           details: {
-            subtotal: '20.00'
+            subtotal: donationAmountStr
           }
         },
         description: `Document Access: ${documentTitle}`,
@@ -119,7 +123,7 @@ serve(async (req) => {
             name: `Access to: ${documentTitle}`,
             description: 'Document access fee',
             quantity: '1',
-            price: '20.00',
+            price: donationAmountStr,
             currency: 'EUR'
           }]
         }
