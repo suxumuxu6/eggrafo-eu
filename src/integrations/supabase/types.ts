@@ -135,7 +135,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: {
-        Args: { _user_id: string }
+        Args: Record<PropertyKey, never> | { _user_id: string }
         Returns: boolean
       }
     }

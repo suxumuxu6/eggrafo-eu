@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -7,15 +6,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { DocumentFormData } from './UploadForm';
 
 export const useFileUpload = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const uploadDocument = async (formData: DocumentFormData) => {
+    if (!isAdmin) {
+      toast.error('Μόνο διαχειριστές μπορούν να ανεβάζουν έγγραφα.');
+      setErrorMessage('Μόνο διαχειριστές μπορούν να ανεβάζουν έγγραφα.');
+      return false;
+    }
+
     const { title, description, tags, category, file } = formData;
-    
+
     if (!file) {
       toast.error('Please select a PDF file');
       return false;
