@@ -64,11 +64,18 @@ export const LiveChatWidget: React.FC = () => {
       ...msgs,
       { sender: "user", text: trimmed }
     ]);
-    // Placeholder "bot" reply
+    // Determine next bot reply contextually
     setTimeout(() => {
+      let nextBotMessage = "Ευχαριστούμε, λάβαμε το αίτημά σας. Θα επικοινωνήσουμε σύντομα!";
+      // Check previous bot message for context
+      // Find last bot message before this (last in messages array)
+      const prevBotMessage = [...messages].reverse().find(msg => msg.sender === "bot")?.text;
+      if (prevBotMessage === "Γράψτε την νομική μορφή") {
+        nextBotMessage = "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε";
+      }
       setMessages(msgs => [
         ...msgs,
-        { sender: "bot", text: "Ευχαριστούμε, λάβαμε το αίτημά σας. Θα επικοινωνήσουμε σύντομα!" }
+        { sender: "bot", text: nextBotMessage }
       ]);
     }, 700);
     setMessageInput("");
@@ -171,3 +178,4 @@ export const LiveChatWidget: React.FC = () => {
 };
 
 export default LiveChatWidget;
+
