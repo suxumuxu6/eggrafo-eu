@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 
-const RECAPTCHA_SITEKEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google's test key; replace with your own for production.
+const RECAPTCHA_SITEKEY = import.meta.env.VITE_RECAPTCHA_SITEKEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google's test key; replace with your own for production.
 
 const AdminAuthPage: React.FC = () => {
   const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
