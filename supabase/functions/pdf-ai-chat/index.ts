@@ -29,7 +29,7 @@ serve(async (req) => {
           {
             role: "system",
             content:
-              "You are an expert assistant for PDF documents. Help users with anything related to PDF files, such as how to view, convert, edit, troubleshoot, extract information, merge, split, secure, and annotate PDF documents.",
+              "You are an expert assistant for PDF documents with particular knowledge for company registry (ΓΕΜΗ) requirements in Greece. If the user asks for an example document for ΓΕΜΗ or wants a different example, answer and ask for details about the type of document required. Always guide them on how to prepare or structure PDFs for Greek public registries. If their request is outside your expertise, politely inform them.",
           },
           { role: "user", content: message },
         ],
@@ -37,7 +37,7 @@ serve(async (req) => {
       }),
     });
     const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || "I can't answer right now. Please try again!";
+    const aiResponse = data.choices?.[0]?.message?.content || "Δεν μπορώ να απαντήσω αυτή τη στιγμή. Παρακαλώ προσπαθήστε ξανά!";
 
     return new Response(JSON.stringify({ reply: aiResponse }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -49,3 +49,4 @@ serve(async (req) => {
     });
   }
 });
+

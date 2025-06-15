@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,12 +9,18 @@ interface Message {
   text: string;
 }
 
+const firstTimeGemhPrompt =
+  "Εάν χρειάζεστε κάποιο διαφορετικό παράδειγμα εγγράφου για ΓΕΜΗ, γράψτε μας εδώ και θα σας βοηθήσουμε!";
+
 const PdfAiChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Show the prompt as the first message, only if the user hasn't started chatting
+  const shouldShowGemhPrompt = messages.length === 0 && open;
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -71,8 +76,14 @@ const PdfAiChatWidget: React.FC = () => {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 h-60">
+            {/* Custom GEMH prompt */}
+            {shouldShowGemhPrompt && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 mb-2 text-center font-semibold">
+                {firstTimeGemhPrompt}
+              </div>
+            )}
             {messages.length === 0 && (
-              <div className="text-gray-400 text-sm text-center pt-8">
+              <div className="text-gray-400 text-sm text-center pt-4">
                 Κάντε ερωτήσεις σχετικά με PDF αρχεία!
               </div>
             )}
