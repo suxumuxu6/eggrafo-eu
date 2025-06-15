@@ -207,6 +207,15 @@ export const LiveChatWidget: React.FC = () => {
     }
   };
 
+  // Resets chat as if user just opened the widget
+  const handleStartOver = () => {
+    setMessages([{ sender: "bot", text: initialMessage }]);
+    setStep("awaitingOption");
+    setCanSendMessage(false);
+    setMessageInput("");
+    setEmailInput("");
+  };
+
   return (
     <>
       {!open && (
@@ -373,6 +382,14 @@ export const LiveChatWidget: React.FC = () => {
                 disabled={!messageInput.trim()}
               >Αποστολή</Button>
             </form>
+          )}
+          {/* Always show "Start Over" button except on initial screen */}
+          {(open && !(step === "awaitingOption" && messages.length === 1 && messages[0].sender === "bot")) && (
+            <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 flex justify-center">
+              <Button variant="outline" size="sm" onClick={handleStartOver}>
+                Ξεκινήστε από την αρχή
+              </Button>
+            </div>
           )}
         </div>
       )}
