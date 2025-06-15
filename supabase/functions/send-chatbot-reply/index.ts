@@ -55,9 +55,13 @@ serve(async (req: Request) => {
       }
     }
 
+    // Use your verified email address or a domain you've verified with Resend
+    // Replace "gemhdesk@gmail.com" with your verified domain email
+    const fromEmail = Deno.env.get("FROM_EMAIL") || "gemhdesk@gmail.com";
+    
     console.log("Sending email with Resend...");
     const sendResult = await resend.emails.send({
-      from: "Eggrafo Chatbot <onboarding@resend.dev>",
+      from: `Eggrafo Support <${fromEmail}>`,
       to: [email],
       subject,
       html: `<p>${message.replace(/\n/g, "<br />")}</p>`,
