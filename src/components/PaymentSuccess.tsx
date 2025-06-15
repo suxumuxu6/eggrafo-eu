@@ -13,9 +13,25 @@ const PaymentSuccess: React.FC = () => {
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Retrieve params
   const paymentId = searchParams.get('paymentId');
   const payerId = searchParams.get('PayerID');
-  const donationId = searchParams.get('donationId');
+  let donationId = searchParams.get('donationId');
+
+  // If donationId is missing, try to get from localStorage ("pendingDonation")
+  if (!donationId) {
+    try {
+      const pending = localStorage.getItem('pendingDonation');
+      if (pending) {
+        const obj = JSON.parse(pending);
+        if (obj && obj.donationId) {
+          donationId = obj.donationId;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
 
   useEffect(() => {
     if (paymentId && payerId && donationId) {
@@ -24,6 +40,7 @@ const PaymentSuccess: React.FC = () => {
       setError('Missing payment information');
       setVerifying(false);
     }
+    // eslint-disable-next-line
   }, [paymentId, payerId, donationId]);
 
   const verifyPayment = async () => {
@@ -114,3 +131,4 @@ const PaymentSuccess: React.FC = () => {
 };
 
 export default PaymentSuccess;
+
