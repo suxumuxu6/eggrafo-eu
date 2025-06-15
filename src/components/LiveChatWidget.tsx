@@ -193,7 +193,7 @@ export const LiveChatWidget: React.FC = () => {
         .from("chatbot_messages")
         .insert({
           email: email || null,
-          messages: finalMessages,
+          messages: finalMessages as unknown as import("@/integrations/supabase/types").Json,
         });
     } catch (err) {
       // Just log, do not block UI
