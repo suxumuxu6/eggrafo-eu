@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +10,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  signIn: (email: string, password: string, captchaToken?: string) => Promise<boolean>;
   signUp: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 }
@@ -75,11 +74,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   // Sign In
-  const signIn = async (email: string, password: string) => {
+  // Accept captchaToken parameter and pass to supabase.auth.signInWithPassword
+  const signIn = async (email: string, password: string, captchaToken?: string) => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: captchaToken ? { captchaToken } : undefined,
     });
     setLoading(false);
     if (error) {

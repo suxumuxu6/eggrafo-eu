@@ -7,12 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
+
+const HCAPTCHA_SITEKEY = "10000000-ffff-ffff-ffff-000000000001"; // <-- REPLACE ME!
 
 const AdminAuthPage: React.FC = () => {
   const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formLoading, setFormLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const captchaRef = React.useRef<HCaptcha>(null);
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -23,16 +29,38 @@ const AdminAuthPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!captchaToken) {
+      setCaptchaError("Παρακαλώ λύστε το hCaptcha.");
+      return;
+    }
     setFormLoading(true);
+    setCaptchaError(null);
     try {
-      const success = await signIn(email, password);
+      // Pass the captchaToken in the options object
+      // Supabase expects { captchaToken }
+      // Your context AuthContext must also be updated if needed,
+      // but by default, supabase-js handles it as an extra param.
+      const success = await signIn(email, password, captchaToken);
       if (success) {
         setEmail("");
         setPassword("");
+        setCaptchaToken(null);
+        if (captchaRef.current) captchaRef.current.resetCaptcha();
       }
     } finally {
       setFormLoading(false);
     }
+  };
+
+  // hCaptcha callback handlers
+  const handleCaptchaVerify = (token: string) => {
+    setCaptchaToken(token);
+    setCaptchaError(null);
+  };
+
+  const handleCaptchaExpire = () => {
+    setCaptchaToken(null);
+    setCaptchaError("Το hCaptcha έληξε. Παρακαλώ δοκιμάστε ξανά.");
   };
 
   return (
@@ -80,6 +108,18 @@ const AdminAuthPage: React.FC = () => {
                 disabled={formLoading}
               />
             </div>
+            <div className="flex justify-center">
+              <HCaptcha
+                sitekey={HCAPTCHA_SITEKEY}
+                onVerify={handleCaptchaVerify}
+                onExpire={handleCaptchaExpire}
+                ref={captchaRef}
+                theme="light"
+              />
+            </div>
+            {captchaError && (
+              <div className="text-xs text-red-500 text-center">{captchaError}</div>
+            )}
             <div className="flex gap-2">
               <Button
                 type="submit"
@@ -100,4 +140,3 @@ const AdminAuthPage: React.FC = () => {
 };
 
 export default AdminAuthPage;
-
