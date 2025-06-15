@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, User, CreditCard, ExternalLink } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface DonationModalProps {
   isOpen: boolean;
@@ -17,8 +18,8 @@ interface UserData {
   name: string;
   email: string;
 }
-const PAYPAL_DONATION_URL = "https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U";
 
+// Note: We no longer use the simple hosted PayPal URL, restored advanced logic!
 const DonationModal: React.FC<DonationModalProps> = ({
   isOpen,
   onClose,
@@ -31,6 +32,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
     email: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
+
   const handleInputChange = (field: keyof UserData, value: string) => {
     setUserData(prev => ({
       ...prev,
@@ -39,13 +41,11 @@ const DonationModal: React.FC<DonationModalProps> = ({
   };
 
   const handlePayPalDonation = async () => {
-    // Validate required fields before redirecting (optional, can remove if not needed)
+    // Validate required fields before redirecting
     if (!userData.name.trim() || !userData.email.trim()) {
       toast.error('Please fill in your name and email address');
       return;
     }
-
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
       toast.error('Please enter a valid email address');
@@ -53,10 +53,42 @@ const DonationModal: React.FC<DonationModalProps> = ({
     }
 
     setIsProcessing(true);
-    // Open PayPal donation url in new tab
-    window.open(PAYPAL_DONATION_URL, '_blank', 'noopener,noreferrer');
-    setIsProcessing(false);
-    onClose();
+    try {
+      // Call the edge function to create a PayPal payment
+      const { data, error } = await supabase.functions.invoke('create-paypal-payment', {
+        body: {
+          userData,
+          documentId,
+          documentTitle
+        }
+      });
+
+      if (error) {
+        console.error('PayPal payment creation error:', error);
+        throw new Error(error.message || 'Failed to create payment');
+      }
+      if (!data.success) {
+        throw new Error(data.error || 'Payment creation failed');
+      }
+
+      // Store user data and donation info for later verification
+      localStorage.setItem('pendingDonation', JSON.stringify({
+        ...userData,
+        documentTitle,
+        documentId,
+        donationId: data.donationId,
+        paymentId: data.paymentId,
+        timestamp: Date.now()
+      }));
+
+      toast.success('Redirecting to PayPal for payment...');
+      // Redirect user to PayPal approval URL
+      window.location.href = data.approvalUrl;
+    } catch (error: any) {
+      console.error('Payment creation error:', error);
+      toast.error(`Payment creation failed: ${error.message}`);
+      setIsProcessing(false);
+    }
   };
 
   const handleClose = () => {
@@ -68,6 +100,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
       onClose();
     }
   };
+
   return <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -82,7 +115,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
             <p className="font-medium text-kb-blue mb-1">{documentTitle}</p>
             <p>Προκειμένου να δείτε το έγγραφο θα θέλαμε να μας ενισχύσετε κάνοντας δωρεά 12€.</p>
           </div>
-
           <div className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -93,7 +125,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
                 <Input id="name" type="text" value={userData.name} onChange={e => handleInputChange('name', e.target.value)} className="pl-10" required disabled={isProcessing} />
               </div>
             </div>
-
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email *
@@ -104,7 +135,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
               </div>
             </div>
           </div>
-
           <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
             <div className="flex items-center gap-2 text-yellow-800 text-sm">
               <CreditCard className="h-4 w-4" />
@@ -114,10 +144,9 @@ const DonationModal: React.FC<DonationModalProps> = ({
               Θα μεταφερθείτε στο PayPal για να ολοκληρώσετε την δωρεά.
             </p>
           </div>
-
           <div className="flex gap-2 pt-2">
             <Button onClick={handlePayPalDonation} className="flex-1 bg-kb-blue hover:bg-kb-blue/90 text-white" disabled={isProcessing || !userData.name.trim() || !userData.email.trim()}>
-              {isProcessing ? 'Redirecting...' : <>
+              {isProcessing ? 'Creating Payment...' : <>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Δωρεά μέσω Paypal
                 </>}
@@ -126,7 +155,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
               Ακύρωση
             </Button>
           </div>
-
           <p className="text-xs text-gray-500 text-center">
             Τα στοιχεία σας συλλέγονται μόνο για σκοπούς δωρεάς και δεν θα κοινοποιηθούν σε τρίτους.
           </p>
