@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DocumentsHeader from '../components/DocumentsHeader';
@@ -9,8 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { useDocuments } from '../hooks/useDocuments';
 import { Document } from '../utils/searchUtils';
 import FeaturedDocumentsSection from '../components/FeaturedDocumentsSection';
-import OdfAiChatWidget from '../components/OdfAiChatWidget';
-import PdfAiChatWidget from "../components/PdfAiChatWidget";
+// Removed: import OdfAiChatWidget from '../components/OdfAiChatWidget';
+// Removed: import PdfAiChatWidget from "../components/PdfAiChatWidget";
 
 const EXCLUDED_TITLES = [
   "ν. 4072/2012 Προσωπικές Εταιρείες",
@@ -171,8 +172,7 @@ const Home: React.FC = () => {
         documentTitle={documentToDelete?.title || ''}
         isDeleting={isDeleting}
       />
-      {/* PDF AI Chat Widget */}
-      <PdfAiChatWidget />
+      {/* PDF AI Chat Widget removed */}
     </div>
   );
 };
