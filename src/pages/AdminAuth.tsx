@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const AdminAuthPage: React.FC = () => {
-  const { signIn, signUp, isAuthenticated, isAdmin, loading } = useAuth();
+  const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formLoading, setFormLoading] = useState(false);
@@ -35,31 +35,17 @@ const AdminAuthPage: React.FC = () => {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormLoading(true);
-    try {
-      const created = await signUp(email, password);
-      if (created) {
-        setEmail("");
-        setPassword("");
-      }
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex justify-center items-center bg-blue-50">
       <Card className="mx-auto w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex gap-2 items-center">
             <Lock className="h-5 w-5 text-kb-purple" />
-            Admin Login / Register
+            Admin Login
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={handleLogin}>
+          <form className="space-y-4" onSubmit={handleLogin} autoComplete="off">
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 <span className="flex items-center gap-1">
@@ -102,14 +88,9 @@ const AdminAuthPage: React.FC = () => {
               >
                 {formLoading ? "Logging in..." : "Login"}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleSignUp}
-                disabled={formLoading}
-              >
-                Register
-              </Button>
+            </div>
+            <div className="text-xs text-gray-400 text-center pt-4">
+              Only users with admin rights can log in here. If you don't have access, contact an administrator.
             </div>
           </form>
         </CardContent>
@@ -119,3 +100,4 @@ const AdminAuthPage: React.FC = () => {
 };
 
 export default AdminAuthPage;
+
