@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import PaymentCancel from "./components/PaymentCancel";
 import { AuthProvider } from "./context/AuthContext";
 import AdminAuthPage from "./pages/AdminAuth";
 import AdminChatbot from "./pages/AdminChatbot";
+import Navbar from "@/components/Navbar";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +21,7 @@ const App = () => (
     <Sonner />
     <BrowserRouter>
       <AuthProvider>
+        <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
@@ -35,3 +38,4 @@ const App = () => (
 );
 
 export default App;
+
