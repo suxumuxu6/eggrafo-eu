@@ -69,13 +69,13 @@ serve(async (req) => {
       ? Number(donationAmount).toFixed(2)
       : "12.00";
 
-    // --- DEBUG: Log credentials, environment, and endpoints ---
-    console.log('PayPal credentials:', { clientId: clientId?.slice(0, 8), clientSecret: clientSecret ? '****' : null });
-    console.log('PayPal endpoint:', tokenUrl, paymentUrl);
-
     // --- [PayPal LIVE API endpoints] ---
     const tokenUrl = 'https://api-m.paypal.com/v1/oauth2/token';
     const paymentUrl = 'https://api-m.paypal.com/v1/payments/payment';
+
+    // --- DEBUG: Log credentials, environment, and endpoints ---
+    console.log('PayPal credentials:', { clientId: clientId?.slice(0, 8), clientSecret: clientSecret ? '****' : null });
+    console.log('PayPal endpoint:', tokenUrl, paymentUrl);
 
     // Get PayPal access token
     console.log('Requesting PayPal access token...');
