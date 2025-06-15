@@ -209,6 +209,7 @@ const AdminChatbot: React.FC = () => {
         open={messagesModalOpen}
         onOpenChange={setMessagesModalOpen}
         conversation={selectedConversation}
+        onConversationUpdate={fetchMessages}
       />
 
       {/* Replies Modal */}

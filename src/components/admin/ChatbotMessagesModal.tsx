@@ -1,7 +1,9 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ChatbotMessage {
   id: string;
@@ -17,13 +19,38 @@ interface ChatbotMessagesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conversation: ChatbotMessage | null;
+  onConversationUpdate: () => void;
 }
 
 const ChatbotMessagesModal: React.FC<ChatbotMessagesModalProps> = ({
   open,
   onOpenChange,
   conversation,
+  onConversationUpdate,
 }) => {
+  useEffect(() => {
+    const markAsRead = async () => {
+      if (open && conversation && conversation.status === "unread") {
+        try {
+          const { error } = await supabase
+            .from("chatbot_messages")
+            .update({ status: "read" })
+            .eq("id", conversation.id);
+
+          if (!error) {
+            onConversationUpdate();
+          } else {
+            console.error("Error marking conversation as read:", error);
+          }
+        } catch (err) {
+          console.error("Error marking conversation as read:", err);
+        }
+      }
+    };
+
+    markAsRead();
+  }, [open, conversation?.id, conversation?.status, onConversationUpdate]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
