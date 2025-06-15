@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -14,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userData, documentId, documentTitle } = await req.json();
+    const { userData, documentId, documentTitle, donationAmount } = await req.json();
     
     console.log('Creating PayPal payment for:', { userData, documentId, documentTitle });
 
@@ -34,14 +33,26 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Create donation record
-    const { data: donation, error: donationError } = await supabase
+    // Generate a unique, secure link_token
+    function generateLinkToken(len = 32) {
+      const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let token = "";
+      for (let i = 0; i < len; i++) {
+        token += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      return token;
+    }
+
+    // Insert a new donation record with link_token
+    const link_token = generateLinkToken();
+    const { data: donationData, error: donationError } = await supabase
       .from('donations')
       .insert({
+        amount: donationAmount,
+        document_id: documentId || null,
         email: userData.email,
-        amount: 20,
-        document_id: documentId,
-        status: 'pending'
+        status: 'pending',
+        link_token,
       })
       .select()
       .single();
@@ -51,7 +62,7 @@ serve(async (req) => {
       throw donationError;
     }
 
-    console.log('Created donation record:', donation.id);
+    console.log('Created donation record:', donationData.id);
 
     // PayPal LIVE API endpoints
     const tokenUrl = 'https://api-m.paypal.com/v1/oauth2/token';
@@ -89,7 +100,7 @@ serve(async (req) => {
         payment_method: 'paypal'
       },
       redirect_urls: {
-        return_url: `${origin}/payment-success?donationId=${donation.id}`,
+        return_url: `${origin}/payment-success?donationId=${donationData.id}`,
         cancel_url: `${origin}/payment-cancel`
       },
       transactions: [{
@@ -101,7 +112,7 @@ serve(async (req) => {
           }
         },
         description: `Document Access: ${documentTitle}`,
-        custom: donation.id,
+        custom: donationData.id,
         item_list: {
           items: [{
             name: `Access to: ${documentTitle}`,
@@ -148,17 +159,18 @@ serve(async (req) => {
 
     console.log('Payment created successfully:', { paymentId: paymentData.id, approvalUrl });
 
+    // Return donation link in the API response
+    const donationLink = `https://${Deno.env.get("SUPABASE_PROJECT_REF") || "YOUR_PROJECT_REF"}.lovableproject.com/donation-link?token=${link_token}`;
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        paymentId: paymentData.id,
+      JSON.stringify({
+        success: true,
+        paymentId,
         approvalUrl,
-        donationId: donation.id
+        donationId: donationData.id,
+        donationLink,
       }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 200, headers: corsHeaders }
     );
 
   } catch (error) {

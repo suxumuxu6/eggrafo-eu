@@ -56,6 +56,7 @@ export type Database = {
           email: string
           expires_at: string | null
           id: string
+          link_token: string | null
           paypal_transaction_id: string | null
           status: string | null
         }
@@ -66,6 +67,7 @@ export type Database = {
           email: string
           expires_at?: string | null
           id?: string
+          link_token?: string | null
           paypal_transaction_id?: string | null
           status?: string | null
         }
@@ -76,6 +78,7 @@ export type Database = {
           email?: string
           expires_at?: string | null
           id?: string
+          link_token?: string | null
           paypal_transaction_id?: string | null
           status?: string | null
         }

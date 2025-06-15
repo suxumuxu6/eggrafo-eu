@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -60,13 +59,24 @@ serve(async (req) => {
       const supabase = createClient(supabaseUrl, supabaseKey);
 
       // Extract info
-      const donationId = params["custom"] || null; // You should set "custom" in the form/button to your donationId
+      const donationId = params["custom"] || null; // As before
       const payerEmail = params["payer_email"];
       const txnId = params["txn_id"];
       const amount = Number(params["mc_gross"]);
       const currency = params["mc_currency"] || "EUR";
 
-      // Attempt upsert by txn_id if possible (idempotent); fallback to insert by custom if passed.
+      // Retrieve the link_token if donationId was provided (for convenience)
+      let link_token = null;
+      if (donationId) {
+        const { data: existingDonation } = await supabase
+          .from("donations")
+          .select("link_token")
+          .eq("id", donationId)
+          .maybeSingle();
+        link_token = existingDonation?.link_token || null;
+      }
+
+      // Prepare upsert data
       let upsertData: any = {
         status: "completed",
         paypal_transaction_id: txnId,
@@ -74,6 +84,7 @@ serve(async (req) => {
         email: payerEmail,
       };
       if (donationId) upsertData.id = donationId;
+      if (link_token) upsertData.link_token = link_token;
 
       // Try to update by PayPal txn_id, fall back to id (if custom field provided)
       let result;
