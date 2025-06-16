@@ -35,6 +35,7 @@ export const useEmailReply = () => {
 
     setSendingReply(true);
     try {
+      console.log("Starting reply send process...");
       console.log("Sending reply to:", replyTo.email);
       console.log("Subject:", replySubject);
       console.log("Body length:", replyBody.length);
@@ -44,6 +45,7 @@ export const useEmailReply = () => {
       
       if (!session) {
         toast.error("Authentication required. Please log in again.");
+        setSendingReply(false);
         return;
       }
 
@@ -79,6 +81,11 @@ https://eggrafo.work/support
       }
 
       console.log("Making request to edge function...");
+      
+      // Set timeout for the request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const res = await fetch(
         "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
         {
@@ -88,16 +95,24 @@ https://eggrafo.work/support
             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
           },
           body: formData,
+          signal: controller.signal
         }
       );
+      
+      clearTimeout(timeoutId);
       
       console.log("Response received:", {
         status: res.status,
         statusText: res.statusText,
-        ok: res.ok,
-        headers: Object.fromEntries(res.headers.entries())
+        ok: res.ok
       });
       
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Request failed:", errorText);
+        throw new Error(`HTTP ${res.status}: ${res.statusText} - ${errorText}`);
+      }
+
       const responseText = await res.text();
       console.log("Raw response text:", responseText);
       
@@ -107,44 +122,54 @@ https://eggrafo.work/support
         console.log("Parsed response data:", responseData);
       } catch (parseError) {
         console.error("Failed to parse response JSON:", parseError);
-        console.error("Response was:", responseText);
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
       }
 
-      if (res.ok && responseData.success) {
+      if (responseData.success) {
         console.log("Success! Email sent with ID:", responseData.id);
         toast.success("Ειδοποίηση εστάλη επιτυχώς στον χρήστη.");
         
         // Save the actual admin reply to support_replies table
-        await supabase
+        const { error: replyError } = await supabase
           .from("support_replies")
           .insert({
             chatbot_message_id: replyTo.chatId,
             sender: "admin",
             message: replyBody
           });
+
+        if (replyError) {
+          console.error("Error saving reply to database:", replyError);
+          toast.error("Το email στάλθηκε αλλά υπήρξε σφάλμα στην αποθήκευση.");
+        }
         
-        await supabase
+        // Update the chatbot message status
+        const { error: updateError } = await supabase
           .from("chatbot_messages")
           .update({
             status: "read",
             last_admin_reply_at: new Date().toISOString(),
           })
           .eq("id", replyTo.chatId);
+
+        if (updateError) {
+          console.error("Error updating message status:", updateError);
+        }
           
         onSuccess();
         setReplyTo(null);
       } else {
-        const errorMessage = responseData?.error || `HTTP ${res.status}: ${res.statusText}`;
+        const errorMessage = responseData?.error || "Unknown error occurred";
         console.error("Server returned error:", errorMessage);
-        console.error("Full response:", responseData);
         toast.error("Σφάλμα αποστολής: " + errorMessage);
       }
     } catch (err: any) {
       console.error("Fetch/Network error:", err);
       
       let userFriendlyMessage = "Network error";
-      if (err.message) {
+      if (err.name === 'AbortError') {
+        userFriendlyMessage = "Request timeout - please try again";
+      } else if (err.message) {
         if (err.message.includes("JSON")) {
           userFriendlyMessage = "Server returned invalid response";
         } else if (err.message.includes("fetch")) {
