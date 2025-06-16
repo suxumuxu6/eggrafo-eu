@@ -96,28 +96,18 @@ const AdminChatbot: React.FC = () => {
     try {
       console.log("Sending reply to:", replyTo.email);
       
-      // Get the current session to include authorization
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const formData = new FormData();
       formData.append("email", replyTo.email);
       formData.append("subject", replySubject);
       formData.append("message", replyBody);
-      formData.append("chatId", replyTo.chatId); // Add chatId for reply link
+      formData.append("chatId", replyTo.chatId);
+      formData.append("isAdminReply", "true"); // Add this flag to indicate it's an admin reply
       if (replyFile) formData.append("file", replyFile);
-
-      const headers: Record<string, string> = {};
-      
-      // Add authorization header if session exists
-      if (session?.access_token) {
-        headers.authorization = `Bearer ${session.access_token}`;
-      }
 
       const res = await fetch(
         "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
         {
           method: "POST",
-          headers,
           body: formData,
         }
       );
@@ -150,19 +140,6 @@ const AdminChatbot: React.FC = () => {
           })
           .eq("id", replyTo.chatId);
           
-        // Insert reply row
-        let fileUrl = null;
-        if (replyFile) {
-          // Optionally, you can implement file uploads to storage
-        }
-        await supabase.from("chatbot_replies").insert({
-          chatbot_message_id: replyTo.chatId,
-          email: replyTo.email,
-          subject: replySubject,
-          body: replyBody,
-          file_url: fileUrl,
-        });
-        
         fetchMessages();
         setReplyTo(null);
       } else {

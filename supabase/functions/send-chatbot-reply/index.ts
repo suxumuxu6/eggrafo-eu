@@ -27,8 +27,9 @@ serve(async (req: Request) => {
     const message = formData.get("message")?.toString();
     const file = formData.get("file") as File | undefined;
     const chatId = formData.get("chatId")?.toString();
+    const isAdminReply = formData.get("isAdminReply")?.toString() === "true";
 
-    console.log("Parsed data:", { email, subject, messageLength: message?.length, hasFile: !!file, chatId });
+    console.log("Parsed data:", { email, subject, messageLength: message?.length, hasFile: !!file, chatId, isAdminReply });
 
     if (!email || !subject || !message) {
       console.error("Missing required fields:", { email: !!email, subject: !!subject, message: !!message });
@@ -104,9 +105,31 @@ serve(async (req: Request) => {
       });
     }
 
-    // For user replies from the ChatbotReply page, we don't need to save to the database
-    // The email itself serves as the record of the user's response
-    // Only admin replies from the admin panel should be saved to chatbot_replies table
+    // Save admin replies to database using service role key
+    if (isAdminReply && chatId) {
+      console.log("Saving admin reply to database...");
+      const supabaseServiceRole = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const { error: dbError } = await supabaseServiceRole
+        .from("chatbot_replies")
+        .insert({
+          chatbot_message_id: chatId,
+          email: email,
+          subject: subject,
+          body: message,
+          file_url: null,
+        });
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+        // Don't fail the entire request if database save fails
+      } else {
+        console.log("Admin reply saved to database successfully");
+      }
+    }
 
     console.log("Email sent successfully:", sendResult.data?.id);
     return new Response(JSON.stringify({ 
