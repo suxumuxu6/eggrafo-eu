@@ -39,6 +39,7 @@ serve(async (req: Request) => {
       );
     }
 
+    // Prepare attachments
     const attachments: any[] = [];
     if (file && file.size > 0) {
       try {
@@ -107,27 +108,42 @@ serve(async (req: Request) => {
 
     // Save admin replies to database using service role key
     if (isAdminReply && chatId) {
-      console.log("Saving admin reply to database...");
-      const supabaseServiceRole = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
+      console.log("Attempting to save admin reply to database...");
+      
+      try {
+        const supabaseServiceRole = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
 
-      const { error: dbError } = await supabaseServiceRole
-        .from("chatbot_replies")
-        .insert({
-          chatbot_message_id: chatId,
-          email: email,
-          subject: subject,
-          body: message,
-          file_url: null,
-        });
+        console.log("Created Supabase service role client");
 
-      if (dbError) {
-        console.error("Database error:", dbError);
-        // Don't fail the entire request if database save fails
-      } else {
-        console.log("Admin reply saved to database successfully");
+        const { data: insertData, error: dbError } = await supabaseServiceRole
+          .from("chatbot_replies")
+          .insert({
+            chatbot_message_id: chatId,
+            email: email,
+            subject: subject,
+            body: message,
+            file_url: null,
+          });
+
+        if (dbError) {
+          console.error("Database insert error:", dbError);
+          console.error("Error details:", {
+            message: dbError.message,
+            details: dbError.details,
+            hint: dbError.hint,
+            code: dbError.code
+          });
+          // Don't fail the entire request if database save fails - email was sent successfully
+          console.log("Email sent successfully but database save failed");
+        } else {
+          console.log("Admin reply saved to database successfully:", insertData);
+        }
+      } catch (dbException) {
+        console.error("Database operation exception:", dbException);
+        // Don't fail the entire request - email was sent successfully
       }
     }
 
@@ -141,6 +157,7 @@ serve(async (req: Request) => {
     });
   } catch (e) {
     console.error("send-chatbot-reply error:", e);
+    console.error("Error stack:", e instanceof Error ? e.stack : "No stack trace");
     const errorMessage = e instanceof Error ? e.message : "Unknown server error";
     return new Response(
       JSON.stringify({ error: `Server error: ${errorMessage}` }),
