@@ -68,14 +68,6 @@ serve(async (req: Request) => {
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || "https://eggrafo.work";
     const replyLink = chatId ? `${origin}/reply?chat=${chatId}` : null;
     
-    // Add signature to the message
-    let messageWithSignature = `${message}\n\n---\nSupport Team - Eggrafo.work`;
-    
-    // Only add reply link for non-closure emails
-    if (replyLink && !subject.includes("έχει κλείσει")) {
-      messageWithSignature += `\n\nΓια να απαντήσετε στο μήνυμα, παρακαλώ πατήστε εδώ: ${replyLink}`;
-    }
-    
     console.log("Sending email with Resend...");
     const sendResult = await resend.emails.send({
       from: `Eggrafo Support <${fromEmail}>`,
@@ -84,14 +76,6 @@ serve(async (req: Request) => {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <p>${message.replace(/\n/g, "<br />")}</p>
-          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;" />
-          <p><strong>Support Team - Eggrafo.work</strong></p>
-          ${replyLink && !subject.includes("έχει κλείσει") ? `
-          <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
-            <p style="margin: 0; color: #666;">Για να απαντήσετε στο μήνυμα:</p>
-            <a href="${replyLink}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Πατήστε Εδώ</a>
-          </div>
-          ` : ''}
         </div>
       `,
       attachments: attachments.length ? attachments : undefined,
