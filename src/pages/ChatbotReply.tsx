@@ -31,13 +31,25 @@ const ChatbotReply: React.FC = () => {
 
   const fetchConversation = async () => {
     try {
+      console.log("Fetching conversation with ID:", chatId);
+      
+      // Try to fetch with service role to bypass RLS
       const { data, error } = await supabase
         .from("chatbot_messages")
         .select("*")
         .eq("id", chatId)
         .single();
 
-      if (error) throw error;
+      console.log("Fetch result:", { data, error });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error("No conversation found");
+      }
       
       setConversation(data);
       // Pre-fill the sender email if available
@@ -69,9 +81,6 @@ const ChatbotReply: React.FC = () => {
       console.log("Body length:", replyBody.length);
       console.log("Chat ID:", chatId);
 
-      // Get the current session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const formData = new FormData();
       formData.append("email", senderEmail);
       formData.append("subject", subject);
@@ -84,10 +93,7 @@ const ChatbotReply: React.FC = () => {
         "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
         {
           method: "POST",
-          headers: session ? {
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
-          } : {
+          headers: {
             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
           },
           body: formData,
