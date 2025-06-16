@@ -49,26 +49,33 @@ const ChatbotReply: React.FC = () => {
 
     setLoading(true);
     try {
-      // Insert the user reply directly using the service role or without RLS restrictions
-      const { error } = await supabase
-        .from("chatbot_replies")
-        .insert({
-          chatbot_message_id: chatId,
-          email: email,
-          subject: "Απάντηση Χρήστη",
-          body: message,
-          file_url: null,
-        });
+      // Use the send-chatbot-reply edge function
+      const formData = new FormData();
+      formData.append("email", "support@eggrafo.work"); // Send to support team
+      formData.append("subject", "Απάντηση Χρήστη από Chatbot");
+      formData.append("message", `Απάντηση από χρήστη: ${email}\n\nΜήνυμα:\n${message}\n\nChat ID: ${chatId}`);
+      formData.append("chatId", chatId);
 
-      if (error) {
-        console.error("Error saving reply:", error);
-        toast.error("Αποτυχία αποστολής απάντησης");
-      } else {
+      const response = await fetch(
+        "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const responseData = await response.json();
+
+      if (response.ok && responseData.success) {
         setSubmitted(true);
         toast.success("Η απάντησή σας στάλθηκε επιτυχώς!");
+      } else {
+        const errorMessage = responseData?.error || "Άγνωστο σφάλμα";
+        console.error("Server error:", errorMessage);
+        toast.error("Αποτυχία αποστολής: " + errorMessage);
       }
-    } catch (err) {
-      console.error("Error:", err);
+    } catch (err: any) {
+      console.error("Network/fetch error:", err);
       toast.error("Αποτυχία αποστολής απάντησης");
     } finally {
       setLoading(false);
