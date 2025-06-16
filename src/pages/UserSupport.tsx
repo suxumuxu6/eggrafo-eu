@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,11 +56,13 @@ const UserSupport: React.FC = () => {
         return;
       }
 
-      // Transform the data to match our interface
+      // Safely transform the data to match our interface
       const transformedData: ChatbotMessage = {
         id: rawData.id,
         email: rawData.email || '',
-        messages: Array.isArray(rawData.messages) ? rawData.messages as ChatMessage[] : [],
+        messages: Array.isArray(rawData.messages) 
+          ? (rawData.messages as unknown as ChatMessage[])
+          : [],
         support_ticket_code: rawData.support_ticket_code || '',
         ticket_status: rawData.ticket_status || '',
         submitted_at: rawData.submitted_at || ''
