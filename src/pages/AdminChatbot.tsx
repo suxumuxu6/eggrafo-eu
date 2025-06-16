@@ -95,15 +95,22 @@ const AdminChatbot: React.FC = () => {
     setSendingReply(true);
     try {
       console.log("Sending reply to:", replyTo.email);
+      console.log("Subject:", replySubject);
+      console.log("Body length:", replyBody.length);
+      console.log("Chat ID:", replyTo.chatId);
       
       const formData = new FormData();
       formData.append("email", replyTo.email);
       formData.append("subject", replySubject);
       formData.append("message", replyBody);
       formData.append("chatId", replyTo.chatId);
-      formData.append("isAdminReply", "true"); // Add this flag to indicate it's an admin reply
-      if (replyFile) formData.append("file", replyFile);
+      formData.append("isAdminReply", "true");
+      if (replyFile) {
+        console.log("Adding file:", replyFile.name, "Size:", replyFile.size);
+        formData.append("file", replyFile);
+      }
 
+      console.log("Making request to edge function...");
       const res = await fetch(
         "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
         {
@@ -112,19 +119,28 @@ const AdminChatbot: React.FC = () => {
         }
       );
       
+      console.log("Response received:", {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok,
+        headers: Object.fromEntries(res.headers.entries())
+      });
+      
       const responseText = await res.text();
-      console.log("Response status:", res.status);
-      console.log("Response text:", responseText);
+      console.log("Raw response text:", responseText);
       
       let responseData;
       try {
         responseData = JSON.parse(responseText);
+        console.log("Parsed response data:", responseData);
       } catch (parseError) {
-        console.error("Failed to parse response:", parseError);
-        throw new Error("Invalid response from server");
+        console.error("Failed to parse response JSON:", parseError);
+        console.error("Response was:", responseText);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
       }
 
       if (res.ok && responseData.success) {
+        console.log("Success! Email sent with ID:", responseData.id);
         toast.success("Απάντηση εστάλη επιτυχώς.");
         
         // Update database to mark as read and increment reply count
@@ -143,13 +159,29 @@ const AdminChatbot: React.FC = () => {
         fetchMessages();
         setReplyTo(null);
       } else {
-        const errorMessage = responseData?.error || "Unknown error occurred";
-        console.error("Server error:", errorMessage);
+        const errorMessage = responseData?.error || `HTTP ${res.status}: ${res.statusText}`;
+        console.error("Server returned error:", errorMessage);
+        console.error("Full response:", responseData);
         toast.error("Σφάλμα αποστολής: " + errorMessage);
       }
     } catch (err: any) {
-      console.error("Network/fetch error:", err);
-      toast.error("Αποτυχία αποστολής: " + (err.message || "Network error"));
+      console.error("Fetch/Network error:", err);
+      console.error("Error type:", typeof err);
+      console.error("Error message:", err.message);
+      console.error("Error stack:", err.stack);
+      
+      let userFriendlyMessage = "Network error";
+      if (err.message) {
+        if (err.message.includes("JSON")) {
+          userFriendlyMessage = "Server returned invalid response";
+        } else if (err.message.includes("fetch")) {
+          userFriendlyMessage = "Connection failed";
+        } else {
+          userFriendlyMessage = err.message;
+        }
+      }
+      
+      toast.error("Αποτυχία αποστολής: " + userFriendlyMessage);
     } finally {
       setSendingReply(false);
       setReplyFile(null);
