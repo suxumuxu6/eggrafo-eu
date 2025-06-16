@@ -39,24 +39,12 @@ const CloseTicketButton: React.FC<CloseTicketButtonProps> = ({
 
       if (updateError) throw updateError;
 
-      // Send closure email
+      // Send closure email with updated message
       try {
         const formData = new FormData();
         formData.append("email", email);
         formData.append("subject", "Το αίτημά σας έχει κλείσει");
-        formData.append("message", `Αγαπητέ/ή χρήστη,
-
-Το αίτημά σας με κωδικό ${ticketCode} έχει κλείσει επιτυχώς.
-
-Εάν χρειάζεστε περαιτέρω βοήθεια, μπορείτε να δημιουργήσετε νέο αίτημα μέσω του chatbot στην ιστοσελίδα μας.
-
-Ευχαριστούμε που επιλέξατε τις υπηρεσίες μας.
-
-Με εκτίμηση,
-Η ομάδα υποστήριξης eggrafo.work
-
----
-ΣΗΜΕΙΩΣΗ: Παρακαλούμε μην απαντήσετε σε αυτό το email καθώς στάλθηκε από αυτόματο σύστημα.`);
+        formData.append("message", "Το αίτημά σας έχει κλείσει. Μην απαντήσετε σε αυτό το email.");
         formData.append("chatId", chatId);
         formData.append("isAdminReply", "false");
 

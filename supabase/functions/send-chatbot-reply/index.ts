@@ -59,17 +59,20 @@ serve(async (req: Request) => {
       }
     }
 
-    // Use your verified email address or a domain you've verified with Resend
-    const fromEmail = Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev";
+    // Use non-reply email address for closure notifications
+    const fromEmail = subject.includes("έχει κλείσει") 
+      ? "non-reply@eggrafo.work" 
+      : (Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev");
     
     // Create reply link - use the request origin to get the correct base URL
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || "https://eggrafo.work";
     const replyLink = chatId ? `${origin}/reply?chat=${chatId}` : null;
     
-    // Add signature and reply link to the message
+    // Add signature to the message
     let messageWithSignature = `${message}\n\n---\nSupport Team - Eggrafo.work`;
     
-    if (replyLink) {
+    // Only add reply link for non-closure emails
+    if (replyLink && !subject.includes("έχει κλείσει")) {
       messageWithSignature += `\n\nΓια να απαντήσετε στο μήνυμα, παρακαλώ πατήστε εδώ: ${replyLink}`;
     }
     
@@ -83,7 +86,7 @@ serve(async (req: Request) => {
           <p>${message.replace(/\n/g, "<br />")}</p>
           <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;" />
           <p><strong>Support Team - Eggrafo.work</strong></p>
-          ${replyLink ? `
+          ${replyLink && !subject.includes("έχει κλείσει") ? `
           <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
             <p style="margin: 0; color: #666;">Για να απαντήσετε στο μήνυμα:</p>
             <a href="${replyLink}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Πατήστε Εδώ</a>

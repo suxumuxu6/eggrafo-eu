@@ -56,19 +56,13 @@ export const useEmailReply = () => {
 
       const supportTicketCode = ticketData?.support_ticket_code;
       
-      // Create notification message with direct link and access instructions
+      // Create simplified notification message
       const notificationMessage = `Αγαπητέ/ή χρήστη,
 
 Έχετε λάβει νέα απάντηση για το αίτημά σας με κωδικό: ${supportTicketCode}
 
-🔗 ΑΠΕΥΘΕΙΑΣ ΠΡΟΣΒΑΣΗ:
-Κάντε κλικ εδώ για να δείτε την απάντηση: https://eggrafo.work/support
-
-📋 ΣΤΟΙΧΕΙΑ ΠΡΟΣΒΑΣΗΣ:
-- Email: ${replyTo.email}
-- Κωδικός πρόσβασης: ${supportTicketCode}
-
-Εισάγετε τα παραπάνω στοιχεία στη σελίδα υποστήριξης για να δείτε την απάντηση και να συνεχίσετε τη συνομιλία.
+Για να δείτε την απάντηση και να συνεχίσετε τη συνομιλία, παρακαλώ επισκεφτείτε:
+https://eggrafo.work/support
 
 Με εκτίμηση,
 Η ομάδα υποστήριξης eggrafo.work`;
