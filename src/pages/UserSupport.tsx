@@ -1,374 +1,233 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import UserSupportFileUpload from "@/components/support/UserSupportFileUpload";
+import { UserSupportFileUpload } from "@/components/support/UserSupportFileUpload";
+import { sendAdminNotificationForUserReply } from "@/utils/chatUtils";
 
 interface ChatMessage {
-  sender: "user" | "bot";
+  sender: "bot" | "user" | "admin";
   text: string;
   imageUrl?: string;
 }
 
 interface SupportReply {
   id: string;
-  sender: "user" | "admin";
   message: string;
+  sender: "user" | "admin";
   created_at: string;
   file_url?: string;
 }
 
-interface ChatbotMessage {
-  id: string;
-  email: string;
-  messages: ChatMessage[];
-  support_ticket_code: string;
-  ticket_status: string;
-  submitted_at: string;
-}
-
 const UserSupport: React.FC = () => {
   const [email, setEmail] = useState("");
-  const [accessCode, setAccessCode] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [conversation, setConversation] = useState<ChatbotMessage | null>(null);
+  const [ticketCode, setTicketCode] = useState("");
+  const [conversation, setConversation] = useState<ChatMessage[]>([]);
   const [replies, setReplies] = useState<SupportReply[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [replyFile, setReplyFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [newReply, setNewReply] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [conversationFound, setConversationFound] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSearch = async () => {
+    if (!email.trim() || !ticketCode.trim()) {
+      toast.error("Παρακαλώ εισάγετε το email και τον κωδικό.");
+      return;
+    }
 
-    const trimmedEmail = email.trim();
-    const trimmedCode = accessCode.trim();
-
+    setIsLoading(true);
     try {
-      console.log("Attempting to find ticket with:", { 
-        email: trimmedEmail, 
-        code: trimmedCode 
-      });
-      
-      // First, let's check what tickets exist
-      const { data: allTickets, error: allError } = await supabase
-        .from("chatbot_messages")
-        .select("email, support_ticket_code, ticket_status")
-        .limit(10);
-
-      console.log("All tickets in database:", allTickets);
-      console.log("All tickets error:", allError);
-      
-      const { data: rawData, error } = await supabase
+      const { data, error } = await supabase
         .from("chatbot_messages")
         .select("*")
-        .eq("email", trimmedEmail)
-        .eq("support_ticket_code", trimmedCode)
-        .maybeSingle();
+        .eq("email", email.trim())
+        .eq("support_ticket_code", ticketCode.trim())
+        .single();
 
-      console.log("Query result:", { data: rawData, error });
-
-      if (error) {
-        console.error("Database error:", error);
-        toast.error("Σφάλμα βάσης δεδομένων: " + error.message);
+      if (error || !data) {
+        toast.error("Δεν βρέθηκε συνομιλία με αυτά τα στοιχεία.");
+        setConversationFound(false);
         return;
       }
 
-      if (!rawData) {
-        console.error("No ticket found with provided credentials");
-        
-        // Let's check if there's a ticket with just the code
-        const { data: codeOnlyData } = await supabase
-          .from("chatbot_messages")
-          .select("email, support_ticket_code")
-          .eq("support_ticket_code", trimmedCode)
-          .maybeSingle();
-        
-        if (codeOnlyData) {
-          console.log("Found ticket with code but different email:", codeOnlyData);
-          toast.error("Βρέθηκε αίτημα με αυτόν τον κωδικό αλλά με διαφορετικό email. Παρακαλώ ελέγξτε το email σας.");
-        } else {
-          console.log("No ticket found with this code at all");
-          toast.error("Δεν βρέθηκε αίτημα με αυτά τα στοιχεία. Παρακαλώ ελέγξτε το email και τον κωδικό.");
-        }
-        return;
-      }
-
-      // Check if ticket is closed
-      if (rawData.ticket_status === 'closed') {
-        toast.error("Αυτό το αίτημα έχει κλείσει και δεν μπορείτε να προσθέσετε νέες απαντήσεις.");
-        return;
-      }
-
-      // Safely transform the data to match our interface
-      const transformedData: ChatbotMessage = {
-        id: rawData.id,
-        email: rawData.email || '',
-        messages: Array.isArray(rawData.messages) 
-          ? (rawData.messages as unknown as ChatMessage[])
-          : [],
-        support_ticket_code: rawData.support_ticket_code || '',
-        ticket_status: rawData.ticket_status || '',
-        submitted_at: rawData.submitted_at || ''
-      };
-
-      console.log("Transformed conversation data:", transformedData);
-
-      setConversation(transformedData);
-      setIsAuthenticated(true);
-      await fetchReplies(transformedData.id);
-      toast.success("Επιτυχής σύνδεση!");
-    } catch (error) {
-      console.error("Error authenticating:", error);
-      toast.error("Σφάλμα κατά τη σύνδεση: " + (error as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchReplies = async (chatId: string) => {
-    try {
-      const { data: rawData, error } = await supabase
+      setConversation(data.messages || []);
+      setChatId(data.id);
+      setConversationFound(true);
+      
+      // Fetch replies
+      const { data: repliesData, error: repliesError } = await supabase
         .from("support_replies")
         .select("*")
-        .eq("chatbot_message_id", chatId)
+        .eq("chatbot_message_id", data.id)
         .order("created_at", { ascending: true });
 
-      if (!error && rawData) {
-        // Transform the data to match our interface
-        const transformedReplies: SupportReply[] = rawData.map(reply => ({
-          id: reply.id,
-          sender: reply.sender as "user" | "admin",
-          message: reply.message,
-          created_at: reply.created_at,
-          file_url: reply.file_url
-        }));
-        setReplies(transformedReplies);
+      if (!repliesError && repliesData) {
+        setReplies(repliesData);
       }
+
+      toast.success("Συνομιλία βρέθηκε!");
     } catch (error) {
-      console.error("Error fetching replies:", error);
+      console.error("Error searching conversation:", error);
+      toast.error("Σφάλμα κατά την αναζήτηση.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSubmitReply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !conversation) return;
+  const handleSendReply = async () => {
+    if (!newReply.trim() || !chatId) {
+      toast.error("Παρακαλώ εισάγετε ένα μήνυμα.");
+      return;
+    }
 
-    setSubmitting(true);
+    setIsLoading(true);
     try {
-      // First, upload file if present
-      let fileUrl = null;
-      if (replyFile) {
-        const fileExt = replyFile.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `support-files/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, replyFile);
-
-        if (uploadError) {
-          toast.error("Σφάλμα κατά την ανέβασμα του αρχείου");
-          return;
-        }
-
-        const { data: urlData } = await supabase.storage
-          .from('documents')
-          .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
-
-        if (urlData?.signedUrl) {
-          fileUrl = urlData.signedUrl;
-        }
-      }
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("support_replies")
         .insert({
-          chatbot_message_id: conversation.id,
+          chatbot_message_id: chatId,
           sender: "user",
-          message: newMessage.trim(),
-          file_url: fileUrl
-        });
+          message: newReply.trim()
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        toast.error("Σφάλμα αποστολής μηνύματος.");
+        return;
+      }
 
-      toast.success("Η απάντησή σας στάλθηκε επιτυχώς!");
-      setNewMessage("");
-      setReplyFile(null);
-      await fetchReplies(conversation.id);
+      // Add to local state
+      setReplies(prev => [...prev, data]);
+      
+      // Send notification to admin about user reply
+      await sendAdminNotificationForUserReply(email, ticketCode, chatId, newReply.trim());
+      
+      setNewReply("");
+      setUploadedFile(null);
+      toast.success("Το μήνυμά σας εστάλη!");
     } catch (error) {
-      console.error("Error submitting reply:", error);
-      toast.error("Σφάλμα κατά την αποστολή της απάντησης");
+      console.error("Error sending reply:", error);
+      toast.error("Σφάλμα αποστολής μηνύματος.");
     } finally {
-      setSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setConversation(null);
-    setReplies([]);
-    setEmail("");
-    setAccessCode("");
-    setNewMessage("");
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center">Πρόσβαση Υποστήριξης</CardTitle>
-              <p className="text-sm text-gray-600 text-center">
-                Εισάγετε το email και τον κωδικό πρόσβασης που λάβατε από το chatbot
-              </p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Το email σας"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Κωδικός Πρόσβασης</label>
-                  <Input
-                    value={accessCode}
-                    onChange={(e) => setAccessCode(e.target.value)}
-                    placeholder="π.χ. ABC123XY"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Σύνδεση..." : "Είσοδος"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Αίτημα Υποστήριξης</h1>
-            <p className="text-gray-600">Κωδικός: {conversation?.support_ticket_code}</p>
-            <p className="text-sm text-gray-500">
-              Κατάσταση: {conversation?.ticket_status === 'closed' ? 'Κλεισμένο' : 'Ενεργό'}
-            </p>
+    <div className="max-w-4xl mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Υποστήριξη Χρηστών</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Εισάγετε το email σας"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ticketCode">Κωδικός Αιτήματος</Label>
+              <Input
+                id="ticketCode"
+                value={ticketCode}
+                onChange={(e) => setTicketCode(e.target.value)}
+                placeholder="Εισάγετε τον κωδικό"
+              />
+            </div>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            Αποσύνδεση
+          
+          <Button 
+            onClick={handleSearch} 
+            disabled={isLoading}
+            className="w-full"
+          >
+            {isLoading ? "Αναζήτηση..." : "Αναζήτηση Συνομιλίας"}
           </Button>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Original Conversation */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Αρχική Συνομιλία</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {conversation?.messages?.map((msg, idx) => (
-                  <div key={idx} className={`p-3 rounded-lg ${msg.sender === 'user' ? 'bg-blue-50 ml-4' : 'bg-gray-50 mr-4'}`}>
-                    <div className="font-medium text-sm text-gray-600">
-                      {msg.sender === 'user' ? 'Εσείς' : 'Bot'}
+          {conversationFound && (
+            <div className="mt-6 space-y-4">
+              <h3 className="text-lg font-semibold">Αρχική Συνομιλία</h3>
+              <div className="border rounded-lg p-4 max-h-60 overflow-y-auto bg-gray-50">
+                {conversation.map((msg, index) => (
+                  <div key={index} className={`mb-2 ${msg.sender === "user" ? "text-right" : "text-left"}`}>
+                    <div className={`inline-block p-2 rounded-lg max-w-xs ${
+                      msg.sender === "user" 
+                        ? "bg-blue-500 text-white" 
+                        : "bg-white border"
+                    }`}>
+                      <p className="text-sm">{msg.text}</p>
+                      {msg.imageUrl && (
+                        <img src={msg.imageUrl} alt="Attachment" className="mt-2 max-w-full rounded" />
+                      )}
                     </div>
-                    <div className="mt-1 whitespace-pre-line">{msg.text}</div>
-                    {msg.imageUrl && (
-                      <img src={msg.imageUrl} alt="Attached" className="mt-2 max-w-full rounded" />
-                    )}
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Support Conversation */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Συνομιλία Υποστήριξης</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto mb-4">
+              <h3 className="text-lg font-semibold">Απαντήσεις</h3>
+              <div className="border rounded-lg p-4 max-h-60 overflow-y-auto bg-gray-50">
                 {replies.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    Δεν υπάρχουν ακόμα απαντήσεις. Στείλτε ένα μήνυμα παρακάτω.
-                  </p>
+                  <p className="text-gray-500 text-center">Δεν υπάρχουν απαντήσεις ακόμα.</p>
                 ) : (
                   replies.map((reply) => (
-                    <div key={reply.id} className={`p-3 rounded-lg ${reply.sender === 'user' ? 'bg-blue-50 ml-4' : 'bg-green-50 mr-4'}`}>
-                      <div className="font-medium text-sm text-gray-600">
-                        {reply.sender === 'user' ? 'Εσείς' : 'Υποστήριξη'}
-                      </div>
-                      <div className="mt-1 whitespace-pre-line">{reply.message}</div>
-                      {reply.file_url && (
-                        <div className="mt-2">
-                          <a
-                            href={reply.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            📎 Προβολή συνημμένου αρχείου
+                    <div key={reply.id} className={`mb-3 ${reply.sender === "user" ? "text-right" : "text-left"}`}>
+                      <div className={`inline-block p-3 rounded-lg max-w-xs ${
+                        reply.sender === "user" 
+                          ? "bg-blue-500 text-white" 
+                          : "bg-green-500 text-white"
+                      }`}>
+                        <p className="text-sm">{reply.message}</p>
+                        <p className="text-xs mt-1 opacity-75">
+                          {reply.sender === "admin" ? "Διαχειριστής" : "Εσείς"} - {new Date(reply.created_at).toLocaleString('el-GR')}
+                        </p>
+                        {reply.file_url && (
+                          <a href={reply.file_url} target="_blank" rel="noopener noreferrer" className="text-xs underline">
+                            Αρχείο συνημμένο
                           </a>
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-400 mt-2">
-                        {new Date(reply.created_at).toLocaleString('el-GR')}
+                        )}
                       </div>
                     </div>
                   ))
                 )}
               </div>
 
-              {conversation?.ticket_status !== 'closed' && (
-                <form onSubmit={handleSubmitReply} className="space-y-3">
-                  <Textarea
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Γράψτε την απάντησή σας..."
-                    rows={3}
-                    required
-                  />
-                  <UserSupportFileUpload
-                    file={replyFile}
-                    onFileSelect={setReplyFile}
-                    disabled={submitting}
-                  />
-                  <Button type="submit" disabled={submitting || !newMessage.trim()}>
-                    {submitting ? "Αποστολή..." : "Αποστολή Απάντησης"}
-                  </Button>
-                </form>
-              )}
-
-              {conversation?.ticket_status === 'closed' && (
-                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-                  <p className="text-red-800 text-sm">
-                    Αυτό το αίτημα έχει κλείσει. Δεν μπορείτε να προσθέσετε νέες απαντήσεις.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              <div className="space-y-3">
+                <Label htmlFor="newReply">Νέα Απάντηση</Label>
+                <Textarea
+                  id="newReply"
+                  value={newReply}
+                  onChange={(e) => setNewReply(e.target.value)}
+                  placeholder="Γράψτε την απάντησή σας..."
+                  rows={4}
+                />
+                
+                <UserSupportFileUpload onFileSelect={setUploadedFile} />
+                
+                <Button 
+                  onClick={handleSendReply} 
+                  disabled={isLoading || !newReply.trim()}
+                  className="w-full"
+                >
+                  {isLoading ? "Αποστολή..." : "Αποστολή Απάντησης"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
