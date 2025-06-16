@@ -59,7 +59,7 @@ export const saveChatToSupabase = async (
       console.log('Sending admin notification...');
       const adminEmailData = {
         subject: `Νέο αίτημα υποστήριξης: ${ticketCode}`,
-        message: `Νέο αίτημα υποστήριξης έχει δημιουργηθεί.
+        body: `Νέο αίτημα υποστήριξης έχει δημιουργηθεί.
 
 Κωδικός: ${ticketCode}
 Email χρήστη: ${email}
@@ -80,7 +80,7 @@ Email χρήστη: ${email}
       console.log('Sending user notification...');
       const userEmailData = {
         subject: `Κωδικός πρόσβασης για το αίτημά σας: ${ticketCode}`,
-        message: `Αγαπητέ/ή χρήστη,
+        body: `Αγαπητέ/ή χρήστη,
 
 Το αίτημά σας έχει καταχωρηθεί με επιτυχία!
 

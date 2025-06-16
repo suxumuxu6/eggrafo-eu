@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -148,7 +147,7 @@ const UserSupport: React.FC = () => {
       try {
         const adminEmailData = {
           subject: `Νέα απάντηση από χρήστη: ${ticketCode}`,
-          message: `Ο χρήστης έστειλε νέα απάντηση.
+          body: `Ο χρήστης έστειλε νέα απάντηση.
 
 Κωδικός αιτήματος: ${ticketCode}
 Email χρήστη: ${email}
