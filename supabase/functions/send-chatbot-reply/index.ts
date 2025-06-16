@@ -60,7 +60,7 @@ serve(async (req: Request) => {
     // Replace "gemhdesk@gmail.com" with your verified domain email
     const fromEmail = Deno.env.get("FROM_EMAIL") || "gemhdesk@gmail.com";
     
-    // Create reply link
+    // Create reply link - fix the URL construction
     const baseUrl = "https://eggrafo.work"; // Change to your actual domain
     const replyLink = chatId ? `${baseUrl}/reply?chat=${chatId}` : null;
     
@@ -68,7 +68,7 @@ serve(async (req: Request) => {
     let messageWithSignature = `${message}\n\n---\nSupport Team - Eggrafo.work`;
     
     if (replyLink) {
-      messageWithSignature += `\n\nTo reply to this message, please click here: ${replyLink}`;
+      messageWithSignature += `\n\nΓια να απαντήσετε στο μήνυμα, παρακαλώ πατήστε εδώ: ${replyLink}`;
     }
     
     console.log("Sending email with Resend...");
@@ -83,8 +83,8 @@ serve(async (req: Request) => {
           <p><strong>Support Team - Eggrafo.work</strong></p>
           ${replyLink ? `
           <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
-            <p style="margin: 0; color: #666;">To reply to this message:</p>
-            <a href="${replyLink}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reply Here</a>
+            <p style="margin: 0; color: #666;">Για να απαντήσετε στο μήνυμα:</p>
+            <a href="${replyLink}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Πατήστε Εδώ</a>
           </div>
           ` : ''}
         </div>
