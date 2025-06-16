@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatToggleButton } from "./chat/ChatToggleButton";
@@ -115,7 +116,8 @@ export const LiveChatWidget: React.FC = () => {
       }, 700);
     } else if (step === "waitingForDetail") {
       setTimeout(() => {
-        setStep("awaitingDetailsOrEmail");
+        setMessages(msgs => [...msgs, { sender: "bot", text: "Συμπληρώστε το email σας για να έρθουμε σε επικοινωνία μαζί σας." }]);
+        setStep("waitingForEmail");
         setCanSendMessage(false);
       }, 400);
     } else if (step === "techIssue") {
@@ -125,12 +127,6 @@ export const LiveChatWidget: React.FC = () => {
         setCanSendMessage(false);
       }, 500);
     }
-  };
-
-  const handleUserContinueDetail = () => {
-    setStep("waitingForDetail");
-    setCanSendMessage(true);
-    setMessages(msgs => [...msgs, { sender: "bot", text: "Περιγράψτε με λεπτομέρεια τι είδος και τι ακριβώς θα θέλατε" }]);
   };
 
   const handleUserProvideEmail = (e?: React.FormEvent) => {
@@ -222,18 +218,13 @@ export const LiveChatWidget: React.FC = () => {
           />
         )}
 
-        {step === "awaitingDetailsOrEmail" && (
-          <div className="flex flex-col gap-2 mt-2">
-            <Button className="w-full" variant="secondary" onClick={handleUserContinueDetail}>
-              Συνέχεια μηνύματος
-            </Button>
-            <EmailInput
-              emailInput={emailInput}
-              onEmailChange={setEmailInput}
-              onSubmit={handleUserProvideEmail}
-              isEmailValid={isEmailValid}
-            />
-          </div>
+        {step === "waitingForEmail" && (
+          <EmailInput
+            emailInput={emailInput}
+            onEmailChange={setEmailInput}
+            onSubmit={handleUserProvideEmail}
+            isEmailValid={isEmailValid}
+          />
         )}
 
         {step === "techIssue_waitingForEmail" && (

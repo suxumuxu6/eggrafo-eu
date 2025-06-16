@@ -9,7 +9,6 @@ export type ChatStep =
   | "awaitingOption" 
   | "waitingForLegalType" 
   | "waitingForDetail" 
-  | "awaitingDetailsOrEmail" 
   | "waitingForEmail" 
   | "ended" 
   | "techIssue" 
