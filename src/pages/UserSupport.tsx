@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import UserSupportFileUpload from "@/components/support/UserSupportFileUpload";
-import { sendAdminNotificationForUserReply } from "@/utils/notificationUtils";
+import { sendAdminNotificationForUserReply } from "@/utils/emailService";
 
 interface ChatMessage {
   sender: "bot" | "user" | "admin";
@@ -143,15 +142,25 @@ const UserSupport: React.FC = () => {
       // Add to local state
       setReplies(prev => [...prev, newReplyData]);
       
-      // Send notification to admin about user reply
+      // Send notification to admin about user reply using new email service
       console.log("Sending admin notification for user reply...");
       try {
-        await sendAdminNotificationForUserReply(email, ticketCode, chatId, newReply.trim());
-        console.log("Admin notification sent successfully");
-        toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
+        const notificationSuccess = await sendAdminNotificationForUserReply(
+          email, 
+          ticketCode, 
+          chatId, 
+          newReply.trim()
+        );
+        
+        if (notificationSuccess) {
+          console.log("Admin notification sent successfully");
+          toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
+        } else {
+          console.error("Admin notification failed");
+          toast.success("Το μήνυμά σας εστάλη!");
+        }
       } catch (notificationError) {
         console.error("Failed to send admin notification:", notificationError);
-        // Don't fail the whole operation if notification fails
         toast.success("Το μήνυμά σας εστάλη!");
       }
       
