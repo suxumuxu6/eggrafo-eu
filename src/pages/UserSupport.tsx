@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import UserSupportFileUpload from "@/components/support/UserSupportFileUpload";
-import { sendAdminNotificationForUserReply } from "@/utils/chatUtils";
+import { sendAdminNotificationForUserReply } from "@/utils/notificationUtils";
 
 interface ChatMessage {
   sender: "bot" | "user" | "admin";
@@ -55,8 +56,25 @@ const UserSupport: React.FC = () => {
         return;
       }
 
-      // Properly cast messages with type checking
-      const messages = Array.isArray(data.messages) ? data.messages as ChatMessage[] : [];
+      // Safely cast messages with proper type checking
+      const rawMessages = data.messages;
+      let messages: ChatMessage[] = [];
+      
+      if (Array.isArray(rawMessages)) {
+        messages = rawMessages
+          .filter((msg: any) => 
+            msg && 
+            typeof msg === 'object' && 
+            typeof msg.sender === 'string' && 
+            typeof msg.text === 'string'
+          )
+          .map((msg: any) => ({
+            sender: msg.sender as "bot" | "user" | "admin",
+            text: msg.text,
+            ...(msg.imageUrl && { imageUrl: msg.imageUrl })
+          }));
+      }
+      
       setConversation(messages);
       setChatId(data.id);
       setConversationFound(true);

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatToggleButton } from "./chat/ChatToggleButton";
@@ -9,7 +8,9 @@ import { ChatInput } from "./chat/ChatInput";
 import { EmailInput } from "./chat/EmailInput";
 import { SupportTicketDisplay } from "./chat/SupportTicketDisplay";
 import { useChatState } from "@/hooks/useChatState";
-import { uploadImageToSupabase, generateSupportTicketCode, saveChatToSupabase } from "@/utils/chatUtils";
+import { uploadImageToSupabase } from "@/utils/imageUtils";
+import { generateSupportTicketCode } from "@/utils/ticketUtils";
+import { saveChatToSupabase } from "@/utils/chatStorage";
 import { ChatMessage as ChatMessageType } from "@/types/chat";
 
 export const LiveChatWidget: React.FC = () => {
@@ -144,8 +145,6 @@ export const LiveChatWidget: React.FC = () => {
     setSupportTicketCode(ticketCode);
     
     const confirmationMessage = `Το αίτημά σας έχει καταχωρηθεί με επιτυχία!
-
-Κωδικός αιτήματος: ${ticketCode}
 
 Θα λάβετε ειδοποίηση στο email σας με οδηγίες πρόσβασης και όταν υπάρχει νέα απάντηση από την ομάδα υποστήριξης.
 
