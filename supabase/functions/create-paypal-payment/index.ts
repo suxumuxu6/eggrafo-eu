@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -26,7 +27,7 @@ serve(async (req) => {
       throw new Error('PayPal credentials not configured');
     }
 
-    console.log('PayPal credentials available:', { clientId: clientId.substring(0, 10) + '...' });
+    console.log('PayPal credentials available');
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -64,21 +65,18 @@ serve(async (req) => {
 
     console.log('Created donation record:', donationData.id);
 
-    // Prepare amount as a string in xx.00 format (PayPal expects string, e.g. '12.00')
+    // Prepare amount as a string in xx.00 format
     const donationAmountStr = Number.isFinite(donationAmount)
       ? Number(donationAmount).toFixed(2)
       : "12.00";
 
-    // --- [PayPal LIVE API endpoints] ---
+    // Use PayPal LIVE API endpoints
     const tokenUrl = 'https://api-m.paypal.com/v1/oauth2/token';
     const paymentUrl = 'https://api-m.paypal.com/v1/payments/payment';
 
-    // --- DEBUG: Log credentials, environment, and endpoints ---
-    console.log('PayPal credentials:', { clientId: clientId?.slice(0, 8), clientSecret: clientSecret ? '****' : null });
-    console.log('PayPal endpoint:', tokenUrl, paymentUrl);
-
+    console.log('Getting PayPal access token...');
+    
     // Get PayPal access token
-    console.log('Requesting PayPal access token...');
     const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
@@ -89,10 +87,10 @@ serve(async (req) => {
     });
 
     const tokenData = await tokenResponse.json();
-    console.log('Token response:', tokenResponse.status, tokenData);
+    console.log('Token response status:', tokenResponse.status);
 
     if (!tokenResponse.ok || !tokenData.access_token) {
-      // Expose all error info!
+      console.error('PayPal token error:', tokenData);
       return new Response(
         JSON.stringify({
           success: false,
@@ -107,17 +105,17 @@ serve(async (req) => {
     const accessToken = tokenData.access_token;
     console.log('PayPal access token acquired');
 
-    // Get the origin for return URLs
+    // Get the origin for return URLs - ensure we use the correct domain
     const origin = req.headers.get('origin') || 'https://c6e46c6a-7177-4585-90f1-39fed8809a34.lovableproject.com';
-
-    // Create PayPal payment with dynamic amount from user input
+    
+    // Create PayPal payment with simplified structure
     const payment = {
       intent: 'sale',
       payer: {
         payment_method: 'paypal'
       },
       redirect_urls: {
-        return_url: `${origin}/payment-success`,
+        return_url: `${origin}/payment-success?donationId=${donationData.id}`,
         cancel_url: `${origin}/payment-cancel`
       },
       transactions: [{
@@ -125,23 +123,14 @@ serve(async (req) => {
           total: donationAmountStr,
           currency: 'EUR'
         },
-        description: `Document Access: ${documentTitle}`,
-        custom: donationData.id,
-        item_list: {
-          items: [{
-            name: `Access to: ${documentTitle}`,
-            description: 'Document access fee',
-            quantity: 1, // Make sure this is integer!
-            price: donationAmountStr,
-            currency: 'EUR'
-          }]
-        }
+        description: `Donation for Document Access - ${documentTitle}`,
+        custom: donationData.id
       }]
     };
 
-    console.log('Creating PayPal payment with improved payload:', JSON.stringify(payment, null, 2));
+    console.log('Creating PayPal payment with payload:', JSON.stringify(payment, null, 2));
 
-    // --- Payment creation with robust error details ---
+    // Create PayPal payment
     const paymentResponse = await fetch(paymentUrl, {
       method: 'POST',
       headers: {
@@ -152,11 +141,11 @@ serve(async (req) => {
     });
 
     const paymentData = await paymentResponse.json();
-    console.log('CreatePayment status:', paymentResponse.status);
-    console.log('CreatePayment response:', paymentData);
+    console.log('PayPal payment response status:', paymentResponse.status);
+    console.log('PayPal payment response:', paymentData);
 
     if (!paymentResponse.ok) {
-      // Expose detailed error
+      console.error('PayPal payment creation failed:', paymentData);
       return new Response(
         JSON.stringify({
           success: false,
@@ -189,13 +178,17 @@ serve(async (req) => {
       throw new Error('No approval URL returned from PayPal');
     }
 
-    // *** FIX: Define paymentId variable here ***
     const paymentId = paymentData.id;
 
-    console.log('Payment created successfully:', { paymentId, approvalUrl });
+    // Update donation record with PayPal payment ID
+    await supabase
+      .from('donations')
+      .update({
+        paypal_transaction_id: paymentId
+      })
+      .eq('id', donationData.id);
 
-    // Return donation link in the API response
-    const donationLink = `https://${Deno.env.get("SUPABASE_PROJECT_REF") || "YOUR_PROJECT_REF"}.lovableproject.com/donation-link?token=${link_token}`;
+    console.log('Payment created successfully:', { paymentId, approvalUrl });
 
     return new Response(
       JSON.stringify({
@@ -203,16 +196,25 @@ serve(async (req) => {
         paymentId,
         approvalUrl,
         donationId: donationData.id,
-        donationLink,
       }),
-      { status: 200, headers: corsHeaders }
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
 
   } catch (error) {
     console.error('Error creating PayPal payment:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message, stack: error.stack }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message,
+        stack: error.stack 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });

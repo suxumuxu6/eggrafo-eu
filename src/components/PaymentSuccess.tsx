@@ -13,20 +13,12 @@ const PaymentSuccess: React.FC = () => {
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Retrieve params
-  let paymentId = searchParams.get('paymentId');
-  let payerId = searchParams.get('PayerID');
+  // Get parameters from URL
+  const paymentId = searchParams.get('paymentId') || searchParams.get('token');
+  const payerId = searchParams.get('PayerID');
   let donationId = searchParams.get('donationId');
 
-  // PayPal sometimes returns only token, not paymentId, so fallback to token
-  if (!paymentId) {
-    const token = searchParams.get('token');
-    if (token) {
-      paymentId = token;
-    }
-  }
-
-  // If donationId is missing, try to get from localStorage ("pendingDonation")
+  // If donationId is missing, try to get from localStorage
   if (!donationId) {
     try {
       const pending = localStorage.getItem('pendingDonation');
@@ -37,22 +29,28 @@ const PaymentSuccess: React.FC = () => {
         }
       }
     } catch (e) {
-      // ignore
+      console.log('No pending donation found in localStorage');
     }
   }
 
   useEffect(() => {
+    console.log('PaymentSuccess params:', { paymentId, payerId, donationId });
+    
     if (paymentId && payerId && donationId) {
       verifyPayment();
+    } else if (paymentId && donationId) {
+      // Sometimes PayerID might not be present immediately, try verification anyway
+      verifyPayment();
     } else {
-      setError('Missing payment information');
+      setError('Missing payment information. Please try the payment process again.');
       setVerifying(false);
     }
-    // eslint-disable-next-line
   }, [paymentId, payerId, donationId]);
 
   const verifyPayment = async () => {
     try {
+      console.log('Verifying payment with:', { paymentId, payerId, donationId });
+      
       const { data, error } = await supabase.functions.invoke('verify-paypal-payment', {
         body: {
           paymentId,
@@ -61,9 +59,24 @@ const PaymentSuccess: React.FC = () => {
         }
       });
 
-      if (error) throw error;
+      console.log('Verification response:', data, error);
 
-      if (data.success) {
+      if (error) {
+        console.error('Verification error:', error);
+        throw error;
+      }
+
+      // Handle if data is a string (sometimes returned by supabase.functions.invoke)
+      let parsedData: any = data;
+      if (typeof data === 'string') {
+        try {
+          parsedData = JSON.parse(data);
+        } catch (e) {
+          throw new Error("Could not parse verification response");
+        }
+      }
+
+      if (parsedData.success) {
         setVerified(true);
         toast.success('Payment verified successfully! You now have access to the document.');
         
@@ -74,8 +87,11 @@ const PaymentSuccess: React.FC = () => {
           timestamp: Date.now(),
           verified: true
         }));
+
+        // Clear pending donation from localStorage
+        localStorage.removeItem('pendingDonation');
       } else {
-        throw new Error(data.error || 'Payment verification failed');
+        throw new Error(parsedData.error || 'Payment verification failed');
       }
     } catch (err: any) {
       console.error('Payment verification error:', err);
@@ -96,10 +112,10 @@ const PaymentSuccess: React.FC = () => {
           <>
             <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Verifying Payment
+              Επιβεβαίωση Πληρωμής
             </h2>
             <p className="text-gray-600">
-              Please wait while we verify your PayPal payment...
+              Παρακαλώ περιμένετε ενώ επιβεβαιώνουμε την πληρωμή σας...
             </p>
           </>
         )}
@@ -108,13 +124,13 @@ const PaymentSuccess: React.FC = () => {
           <>
             <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Payment Successful!
+              Η Πληρωμή Ολοκληρώθηκε!
             </h2>
             <p className="text-gray-600 mb-6">
-              Thank you for your donation. You now have access to the document.
+              Σας ευχαριστούμε για τη δωρεά σας. Τώρα έχετε πρόσβαση στο έγγραφο.
             </p>
-            <Button onClick={handleReturnHome} className="w-full">
-              Return to Documents
+            <Button onClick={handleReturnHome} className="w-full bg-kb-blue hover:bg-kb-blue/90">
+              Επιστροφή στα Έγγραφα
             </Button>
           </>
         )}
@@ -123,14 +139,19 @@ const PaymentSuccess: React.FC = () => {
           <>
             <XCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Payment Verification Failed
+              Αποτυχία Επιβεβαίωσης Πληρωμής
             </h2>
             <p className="text-gray-600 mb-6">
               {error}
             </p>
-            <Button onClick={handleReturnHome} variant="outline" className="w-full">
-              Return to Documents
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={handleReturnHome} className="w-full bg-kb-blue hover:bg-kb-blue/90">
+                Επιστροφή στα Έγγραφα
+              </Button>
+              <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                Δοκιμάστε Ξανά
+              </Button>
+            </div>
           </>
         )}
       </div>
