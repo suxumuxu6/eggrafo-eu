@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../utils/searchUtils';
@@ -10,6 +11,7 @@ export const useDocuments = () => {
 
   const fetchDocuments = async () => {
     try {
+      console.log('Starting to fetch documents...');
       setLoading(true);
       setError(null);
       
@@ -18,7 +20,10 @@ export const useDocuments = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('Supabase response:', { data, error: fetchError });
+
       if (fetchError) {
+        console.error('Supabase error:', fetchError);
         throw fetchError;
       }
 
@@ -33,11 +38,14 @@ export const useDocuments = () => {
         view_count: doc.view_count || 0
       }));
 
+      console.log('Transformed documents:', transformedDocuments);
       setDocuments(transformedDocuments);
     } catch (err: any) {
       console.error('Error fetching documents:', err);
       setError(err.message || 'Failed to fetch documents');
+      toast.error('Failed to load documents. Please try refreshing the page.');
     } finally {
+      console.log('Fetch completed, setting loading to false');
       setLoading(false);
     }
   };
@@ -137,6 +145,7 @@ export const useDocuments = () => {
   };
 
   useEffect(() => {
+    console.log('useDocuments hook mounted, calling fetchDocuments');
     fetchDocuments();
   }, []);
 
