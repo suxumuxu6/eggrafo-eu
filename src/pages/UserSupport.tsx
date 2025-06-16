@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import UserSupportFileUpload from "@/components/support/UserSupportFileUpload";
 
 interface ChatMessage {
   sender: "user" | "bot";
@@ -17,6 +18,7 @@ interface SupportReply {
   sender: "user" | "admin";
   message: string;
   created_at: string;
+  file_url?: string;
 }
 
 interface ChatbotMessage {
@@ -35,6 +37,7 @@ const UserSupport: React.FC = () => {
   const [conversation, setConversation] = useState<ChatbotMessage | null>(null);
   const [replies, setReplies] = useState<SupportReply[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [replyFile, setReplyFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -94,7 +97,8 @@ const UserSupport: React.FC = () => {
           id: reply.id,
           sender: reply.sender as "user" | "admin",
           message: reply.message,
-          created_at: reply.created_at
+          created_at: reply.created_at,
+          file_url: reply.file_url
         }));
         setReplies(transformedReplies);
       }
@@ -109,18 +113,45 @@ const UserSupport: React.FC = () => {
 
     setSubmitting(true);
     try {
+      // First, upload file if present
+      let fileUrl = null;
+      if (replyFile) {
+        const fileExt = replyFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `support-files/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, replyFile);
+
+        if (uploadError) {
+          toast.error("Σφάλμα κατά την ανέβασμα του αρχείου");
+          return;
+        }
+
+        const { data: urlData } = await supabase.storage
+          .from('documents')
+          .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
+
+        if (urlData?.signedUrl) {
+          fileUrl = urlData.signedUrl;
+        }
+      }
+
       const { error } = await supabase
         .from("support_replies")
         .insert({
           chatbot_message_id: conversation.id,
           sender: "user",
-          message: newMessage.trim()
+          message: newMessage.trim(),
+          file_url: fileUrl
         });
 
       if (error) throw error;
 
       toast.success("Η απάντησή σας στάλθηκε επιτυχώς!");
       setNewMessage("");
+      setReplyFile(null);
       await fetchReplies(conversation.id);
     } catch (error) {
       console.error("Error submitting reply:", error);
@@ -236,6 +267,18 @@ const UserSupport: React.FC = () => {
                         {reply.sender === 'user' ? 'Εσείς' : 'Υποστήριξη'}
                       </div>
                       <div className="mt-1 whitespace-pre-line">{reply.message}</div>
+                      {reply.file_url && (
+                        <div className="mt-2">
+                          <a
+                            href={reply.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm"
+                          >
+                            📎 Προβολή συνημμένου αρχείου
+                          </a>
+                        </div>
+                      )}
                       <div className="text-xs text-gray-400 mt-2">
                         {new Date(reply.created_at).toLocaleString('el-GR')}
                       </div>
@@ -251,6 +294,11 @@ const UserSupport: React.FC = () => {
                   placeholder="Γράψτε την απάντησή σας..."
                   rows={3}
                   required
+                />
+                <UserSupportFileUpload
+                  file={replyFile}
+                  onFileSelect={setReplyFile}
+                  disabled={submitting}
                 />
                 <Button type="submit" disabled={submitting || !newMessage.trim()}>
                   {submitting ? "Αποστολή..." : "Αποστολή Απάντησης"}

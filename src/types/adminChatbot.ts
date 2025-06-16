@@ -25,4 +25,5 @@ export interface SupportReply {
   sender: "user" | "admin";
   message: string;
   created_at: string;
+  file_url?: string | null;
 }

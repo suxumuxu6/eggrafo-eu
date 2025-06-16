@@ -46,13 +46,37 @@ export const useEmailReply = () => {
         toast.error("Authentication required. Please log in again.");
         return;
       }
+
+      // Get the support ticket code for the notification
+      const { data: ticketData } = await supabase
+        .from("chatbot_messages")
+        .select("support_ticket_code")
+        .eq("id", replyTo.chatId)
+        .single();
+
+      const supportTicketCode = ticketData?.support_ticket_code;
+      
+      // Create notification message instead of sending actual reply content
+      const notificationMessage = `Αγαπητέ/ή χρήστη,
+
+Έχετε λάβει νέα απάντηση για το αίτημά σας με κωδικό: ${supportTicketCode}
+
+Για να δείτε την απάντηση και να συνεχίσετε τη συνομιλία, παρακαλώ επισκεφτείτε:
+https://eggrafo.work/support
+
+Θα χρειαστείτε:
+- Email: ${replyTo.email}
+- Κωδικός πρόσβασης: ${supportTicketCode}
+
+Με εκτίμηση,
+Η ομάδα υποστήριξης eggrafo.work`;
       
       const formData = new FormData();
       formData.append("email", replyTo.email);
-      formData.append("subject", replySubject);
-      formData.append("message", replyBody);
+      formData.append("subject", "Νέα απάντηση στο αίτημά σας");
+      formData.append("message", notificationMessage);
       formData.append("chatId", replyTo.chatId);
-      formData.append("isAdminReply", "true");
+      formData.append("isAdminReply", "false"); // This is just a notification, not the actual reply
       if (replyFile) {
         console.log("Adding file:", replyFile.name, "Size:", replyFile.size);
         formData.append("file", replyFile);
@@ -93,8 +117,9 @@ export const useEmailReply = () => {
 
       if (res.ok && responseData.success) {
         console.log("Success! Email sent with ID:", responseData.id);
-        toast.success("Απάντηση εστάλη επιτυχώς.");
+        toast.success("Ειδοποίηση εστάλη επιτυχώς στον χρήστη.");
         
+        // Save the actual admin reply to support_replies table
         await supabase
           .from("support_replies")
           .insert({
