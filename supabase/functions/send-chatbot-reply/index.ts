@@ -62,7 +62,7 @@ serve(async (req: Request) => {
     // Use non-reply email address for closure notifications
     const fromEmail = subject.includes("έχει κλείσει") 
       ? "non-reply@eggrafo.work" 
-      : (Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev");
+      : (Deno.env.get("FROM_EMAIL") || "support@eggrafo.work");
     
     // Create reply link - use the request origin to get the correct base URL
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || "https://eggrafo.work";
