@@ -12,7 +12,7 @@ const corsHeaders = {
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 
 serve(async (req: Request) => {
-  console.log("Received request:", req.method);
+  console.log("Received request:", req.method, req.url);
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -20,7 +20,7 @@ serve(async (req: Request) => {
 
   try {
     const formData = await req.formData();
-    console.log("FormData received");
+    console.log("FormData received, processing...");
 
     const email = formData.get("email")?.toString();
     const subject = formData.get("subject")?.toString();
@@ -29,12 +29,33 @@ serve(async (req: Request) => {
     const chatId = formData.get("chatId")?.toString();
     const isAdminReply = formData.get("isAdminReply")?.toString() === "true";
 
-    console.log("Parsed data:", { email, subject, messageLength: message?.length, hasFile: !!file, chatId, isAdminReply });
+    console.log("Email data:", { 
+      email, 
+      subject, 
+      messageLength: message?.length, 
+      hasFile: !!file, 
+      chatId, 
+      isAdminReply 
+    });
 
     if (!email || !subject || !message) {
-      console.error("Missing required fields:", { email: !!email, subject: !!subject, message: !!message });
+      console.error("Missing required fields:", { 
+        hasEmail: !!email, 
+        hasSubject: !!subject, 
+        hasMessage: !!message 
+      });
       return new Response(
         JSON.stringify({ error: "Missing required fields: email, subject, or message" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error("Invalid email format:", email);
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -49,7 +70,7 @@ serve(async (req: Request) => {
           content: Buffer.from(arrayBuffer),
           contentType: file.type || "application/pdf",
         });
-        console.log("File attachment prepared:", file.name);
+        console.log("File attachment prepared:", file.name, file.size, "bytes");
       } catch (fileError) {
         console.error("Error processing file:", fileError);
         return new Response(
@@ -59,51 +80,54 @@ serve(async (req: Request) => {
       }
     }
 
-    // Use non-reply email address for closure notifications
+    // Determine from email address
     const fromEmail = subject.includes("έχει κλείσει") 
       ? "non-reply@eggrafo.work" 
-      : (Deno.env.get("FROM_EMAIL") || "support@eggrafo.work");
+      : "support@eggrafo.work";
     
-    // Create reply link - use the request origin to get the correct base URL
-    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || "https://eggrafo.work";
-    const replyLink = chatId ? `${origin}/reply?chat=${chatId}` : null;
+    console.log("Sending email via Resend...", { from: fromEmail, to: email });
     
-    console.log("Sending email with Resend...");
     const sendResult = await resend.emails.send({
       from: `Eggrafo Support <${fromEmail}>`,
       to: [email],
       subject,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <p>${message.replace(/\n/g, "<br />")}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h2 style="color: #333; margin: 0 0 10px 0;">Eggrafo Support</h2>
+          </div>
+          <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef;">
+            <p style="color: #333; line-height: 1.6; margin: 0;">${message.replace(/\n/g, "<br />")}</p>
+          </div>
+          <div style="text-align: center; margin-top: 20px; padding: 10px; font-size: 12px; color: #666;">
+            <p>Αυτό το email στάλθηκε από το σύστημα υποστήριξης του eggrafo.work</p>
+          </div>
         </div>
       `,
       attachments: attachments.length ? attachments : undefined,
     });
 
-    console.log("Resend response:", sendResult);
+    console.log("Resend API response:", sendResult);
 
     if (sendResult.error) {
-      console.error("Resend error:", sendResult.error);
+      console.error("Resend API error:", sendResult.error);
       return new Response(JSON.stringify({ 
-        error: `Email sending failed: ${sendResult.error.message || sendResult.error}` 
+        error: `Email sending failed: ${sendResult.error.message || JSON.stringify(sendResult.error)}` 
       }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Save admin replies to database using service role key
+    // Save admin replies to database
     if (isAdminReply && chatId) {
-      console.log("Attempting to save admin reply to database...");
+      console.log("Saving admin reply to database...");
       
       try {
         const supabaseServiceRole = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
-
-        console.log("Created Supabase service role client");
 
         const { data: insertData, error: dbError } = await supabaseServiceRole
           .from("chatbot_replies")
@@ -117,37 +141,32 @@ serve(async (req: Request) => {
 
         if (dbError) {
           console.error("Database insert error:", dbError);
-          console.error("Error details:", {
-            message: dbError.message,
-            details: dbError.details,
-            hint: dbError.hint,
-            code: dbError.code
-          });
-          // Don't fail the entire request if database save fails - email was sent successfully
-          console.log("Email sent successfully but database save failed");
         } else {
-          console.log("Admin reply saved to database successfully:", insertData);
+          console.log("Admin reply saved to database successfully");
         }
       } catch (dbException) {
         console.error("Database operation exception:", dbException);
-        // Don't fail the entire request - email was sent successfully
       }
     }
 
-    console.log("Email sent successfully:", sendResult.data?.id);
+    console.log("Email sent successfully. ID:", sendResult.data?.id);
     return new Response(JSON.stringify({ 
       success: true, 
-      id: sendResult.data?.id 
+      id: sendResult.data?.id,
+      message: "Email sent successfully"
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
-  } catch (e) {
-    console.error("send-chatbot-reply error:", e);
-    console.error("Error stack:", e instanceof Error ? e.stack : "No stack trace");
-    const errorMessage = e instanceof Error ? e.message : "Unknown server error";
+    
+  } catch (error) {
+    console.error("Edge function error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown server error";
     return new Response(
-      JSON.stringify({ error: `Server error: ${errorMessage}` }),
+      JSON.stringify({ 
+        error: `Server error: ${errorMessage}`,
+        details: error instanceof Error ? error.stack : undefined
+      }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

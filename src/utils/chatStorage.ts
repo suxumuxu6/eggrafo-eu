@@ -9,7 +9,7 @@ export const saveChatToSupabase = async (
   ticketCode: string
 ): Promise<boolean> => {
   try {
-    console.log('Saving chat to Supabase:', { 
+    console.log('Starting chat save process:', { 
       messagesCount: messages.length, 
       email, 
       ticketCode 
@@ -33,7 +33,7 @@ export const saveChatToSupabase = async (
       submitted_at: new Date().toISOString()
     };
 
-    console.log('Insert data:', insertData);
+    console.log('Inserting chat data:', insertData);
 
     const { data, error } = await supabase
       .from('chatbot_messages')
@@ -46,22 +46,32 @@ export const saveChatToSupabase = async (
       return false;
     }
 
-    console.log('Chat saved successfully:', data);
+    console.log('Chat saved successfully with ID:', data.id);
 
-    // Send email notifications with proper error handling
+    // Send notifications with better error handling
+    console.log('Starting notification process...');
+    
+    // Send admin notification first
     try {
-      console.log('Starting to send notifications...');
+      console.log('Sending admin notification...');
       await sendAdminNotificationForNewTicket(email, ticketCode, data.id);
-      console.log('Admin notification completed');
-      await sendUserNotificationForNewTicket(email, ticketCode, data.id);
-      console.log('User notification completed');
-      console.log('Both notifications sent successfully');
-    } catch (notificationError) {
-      console.error('Notification sending failed:', notificationError);
-      // Don't fail the entire save operation if notifications fail
-      // The chat is already saved successfully
+      console.log('Admin notification completed successfully');
+    } catch (adminError) {
+      console.error('Admin notification failed:', adminError);
+      // Continue with user notification even if admin fails
     }
 
+    // Send user notification
+    try {
+      console.log('Sending user notification...');
+      await sendUserNotificationForNewTicket(email, ticketCode, data.id);
+      console.log('User notification completed successfully');
+    } catch (userError) {
+      console.error('User notification failed:', userError);
+      // Don't fail the entire operation if user notification fails
+    }
+
+    console.log('Chat save and notification process completed');
     return true;
   } catch (error) {
     console.error('Error in saveChatToSupabase:', error);
