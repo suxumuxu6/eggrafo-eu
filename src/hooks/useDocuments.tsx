@@ -15,10 +15,17 @@ export const useDocuments = () => {
       setLoading(true);
       setError(null);
       
-      const { data, error: fetchError } = await supabase
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+      
+      const fetchPromise = supabase
         .from('documents')
         .select('*')
         .order('created_at', { ascending: false });
+
+      const { data, error: fetchError } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       console.log('Supabase response:', { data, error: fetchError });
 
@@ -42,8 +49,17 @@ export const useDocuments = () => {
       setDocuments(transformedDocuments);
     } catch (err: any) {
       console.error('Error fetching documents:', err);
-      setError(err.message || 'Failed to fetch documents');
-      toast.error('Failed to load documents. Please try refreshing the page.');
+      const errorMessage = err.message || 'Failed to fetch documents';
+      setError(errorMessage);
+      
+      // Set empty array as fallback to allow UI to render
+      setDocuments([]);
+      
+      if (err.message !== 'Request timeout') {
+        toast.error('Failed to load documents. Please check your connection and try again.');
+      } else {
+        toast.error('Request timed out. Please try again.');
+      }
     } finally {
       console.log('Fetch completed, setting loading to false');
       setLoading(false);

@@ -15,12 +15,12 @@ const EXCLUDED_TITLES = [
   "ν. 4072/2012 Προσωπικές Εταιρείες",
   "Πρότυπα Καταστατικά Σύστασης",
   "Ν. 4601/2019 Μετασχηματισμοί",
-  "ν. 4919/2022 ΓΕΜΗ" // NEW: exclude this doc from "Παραδείγματα Εγγράφων για λήψη"
+  "ν. 4919/2022 ΓΕΜΗ"
 ];
 
 const Home: React.FC = () => {
   const { isAdmin } = useAuth();
-  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount } = useDocuments();
+  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount, fetchDocuments } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -31,7 +31,7 @@ const Home: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    console.log('searchQuery updated:', searchQuery); // DEBUG
+    console.log('searchQuery updated:', searchQuery);
     filterDocuments();
   }, [allDocuments, searchQuery]);
 
@@ -54,7 +54,7 @@ const Home: React.FC = () => {
 
     filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
 
-    console.log('filterDocuments: filtered result count:', filtered.length, 'query:', searchQuery); // DEBUG
+    console.log('filterDocuments: filtered result count:', filtered.length, 'query:', searchQuery);
     setFilteredDocuments(filtered);
   };
 
@@ -102,7 +102,8 @@ const Home: React.FC = () => {
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kb-purple mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading documents...</p>
+            <p className="text-gray-500 mb-4">Loading documents...</p>
+            <p className="text-sm text-gray-400">If this takes too long, try refreshing the page</p>
           </div>
         </main>
       </div>
@@ -120,12 +121,20 @@ const Home: React.FC = () => {
               </svg>
             </div>
             <p className="text-red-500 mb-4">Error loading documents: {error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="bg-kb-purple text-white px-4 py-2 rounded hover:bg-kb-purple/80 transition-colors"
-            >
-              Retry
-            </button>
+            <div className="space-y-2">
+              <button 
+                onClick={fetchDocuments} 
+                className="bg-kb-purple text-white px-4 py-2 rounded hover:bg-kb-purple/80 transition-colors mr-2"
+              >
+                Try Again
+              </button>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+              >
+                Refresh Page
+              </button>
+            </div>
           </div>
         </main>
       </div>
@@ -136,7 +145,6 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-blue-50 flex flex-col">
       <main className="container mx-auto px-4 py-8 flex-1">
         <DocumentsHeader onSearch={handleSearch} searchQuery={searchQuery} />
-        {/* Documents Section moved above Featured Documents Section */}
         <DocumentsSection
           filteredDocuments={filteredDocuments}
           isAdmin={isAdmin}
@@ -144,7 +152,6 @@ const Home: React.FC = () => {
           onEditDocument={handleEditDocument}
           onDeleteDocument={handleDeleteDocument}
         />
-        {/* Featured Documents Section is now below DocumentsSection */}
         <FeaturedDocumentsSection documents={allDocuments} />
       </main>
       {/* Footer */}
