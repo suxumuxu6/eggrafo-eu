@@ -1,5 +1,6 @@
 
 export const sendAdminNotificationForNewTicket = async (email: string, ticketCode: string, chatId: string) => {
+  console.log("Sending admin notification for new ticket:", { email, ticketCode, chatId });
   try {
     const formData = new FormData();
     formData.append("email", "dldigiweb@gmail.com"); // Admin email
@@ -26,7 +27,8 @@ Email χρήστη: ${email}
     );
 
     if (!adminRes.ok) {
-      console.warn("Failed to send admin notification:", await adminRes.text());
+      const errorText = await adminRes.text();
+      console.warn("Failed to send admin notification:", adminRes.status, errorText);
     } else {
       console.log("Admin notification sent successfully");
     }
@@ -36,6 +38,7 @@ Email χρήστη: ${email}
 };
 
 export const sendUserNotificationForNewTicket = async (email: string, ticketCode: string, chatId: string) => {
+  console.log("Sending user notification for new ticket:", { email, ticketCode, chatId });
   try {
     const userFormData = new FormData();
     userFormData.append("email", email);
@@ -73,7 +76,8 @@ export const sendUserNotificationForNewTicket = async (email: string, ticketCode
     );
 
     if (!userRes.ok) {
-      console.warn("Failed to send user notification:", await userRes.text());
+      const errorText = await userRes.text();
+      console.warn("Failed to send user notification:", userRes.status, errorText);
     } else {
       console.log("User notification sent successfully");
     }
@@ -83,6 +87,7 @@ export const sendUserNotificationForNewTicket = async (email: string, ticketCode
 };
 
 export const sendAdminNotificationForUserReply = async (email: string, ticketCode: string, chatId: string, userMessage: string) => {
+  console.log("Sending admin notification for user reply:", { email, ticketCode, chatId, userMessage: userMessage.substring(0, 50) + "..." });
   try {
     const formData = new FormData();
     formData.append("email", "dldigiweb@gmail.com"); // Admin email
@@ -111,7 +116,8 @@ Email χρήστη: ${email}
     );
 
     if (!adminRes.ok) {
-      console.warn("Failed to send admin notification for user reply:", await adminRes.text());
+      const errorText = await adminRes.text();
+      console.warn("Failed to send admin notification for user reply:", adminRes.status, errorText);
     } else {
       console.log("Admin notification for user reply sent successfully");
     }

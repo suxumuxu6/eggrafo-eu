@@ -126,6 +126,7 @@ const UserSupport: React.FC = () => {
         .single();
 
       if (error) {
+        console.error("Database error:", error);
         toast.error("Σφάλμα αποστολής μηνύματος.");
         return;
       }
@@ -143,7 +144,14 @@ const UserSupport: React.FC = () => {
       setReplies(prev => [...prev, newReplyData]);
       
       // Send notification to admin about user reply
-      await sendAdminNotificationForUserReply(email, ticketCode, chatId, newReply.trim());
+      console.log("Sending admin notification for user reply...");
+      try {
+        await sendAdminNotificationForUserReply(email, ticketCode, chatId, newReply.trim());
+        console.log("Admin notification sent successfully");
+      } catch (notificationError) {
+        console.error("Failed to send admin notification:", notificationError);
+        // Don't fail the whole operation if notification fails
+      }
       
       setNewReply("");
       setUploadedFile(null);

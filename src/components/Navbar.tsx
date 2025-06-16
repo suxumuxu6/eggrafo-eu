@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Upload, LogOut, Bot } from "lucide-react";
+import { Upload, LogOut, Bot, HelpCircle } from "lucide-react";
 
 const Navbar: React.FC = () => {
   const {
@@ -33,6 +33,14 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
+            {/* Support button - always visible */}
+            <Link to="/support">
+              <Button variant="outline" className="flex items-center gap-2">
+                <HelpCircle className="h-4 w-4" />
+                <span>Support</span>
+              </Button>
+            </Link>
+
             {loading ? (
               <div className="text-sm text-gray-500">Loading...</div>
             ) : isAuthenticated && isAdmin && user ? (

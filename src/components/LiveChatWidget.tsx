@@ -150,12 +150,15 @@ export const LiveChatWidget: React.FC = () => {
 
 Ευχαριστούμε για την επικοινωνία!`;
     
-    setTimeout(() => {
+    setTimeout(async () => {
       setMessages(msgs => [...msgs, { 
         sender: "bot", 
         text: confirmationMessage
       }]);
-      saveChatToSupabase([
+      
+      // Save the chat and send notifications
+      console.log("Saving chat and sending notifications...");
+      const success = await saveChatToSupabase([
         ...messages, 
         { sender: "user", text: userEmail }, 
         { 
@@ -163,6 +166,13 @@ export const LiveChatWidget: React.FC = () => {
           text: confirmationMessage
         }
       ], userEmail, ticketCode);
+      
+      if (success) {
+        console.log("Chat saved and notifications sent successfully");
+      } else {
+        console.error("Failed to save chat or send notifications");
+      }
+      
       const nextStep = step === "techIssue_waitingForEmail" ? "techIssue_ended" : "ended";
       setStep(nextStep);
     }, 500);
