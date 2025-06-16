@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
@@ -29,6 +28,9 @@ const Home: React.FC = () => {
   const [documentToEdit, setDocumentToEdit] = useState<Document | null>(null);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Force re-render when loading state changes
+  console.log('🏠 Home render - loading:', loading, 'documents count:', allDocuments.length, 'error:', error);
 
   useEffect(() => {
     console.log('🔍 Home: searchQuery updated:', searchQuery);
@@ -97,7 +99,9 @@ const Home: React.FC = () => {
     }
   };
 
+  // Show loading state
   if (loading) {
+    console.log('🔄 Showing loading state');
     return (
       <div className="min-h-screen bg-blue-50">
         <main className="container mx-auto px-4 py-8">
@@ -111,7 +115,9 @@ const Home: React.FC = () => {
     );
   }
 
+  // Show error state
   if (error) {
+    console.log('❌ Showing error state:', error);
     return (
       <div className="min-h-screen bg-blue-50">
         <main className="container mx-auto px-4 py-8">
@@ -142,7 +148,8 @@ const Home: React.FC = () => {
     );
   }
 
-  console.log('🏠 Home: Rendering with documents:', filteredDocuments.length);
+  // Show main content - this should render when loading is false and no error
+  console.log('✅ Showing main content with documents:', filteredDocuments.length);
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col">

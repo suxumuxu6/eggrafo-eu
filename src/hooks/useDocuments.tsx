@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../utils/searchUtils';
@@ -10,68 +9,51 @@ export const useDocuments = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchDocuments = async () => {
+    console.log('🔄 fetchDocuments: Starting...');
+    
     try {
-      console.log('🔄 Starting fetchDocuments...');
       setLoading(true);
       setError(null);
       
-      // Test Supabase connection first
-      console.log('🔗 Testing Supabase connection...');
-      const { data: testData, error: testError } = await supabase
-        .from('documents')
-        .select('count')
-        .limit(1);
-      
-      console.log('📊 Connection test result:', { testData, testError });
-      
-      if (testError) {
-        console.error('❌ Supabase connection failed:', testError);
-        throw new Error(`Database connection failed: ${testError.message}`);
-      }
-
-      console.log('✅ Supabase connection successful, fetching documents...');
-      
+      console.log('📡 Fetching from Supabase...');
       const { data, error: fetchError } = await supabase
         .from('documents')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📄 Raw documents data:', data);
-      console.log('❌ Fetch error:', fetchError);
+      console.log('📊 Supabase response:', { data, fetchError });
 
       if (fetchError) {
-        console.error('❌ Documents fetch error:', fetchError);
+        console.error('❌ Fetch error:', fetchError);
         throw new Error(`Failed to fetch documents: ${fetchError.message}`);
       }
 
       if (!data) {
-        console.log('⚠️ No data returned, setting empty array');
+        console.log('⚠️ No data returned');
         setDocuments([]);
+        setLoading(false);
         return;
       }
 
-      // Transform the data to match our Document interface
-      const transformedDocuments: Document[] = data.map(doc => {
-        console.log('🔄 Transforming document:', doc);
-        return {
-          id: doc.id,
-          title: doc.title || 'Untitled',
-          description: doc.description || '',
-          tags: Array.isArray(doc.tags) ? doc.tags : [],
-          category: doc.category || '',
-          url: doc.file_url || '',
-          view_count: doc.view_count || 0
-        };
-      });
+      // Transform the data
+      const transformedDocuments: Document[] = data.map(doc => ({
+        id: doc.id,
+        title: doc.title || 'Untitled',
+        description: doc.description || '',
+        tags: Array.isArray(doc.tags) ? doc.tags : [],
+        category: doc.category || '',
+        url: doc.file_url || '',
+        view_count: doc.view_count || 0
+      }));
 
-      console.log('✅ Transformed documents:', transformedDocuments);
+      console.log('✅ Setting documents:', transformedDocuments.length);
       setDocuments(transformedDocuments);
       
     } catch (err: any) {
-      console.error('💥 Critical error in fetchDocuments:', err);
+      console.error('💥 Error in fetchDocuments:', err);
       const errorMessage = err.message || 'Unknown error occurred';
       setError(errorMessage);
-      setDocuments([]); // Set empty array as fallback
+      setDocuments([]);
       toast.error(`Failed to load documents: ${errorMessage}`);
     } finally {
       console.log('🏁 Setting loading to false');
@@ -174,7 +156,7 @@ export const useDocuments = () => {
   };
 
   useEffect(() => {
-    console.log('🚀 useDocuments hook mounted, calling fetchDocuments');
+    console.log('🚀 useDocuments: Mounting and fetching documents');
     fetchDocuments();
   }, []);
 
