@@ -103,6 +103,7 @@ const AdminChatbot: React.FC = () => {
       formData.append("email", replyTo.email);
       formData.append("subject", replySubject);
       formData.append("message", replyBody);
+      formData.append("chatId", replyTo.chatId); // Add chatId for reply link
       if (replyFile) formData.append("file", replyFile);
 
       const headers: Record<string, string> = {};
