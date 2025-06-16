@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
@@ -101,6 +102,30 @@ serve(async (req: Request) => {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
+    }
+
+    // Save reply to database using service role key for bypassing RLS
+    if (chatId) {
+      const supabaseServiceRole = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const { error: dbError } = await supabaseServiceRole
+        .from("chatbot_replies")
+        .insert({
+          chatbot_message_id: chatId,
+          email: email,
+          subject: subject,
+          body: message,
+          file_url: null,
+        });
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+      } else {
+        console.log("Reply saved to database successfully");
+      }
     }
 
     console.log("Email sent successfully:", sendResult.data?.id);
