@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -72,15 +71,28 @@ const AdminChatbot: React.FC = () => {
 
   async function fetchMessages() {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data: rawData, error } = await supabase
       .from("chatbot_messages")
       .select("*")
       .order("submitted_at", { ascending: false });
 
-    if (!error && data) {
-      setData(data as ChatbotMessage[]);
+    if (!error && rawData) {
+      // Transform the data to match our interface
+      const transformedData: ChatbotMessage[] = rawData.map(item => ({
+        id: item.id,
+        email: item.email,
+        messages: Array.isArray(item.messages) ? item.messages as Array<{ sender: "user" | "bot"; text: string; imageUrl?: string }> : [],
+        submitted_at: item.submitted_at || '',
+        status: (item.status as "unread" | "read") || "unread",
+        last_admin_reply_at: item.last_admin_reply_at,
+        admin_reply_count: item.admin_reply_count || 0,
+        support_ticket_code: item.support_ticket_code,
+        ticket_status: item.ticket_status
+      }));
+      
+      setData(transformedData);
       // Fetch support replies for each conversation
-      data.forEach(msg => {
+      transformedData.forEach(msg => {
         if (msg.id) fetchSupportReplies(msg.id);
       });
     }
@@ -88,16 +100,24 @@ const AdminChatbot: React.FC = () => {
   }
 
   async function fetchSupportReplies(chatId: string) {
-    const { data, error } = await supabase
+    const { data: rawData, error } = await supabase
       .from("support_replies")
       .select("*")
       .eq("chatbot_message_id", chatId)
       .order("created_at", { ascending: true });
 
-    if (!error && data) {
+    if (!error && rawData) {
+      // Transform the data to match our interface
+      const transformedReplies: SupportReply[] = rawData.map(reply => ({
+        id: reply.id,
+        sender: reply.sender as "user" | "admin",
+        message: reply.message,
+        created_at: reply.created_at
+      }));
+      
       setSupportReplies(prev => ({
         ...prev,
-        [chatId]: data as SupportReply[]
+        [chatId]: transformedReplies
       }));
     }
   }

@@ -44,7 +44,7 @@ const UserSupport: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
+      const { data: rawData, error } = await supabase
         .from("chatbot_messages")
         .select("*")
         .eq("email", email.trim())
@@ -52,14 +52,24 @@ const UserSupport: React.FC = () => {
         .eq("ticket_status", "active")
         .single();
 
-      if (error || !data) {
+      if (error || !rawData) {
         toast.error("Δεν βρέθηκε ενεργό αίτημα με αυτά τα στοιχεία");
         return;
       }
 
-      setConversation(data);
+      // Transform the data to match our interface
+      const transformedData: ChatbotMessage = {
+        id: rawData.id,
+        email: rawData.email || '',
+        messages: Array.isArray(rawData.messages) ? rawData.messages as ChatMessage[] : [],
+        support_ticket_code: rawData.support_ticket_code || '',
+        ticket_status: rawData.ticket_status || '',
+        submitted_at: rawData.submitted_at || ''
+      };
+
+      setConversation(transformedData);
       setIsAuthenticated(true);
-      await fetchReplies(data.id);
+      await fetchReplies(transformedData.id);
       toast.success("Επιτυχής σύνδεση!");
     } catch (error) {
       console.error("Error authenticating:", error);
@@ -71,14 +81,21 @@ const UserSupport: React.FC = () => {
 
   const fetchReplies = async (chatId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: rawData, error } = await supabase
         .from("support_replies")
         .select("*")
         .eq("chatbot_message_id", chatId)
         .order("created_at", { ascending: true });
 
-      if (!error && data) {
-        setReplies(data);
+      if (!error && rawData) {
+        // Transform the data to match our interface
+        const transformedReplies: SupportReply[] = rawData.map(reply => ({
+          id: reply.id,
+          sender: reply.sender as "user" | "admin",
+          message: reply.message,
+          created_at: reply.created_at
+        }));
+        setReplies(transformedReplies);
       }
     } catch (error) {
       console.error("Error fetching replies:", error);
