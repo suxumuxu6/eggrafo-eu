@@ -11,57 +11,70 @@ export const useDocuments = () => {
 
   const fetchDocuments = async () => {
     try {
-      console.log('Starting to fetch documents...');
+      console.log('🔄 Starting fetchDocuments...');
       setLoading(true);
       setError(null);
       
-      // Add timeout to prevent infinite loading
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
-      );
+      // Test Supabase connection first
+      console.log('🔗 Testing Supabase connection...');
+      const { data: testData, error: testError } = await supabase
+        .from('documents')
+        .select('count')
+        .limit(1);
       
-      const fetchPromise = supabase
+      console.log('📊 Connection test result:', { testData, testError });
+      
+      if (testError) {
+        console.error('❌ Supabase connection failed:', testError);
+        throw new Error(`Database connection failed: ${testError.message}`);
+      }
+
+      console.log('✅ Supabase connection successful, fetching documents...');
+      
+      const { data, error: fetchError } = await supabase
         .from('documents')
         .select('*')
         .order('created_at', { ascending: false });
 
-      const { data, error: fetchError } = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
-      console.log('Supabase response:', { data, error: fetchError });
+      console.log('📄 Raw documents data:', data);
+      console.log('❌ Fetch error:', fetchError);
 
       if (fetchError) {
-        console.error('Supabase error:', fetchError);
-        throw fetchError;
+        console.error('❌ Documents fetch error:', fetchError);
+        throw new Error(`Failed to fetch documents: ${fetchError.message}`);
+      }
+
+      if (!data) {
+        console.log('⚠️ No data returned, setting empty array');
+        setDocuments([]);
+        return;
       }
 
       // Transform the data to match our Document interface
-      const transformedDocuments: Document[] = (data || []).map(doc => ({
-        id: doc.id,
-        title: doc.title,
-        description: doc.description || '',
-        tags: doc.tags || [],
-        category: doc.category || '',
-        url: doc.file_url,
-        view_count: doc.view_count || 0
-      }));
+      const transformedDocuments: Document[] = data.map(doc => {
+        console.log('🔄 Transforming document:', doc);
+        return {
+          id: doc.id,
+          title: doc.title || 'Untitled',
+          description: doc.description || '',
+          tags: Array.isArray(doc.tags) ? doc.tags : [],
+          category: doc.category || '',
+          url: doc.file_url || '',
+          view_count: doc.view_count || 0
+        };
+      });
 
-      console.log('Transformed documents:', transformedDocuments);
+      console.log('✅ Transformed documents:', transformedDocuments);
       setDocuments(transformedDocuments);
+      
     } catch (err: any) {
-      console.error('Error fetching documents:', err);
-      const errorMessage = err.message || 'Failed to fetch documents';
+      console.error('💥 Critical error in fetchDocuments:', err);
+      const errorMessage = err.message || 'Unknown error occurred';
       setError(errorMessage);
-      
-      // Set empty array as fallback to allow UI to render
-      setDocuments([]);
-      
-      if (err.message !== 'Request timeout') {
-        toast.error('Failed to load documents. Please check your connection and try again.');
-      } else {
-        toast.error('Request timed out. Please try again.');
-      }
+      setDocuments([]); // Set empty array as fallback
+      toast.error(`Failed to load documents: ${errorMessage}`);
     } finally {
-      console.log('Fetch completed, setting loading to false');
+      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };
@@ -161,7 +174,7 @@ export const useDocuments = () => {
   };
 
   useEffect(() => {
-    console.log('useDocuments hook mounted, calling fetchDocuments');
+    console.log('🚀 useDocuments hook mounted, calling fetchDocuments');
     fetchDocuments();
   }, []);
 

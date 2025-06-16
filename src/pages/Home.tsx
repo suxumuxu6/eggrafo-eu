@@ -31,7 +31,8 @@ const Home: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    console.log('searchQuery updated:', searchQuery);
+    console.log('🔍 Home: searchQuery updated:', searchQuery);
+    console.log('📋 Home: allDocuments count:', allDocuments.length);
     filterDocuments();
   }, [allDocuments, searchQuery]);
 
@@ -54,7 +55,7 @@ const Home: React.FC = () => {
 
     filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
 
-    console.log('filterDocuments: filtered result count:', filtered.length, 'query:', searchQuery);
+    console.log('🎯 Home: filterDocuments result count:', filtered.length, 'query:', searchQuery);
     setFilteredDocuments(filtered);
   };
 
@@ -102,8 +103,8 @@ const Home: React.FC = () => {
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kb-purple mx-auto mb-4"></div>
-            <p className="text-gray-500 mb-4">Loading documents...</p>
-            <p className="text-sm text-gray-400">If this takes too long, try refreshing the page</p>
+            <p className="text-gray-500 mb-4">Φόρτωση εγγράφων...</p>
+            <p className="text-sm text-gray-400">Εάν αυτό διαρκεί πολύ, δοκιμάστε να ανανεώσετε τη σελίδα</p>
           </div>
         </main>
       </div>
@@ -120,19 +121,19 @@ const Home: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <p className="text-red-500 mb-4">Error loading documents: {error}</p>
+            <p className="text-red-500 mb-4">Σφάλμα φόρτωσης εγγράφων: {error}</p>
             <div className="space-y-2">
               <button 
                 onClick={fetchDocuments} 
                 className="bg-kb-purple text-white px-4 py-2 rounded hover:bg-kb-purple/80 transition-colors mr-2"
               >
-                Try Again
+                Δοκιμάστε Ξανά
               </button>
               <button 
                 onClick={() => window.location.reload()} 
                 className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
               >
-                Refresh Page
+                Ανανέωση Σελίδας
               </button>
             </div>
           </div>
@@ -140,6 +141,8 @@ const Home: React.FC = () => {
       </div>
     );
   }
+
+  console.log('🏠 Home: Rendering with documents:', filteredDocuments.length);
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col">
