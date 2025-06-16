@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
@@ -29,7 +30,6 @@ const Home: React.FC = () => {
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Force re-render when loading state changes
   console.log('🏠 Home render - loading:', loading, 'documents count:', allDocuments.length, 'error:', error);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ const Home: React.FC = () => {
     );
   }
 
-  // Show error state
+  // Show error state with more details
   if (error) {
     console.log('❌ Showing error state:', error);
     return (
@@ -148,7 +148,7 @@ const Home: React.FC = () => {
     );
   }
 
-  // Show main content - this should render when loading is false and no error
+  // Show main content
   console.log('✅ Showing main content with documents:', filteredDocuments.length);
 
   return (
@@ -164,19 +164,20 @@ const Home: React.FC = () => {
         />
         <FeaturedDocumentsSection documents={allDocuments} />
       </main>
-      {/* Footer */}
+      
       <footer className="bg-white border-t border-gray-200 py-4">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-gray-500">© Eggrafo.eu 2025</p>
         </div>
       </footer>
-      {/* Modals */}
+      
       {selectedDocument && (
         <InlinePDFViewer 
           document={selectedDocument}
           onClose={() => setSelectedDocument(null)}
         />
       )}
+      
       <EditDocumentModal
         isOpen={isEditModalOpen}
         onClose={() => {
@@ -186,6 +187,7 @@ const Home: React.FC = () => {
         document={documentToEdit}
         onSave={handleSaveEdit}
       />
+      
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
@@ -196,6 +198,7 @@ const Home: React.FC = () => {
         documentTitle={documentToDelete?.title || ''}
         isDeleting={isDeleting}
       />
+      
       <LiveChatWidget />
     </div>
   );
