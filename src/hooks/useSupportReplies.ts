@@ -18,7 +18,8 @@ export const useSupportReplies = () => {
         id: reply.id,
         sender: reply.sender as "user" | "admin",
         message: reply.message,
-        created_at: reply.created_at
+        created_at: reply.created_at,
+        file_url: reply.file_url
       }));
       
       setSupportReplies(prev => ({

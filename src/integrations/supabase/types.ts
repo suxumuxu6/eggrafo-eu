@@ -191,6 +191,7 @@ export type Database = {
         Row: {
           chatbot_message_id: string
           created_at: string
+          file_url: string | null
           id: string
           message: string
           sender: string
@@ -198,6 +199,7 @@ export type Database = {
         Insert: {
           chatbot_message_id: string
           created_at?: string
+          file_url?: string | null
           id?: string
           message: string
           sender: string
@@ -205,6 +207,7 @@ export type Database = {
         Update: {
           chatbot_message_id?: string
           created_at?: string
+          file_url?: string | null
           id?: string
           message?: string
           sender?: string
