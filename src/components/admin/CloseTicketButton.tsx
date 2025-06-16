@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sendEmailViaApi } from "@/utils/emailApi";
 
 interface CloseTicketButtonProps {
   chatId: string;
@@ -39,12 +40,11 @@ const CloseTicketButton: React.FC<CloseTicketButtonProps> = ({
 
       if (updateError) throw updateError;
 
-      // Send closure notification email
+      // Send closure notification email using the working email API
       try {
-        const formData = new FormData();
-        formData.append("email", email);
-        formData.append("subject", `Το αίτημά σας ${ticketCode} έχει κλείσει`);
-        formData.append("message", `Αγαπητέ/ή χρήστη,
+        const closureEmailData = {
+          subject: `Το αίτημά σας ${ticketCode} έχει κλείσει`,
+          body: `Αγαπητέ/ή χρήστη,
 
 Το αίτημά σας με κωδικό ${ticketCode} έχει κλείσει.
 
@@ -53,26 +53,11 @@ const CloseTicketButton: React.FC<CloseTicketButtonProps> = ({
 Σας ευχαριστούμε για την εμπιστοσύνη σας.
 
 Με εκτίμηση,
-Η ομάδα υποστήριξης eggrafo.work`);
-        formData.append("chatId", chatId);
-        formData.append("isAdminReply", "false");
+Η ομάδα υποστήριξης eggrafo.work`
+        };
 
-        const res = await fetch(
-          "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
-          {
-            method: "POST",
-            headers: {
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
-            },
-            body: formData,
-          }
-        );
-
-        if (!res.ok) {
-          console.warn("Failed to send closure email:", await res.text());
-        } else {
-          console.log("Closure notification email sent successfully");
-        }
+        await sendEmailViaApi(email, chatId, closureEmailData);
+        console.log("Closure notification email sent successfully");
       } catch (emailError) {
         console.warn("Failed to send closure email:", emailError);
       }
