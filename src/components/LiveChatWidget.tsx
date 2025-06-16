@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatToggleButton } from "./chat/ChatToggleButton";
@@ -140,9 +139,23 @@ export const LiveChatWidget: React.FC = () => {
     const ticketCode = generateSupportTicketCode();
     setSupportTicketCode(ticketCode);
     
-    const confirmationMessage = `Το αίτημά σας έχει καταχωρηθεί με επιτυχία!
+    const confirmationMessage = `✅ Το αίτημά σας έχει καταχωρηθεί με επιτυχία!
 
-Θα λάβετε ειδοποίηση στο email σας με οδηγίες πρόσβασης και όταν υπάρχει νέα απάντηση από την ομάδα υποστήριξης.
+📧 ΟΔΗΓΙΕΣ ΠΡΟΣΒΑΣΗΣ:
+
+1️⃣ Επισκεφτείτε τη σελίδα υποστήριξης: 
+   https://eggrafo.work/support
+
+2️⃣ Εισάγετε τα στοιχεία σας:
+   • Email: ${userEmail}
+   • Κωδικός: ${ticketCode}
+
+3️⃣ Θα μπορείτε να:
+   ✓ Δείτε την πρόοδο του αιτήματός σας
+   ✓ Λάβετε απαντήσεις από την ομάδα μας
+   ✓ Στείλετε επιπλέον μηνύματα
+
+🔔 Θα λάβετε ειδοποίηση στο email σας με αυτές τις οδηγίες και όταν υπάρχει νέα απάντηση από την ομάδα υποστήριξης.
 
 Ευχαριστούμε για την επικοινωνία!`;
     
