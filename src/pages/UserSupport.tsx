@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import UserSupportFileUpload from "@/components/support/UserSupportFileUpload";
-import { sendAdminNotificationForUserReply } from "@/utils/emailService";
+import { sendEmailViaApi } from "@/utils/emailApi";
 
 interface ChatMessage {
   sender: "bot" | "user" | "admin";
@@ -142,23 +143,25 @@ const UserSupport: React.FC = () => {
       // Add to local state
       setReplies(prev => [...prev, newReplyData]);
       
-      // Send notification to admin about user reply using new email service
+      // Send notification to admin about user reply using working email API
       console.log("Sending admin notification for user reply...");
       try {
-        const notificationSuccess = await sendAdminNotificationForUserReply(
-          email, 
-          ticketCode, 
-          chatId, 
-          newReply.trim()
-        );
+        const adminEmailData = {
+          subject: `Νέα απάντηση από χρήστη: ${ticketCode}`,
+          message: `Ο χρήστης έστειλε νέα απάντηση.
+
+Κωδικός αιτήματος: ${ticketCode}
+Email χρήστη: ${email}
+Χρόνος: ${new Date().toLocaleString('el-GR')}
+
+Μήνυμα χρήστη: "${newReply.trim()}"
+
+Μπορείτε να δείτε και να απαντήσετε στο αίτημα: https://eggrafo.work/admin-chatbot`
+        };
         
-        if (notificationSuccess) {
-          console.log("Admin notification sent successfully");
-          toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
-        } else {
-          console.error("Admin notification failed");
-          toast.success("Το μήνυμά σας εστάλη!");
-        }
+        await sendEmailViaApi("dldigiweb@gmail.com", chatId, adminEmailData);
+        console.log("Admin notification sent successfully");
+        toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
       } catch (notificationError) {
         console.error("Failed to send admin notification:", notificationError);
         toast.success("Το μήνυμά σας εστάλη!");
