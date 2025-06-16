@@ -50,11 +50,14 @@ export const saveChatToSupabase = async (
       ticketCode 
     });
 
+    // Convert messages to JSON format compatible with Supabase
+    const messagesJson = JSON.parse(JSON.stringify(messages));
+
     const { data, error } = await supabase
       .from('chatbot_messages')
       .insert({
         email: email,
-        messages: messages,
+        messages: messagesJson,
         support_ticket_code: ticketCode,
         ticket_status: 'active',
         status: 'unread',
