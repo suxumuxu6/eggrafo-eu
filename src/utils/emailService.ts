@@ -11,8 +11,13 @@ const sendDirectEmail = async (emailData: EmailData): Promise<boolean> => {
   try {
     console.log('Sending email directly via Resend API:', { to: emailData.to, subject: emailData.subject });
     
-    // Replace 're_your_actual_api_key_here' with your real Resend API key
-    const RESEND_API_KEY = 're_your_actual_api_key_here';
+    // Get Resend API key from environment (Supabase secrets)
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not configured');
+      return false;
+    }
     
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
