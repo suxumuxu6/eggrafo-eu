@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
@@ -12,21 +13,48 @@ const UploadPage: React.FC = () => {
   const navigate = useNavigate();
   const { uploadDocument, isUploading, uploadProgress, errorMessage } =
     useFileUpload();
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
+    // Περιμένουμε να ολοκληρωθεί το loading και στη συνέχεια κάνουμε τον έλεγχο
+    if (!loading && !hasCheckedAuth) {
       if (!isAuthenticated) {
         toast.error("Πρέπει να συνδεθείτε για πρόσβαση στη σελίδα.");
         navigate("/home");
       } else if (!isAdmin) {
-        toast.error("Πρέπει να είστε διαχειριστής για upload.");
-        navigate("/home");
+        // Περιμένουμε λίγο ακόμα για να είμαστε σίγουροι ότι ο έλεγχος isAdmin έχει ολοκληρωθεί
+        setTimeout(() => {
+          if (!isAdmin) {
+            toast.error("Πρέπει να είστε διαχειριστής για upload.");
+            navigate("/home");
+          }
+        }, 100);
       }
+      setHasCheckedAuth(true);
     }
-  }, [isAuthenticated, isAdmin, loading, navigate]);
+  }, [isAuthenticated, isAdmin, loading, navigate, hasCheckedAuth]);
 
-  if (loading || !isAuthenticated || !isAdmin) {
-    // Avoid flash while checking
+  // Reset hasCheckedAuth when loading changes (π.χ. όταν αλλάζει tab)
+  useEffect(() => {
+    if (loading) {
+      setHasCheckedAuth(false);
+    }
+  }, [loading]);
+
+  if (loading || !hasCheckedAuth) {
+    // Δείχνουμε loading state όσο ελέγχουμε τα δικαιώματα
+    return (
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Έλεγχος δικαιωμάτων...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !isAdmin) {
+    // Αυτό θα εκτελεστεί μόνο αν πραγματικά δεν έχουμε δικαιώματα
     return null;
   }
 
