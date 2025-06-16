@@ -1,108 +1,155 @@
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const ChatbotReply: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const chatId = searchParams.get("chat");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  
   const [conversation, setConversation] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [replyBody, setReplyBody] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
+  const [subject, setSubject] = useState("Απάντηση στο μήνυμά σας");
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    if (chatId) {
-      fetchConversation();
+    if (!chatId) {
+      toast.error("Δεν βρέθηκε ID συνομιλίας");
+      navigate("/");
+      return;
     }
+    fetchConversation();
   }, [chatId]);
 
   const fetchConversation = async () => {
-    if (!chatId) return;
-    
-    const { data, error } = await supabase
-      .from("chatbot_messages")
-      .select("*")
-      .eq("id", chatId)
-      .single();
-
-    if (!error && data) {
-      setConversation(data);
-      if (data.email) {
-        setEmail(data.email);
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatId || !email.trim() || !message.trim()) {
-      toast.error("Παρακαλώ συμπληρώστε όλα τα πεδία");
-      return;
-    }
-
-    setLoading(true);
     try {
-      // Use the send-chatbot-reply edge function
-      const formData = new FormData();
-      formData.append("email", "support@eggrafo.work"); // Send to support team
-      formData.append("subject", "Απάντηση Χρήστη από Chatbot");
-      formData.append("message", `Απάντηση από χρήστη: ${email}\n\nΜήνυμα:\n${message}\n\nChat ID: ${chatId}`);
-      formData.append("chatId", chatId);
+      const { data, error } = await supabase
+        .from("chatbot_messages")
+        .select("*")
+        .eq("id", chatId)
+        .single();
 
-      const response = await fetch(
-        "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const responseData = await response.json();
-
-      if (response.ok && responseData.success) {
-        setSubmitted(true);
-        toast.success("Η απάντησή σας στάλθηκε επιτυχώς!");
-      } else {
-        const errorMessage = responseData?.error || "Άγνωστο σφάλμα";
-        console.error("Server error:", errorMessage);
-        toast.error("Αποτυχία αποστολής: " + errorMessage);
+      if (error) throw error;
+      
+      setConversation(data);
+      // Pre-fill the sender email if available
+      if (data.email) {
+        setSenderEmail(data.email);
       }
-    } catch (err: any) {
-      console.error("Network/fetch error:", err);
-      toast.error("Αποτυχία αποστολής απάντησης");
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      toast.error("Αποτυχία φόρτωσης συνομιλίας");
+      navigate("/");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!chatId) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!senderEmail.trim() || !replyBody.trim()) {
+      toast.error("Παρακαλώ συμπληρώστε όλα τα πεδία");
+      return;
+    }
+
+    setSending(true);
+    try {
+      console.log("Sending reply...");
+      console.log("Email:", senderEmail);
+      console.log("Subject:", subject);
+      console.log("Body length:", replyBody.length);
+      console.log("Chat ID:", chatId);
+
+      // Get the current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const formData = new FormData();
+      formData.append("email", senderEmail);
+      formData.append("subject", subject);
+      formData.append("message", replyBody);
+      formData.append("chatId", chatId || "");
+      formData.append("isAdminReply", "false");
+
+      console.log("Making request to edge function...");
+      const res = await fetch(
+        "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
+        {
+          method: "POST",
+          headers: session ? {
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
+          } : {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
+          },
+          body: formData,
+        }
+      );
+
+      console.log("Response received:", {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok
+      });
+
+      const responseText = await res.text();
+      console.log("Raw response text:", responseText);
+
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log("Parsed response data:", responseData);
+      } catch (parseError) {
+        console.error("Failed to parse response JSON:", parseError);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+      }
+
+      if (res.ok && responseData.success) {
+        toast.success("Το μήνυμα εστάλη επιτυχώς!");
+        setReplyBody("");
+        // Optionally redirect back to main page or show success message
+        setTimeout(() => {
+          navigate("/");
+        }, 2000);
+      } else {
+        const errorMessage = responseData?.error || `HTTP ${res.status}: ${res.statusText}`;
+        console.error("Server returned error:", errorMessage);
+        toast.error("Σφάλμα αποστολής: " + errorMessage);
+      }
+    } catch (error: any) {
+      console.error("Error sending reply:", error);
+      toast.error("Αποτυχία αποστολής: " + (error.message || "Άγνωστο σφάλμα"));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="max-w-2xl mx-auto p-6">
+        <Card>
           <CardContent className="p-6">
-            <h1 className="text-xl font-semibold text-red-600 mb-2">Μη έγκυρος Σύνδεσμος</h1>
-            <p className="text-gray-600">Αυτός ο σύνδεσμος απάντησης δεν είναι έγκυρος ή έχει λήξει.</p>
+            <div className="text-center">Φόρτωση...</div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (submitted) {
+  if (!conversation) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <div className="text-green-600 text-5xl mb-4">✓</div>
-            <h1 className="text-xl font-semibold text-green-600 mb-2">Η Απάντηση Στάλθηκε!</h1>
-            <p className="text-gray-600">Ευχαριστούμε για την απάντησή σας. Η ομάδα μας θα την εξετάσει σύντομα.</p>
+      <div className="max-w-2xl mx-auto p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-red-500">Η συνομιλία δεν βρέθηκε</div>
           </CardContent>
         </Card>
       </div>
@@ -110,52 +157,66 @@ const ChatbotReply: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="max-w-2xl mx-auto p-6">
+      <Card>
         <CardHeader>
-          <CardTitle>Απάντηση στην Υποστήριξη Eggrafo.work</CardTitle>
-          <p className="text-sm text-gray-600">
-            Χρησιμοποιήστε αυτή τη φόρμα για να απαντήσετε στην ομάδα υποστήριξής μας σχετικά με τη συνομιλία σας με το chatbot.
-          </p>
+          <CardTitle>Απάντηση σε Συνομιλία</CardTitle>
         </CardHeader>
         <CardContent>
-          {conversation && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold mb-2">Αρχική Συνομιλία:</h3>
-              <div className="text-sm text-gray-600">
-                <p><strong>Ημερομηνία:</strong> {new Date(conversation.submitted_at).toLocaleString('el-GR')}</p>
-                <p><strong>Μηνύματα:</strong> {conversation.messages?.length || 0} μηνύματα</p>
+          {/* Show conversation messages */}
+          {conversation.messages && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-medium mb-3">Αρχική Συνομιλία:</h3>
+              <div className="space-y-2">
+                {conversation.messages.map((msg: any, idx: number) => (
+                  <div key={idx} className={`p-2 rounded ${msg.sender === 'user' ? 'bg-blue-100' : 'bg-green-100'}`}>
+                    <strong>{msg.sender === 'user' ? 'Χρήστης' : 'Bot'}:</strong> {msg.text}
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Το Email σας</label>
+              <label className="block text-sm font-medium mb-1">Email Παραλήπτη</label>
               <Input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                placeholder="email@example.com"
                 required
-                disabled={!!conversation?.email}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Η Απάντησή σας</label>
+              <label className="block text-sm font-medium mb-1">Θέμα</label>
+              <Input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Μήνυμα</label>
               <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                value={replyBody}
+                onChange={(e) => setReplyBody(e.target.value)}
                 placeholder="Γράψτε την απάντησή σας εδώ..."
                 rows={6}
                 required
               />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Αποστολή..." : "Αποστολή Απάντησης"}
-            </Button>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={sending}>
+                {sending ? "Αποστολή..." : "Αποστολή Απάντησης"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate("/")}>
+                Ακύρωση
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
