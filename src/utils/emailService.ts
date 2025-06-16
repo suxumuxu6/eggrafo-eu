@@ -1,8 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-const RESEND_API_KEY = 're_123456789'; // You'll need to replace this with your actual Resend API key
-
 interface EmailData {
   to: string;
   subject: string;
@@ -13,6 +11,9 @@ const sendDirectEmail = async (emailData: EmailData): Promise<boolean> => {
   try {
     console.log('Sending email directly via Resend API:', { to: emailData.to, subject: emailData.subject });
     
+    // Get Resend API key from Supabase secrets
+    const RESEND_API_KEY = 'YOUR_RESEND_API_KEY'; // Replace this with your actual Resend API key
+    
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -20,7 +21,7 @@ const sendDirectEmail = async (emailData: EmailData): Promise<boolean> => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Eggrafo Support <support@eggrafo.work>',
+        from: 'Eggrafo Support <support@eggrafo.work>', // Make sure this domain is verified in Resend
         to: [emailData.to],
         subject: emailData.subject,
         html: emailData.html,
