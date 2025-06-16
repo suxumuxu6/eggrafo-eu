@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,7 @@ const AdminAuthPage: React.FC = () => {
 
   React.useEffect(() => {
     if (!loading && isAuthenticated && isAdmin) {
-      navigate("/upload");
+      navigate("/admin-chatbot");
     }
   }, [isAuthenticated, isAdmin, loading, navigate]);
 
@@ -24,12 +25,15 @@ const AdminAuthPage: React.FC = () => {
     e.preventDefault();
     setFormLoading(true);
     try {
-      // No captchaToken required anymore
       const success = await signIn(email, password);
       if (success) {
         setEmail("");
         setPassword("");
+        // Navigation will be handled by the useEffect above
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed");
     } finally {
       setFormLoading(false);
     }
@@ -84,7 +88,7 @@ const AdminAuthPage: React.FC = () => {
               <Button
                 type="submit"
                 className="flex-1 bg-kb-purple hover:bg-kb-purple/90"
-                disabled={formLoading}
+                disabled={formLoading || loading}
               >
                 {formLoading ? "Logging in..." : "Login"}
               </Button>

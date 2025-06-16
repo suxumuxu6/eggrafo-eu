@@ -47,16 +47,26 @@ const UserSupport: React.FC = () => {
     setLoading(true);
 
     try {
+      console.log("Attempting to find ticket with:", { email: email.trim(), code: accessCode.trim() });
+      
       const { data: rawData, error } = await supabase
         .from("chatbot_messages")
         .select("*")
         .eq("email", email.trim())
         .eq("support_ticket_code", accessCode.trim())
-        .eq("ticket_status", "active")
         .single();
 
+      console.log("Query result:", { data: rawData, error });
+
       if (error || !rawData) {
-        toast.error("Δεν βρέθηκε ενεργό αίτημα με αυτά τα στοιχεία");
+        console.error("Error finding ticket:", error);
+        toast.error("Δεν βρέθηκε αίτημα με αυτά τα στοιχεία. Παρακαλώ ελέγξτε το email και τον κωδικό.");
+        return;
+      }
+
+      // Check if ticket is closed
+      if (rawData.ticket_status === 'closed') {
+        toast.error("Αυτό το αίτημα έχει κλείσει και δεν μπορείτε να προσθέσετε νέες απαντήσεις.");
         return;
       }
 
@@ -221,6 +231,9 @@ const UserSupport: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold">Αίτημα Υποστήριξης</h1>
             <p className="text-gray-600">Κωδικός: {conversation?.support_ticket_code}</p>
+            <p className="text-sm text-gray-500">
+              Κατάσταση: {conversation?.ticket_status === 'closed' ? 'Κλεισμένο' : 'Ενεργό'}
+            </p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             Αποσύνδεση
@@ -288,23 +301,33 @@ const UserSupport: React.FC = () => {
                 )}
               </div>
 
-              <form onSubmit={handleSubmitReply} className="space-y-3">
-                <Textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Γράψτε την απάντησή σας..."
-                  rows={3}
-                  required
-                />
-                <UserSupportFileUpload
-                  file={replyFile}
-                  onFileSelect={setReplyFile}
-                  disabled={submitting}
-                />
-                <Button type="submit" disabled={submitting || !newMessage.trim()}>
-                  {submitting ? "Αποστολή..." : "Αποστολή Απάντησης"}
-                </Button>
-              </form>
+              {conversation?.ticket_status !== 'closed' && (
+                <form onSubmit={handleSubmitReply} className="space-y-3">
+                  <Textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Γράψτε την απάντησή σας..."
+                    rows={3}
+                    required
+                  />
+                  <UserSupportFileUpload
+                    file={replyFile}
+                    onFileSelect={setReplyFile}
+                    disabled={submitting}
+                  />
+                  <Button type="submit" disabled={submitting || !newMessage.trim()}>
+                    {submitting ? "Αποστολή..." : "Αποστολή Απάντησης"}
+                  </Button>
+                </form>
+              )}
+
+              {conversation?.ticket_status === 'closed' && (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <p className="text-red-800 text-sm">
+                    Αυτό το αίτημα έχει κλείσει. Δεν μπορείτε να προσθέσετε νέες απαντήσεις.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

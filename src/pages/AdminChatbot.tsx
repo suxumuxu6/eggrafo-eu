@@ -14,9 +14,9 @@ import { useSupportReplies } from "@/hooks/useSupportReplies";
 import { useEmailReply } from "@/hooks/useEmailReply";
 
 const AdminChatbot: React.FC = () => {
-  const { isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, loading } = useAuth();
   const [data, setData] = useState<ChatbotMessage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const { supportReplies, fetchSupportReplies } = useSupportReplies();
   
   const {
@@ -47,35 +47,56 @@ const AdminChatbot: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetchMessages();
-  }, []);
+    if (!loading && isAuthenticated && isAdmin) {
+      fetchMessages();
+    }
+  }, [loading, isAuthenticated, isAdmin]);
 
   const fetchMessages = async () => {
-    setLoading(true);
-    const { data: rawData, error } = await supabase
-      .from("chatbot_messages")
-      .select("*")
-      .order("submitted_at", { ascending: false });
-
-    if (!error && rawData) {
-      const transformedData: ChatbotMessage[] = rawData.map(item => ({
-        id: item.id,
-        email: item.email,
-        messages: Array.isArray(item.messages) ? item.messages as Array<{ sender: "user" | "bot"; text: string; imageUrl?: string }> : [],
-        submitted_at: item.submitted_at || '',
-        status: (item.status as "unread" | "read") || "unread",
-        last_admin_reply_at: item.last_admin_reply_at,
-        admin_reply_count: item.admin_reply_count || 0,
-        support_ticket_code: item.support_ticket_code,
-        ticket_status: item.ticket_status
-      }));
+    setDataLoading(true);
+    try {
+      console.log("Fetching chatbot messages...");
       
-      setData(transformedData);
-      transformedData.forEach(msg => {
-        if (msg.id) fetchSupportReplies(msg.id);
-      });
+      const { data: rawData, error } = await supabase
+        .from("chatbot_messages")
+        .select("*")
+        .order("submitted_at", { ascending: false });
+
+      console.log("Fetched data:", { data: rawData, error });
+
+      if (error) {
+        console.error("Error fetching messages:", error);
+        toast.error("Σφάλμα κατά τη φόρτωση των μηνυμάτων");
+        return;
+      }
+
+      if (rawData) {
+        const transformedData: ChatbotMessage[] = rawData.map(item => ({
+          id: item.id,
+          email: item.email || '',
+          messages: Array.isArray(item.messages) ? item.messages as Array<{ sender: "user" | "bot"; text: string; imageUrl?: string }> : [],
+          submitted_at: item.submitted_at || '',
+          status: (item.status as "unread" | "read") || "unread",
+          last_admin_reply_at: item.last_admin_reply_at,
+          admin_reply_count: item.admin_reply_count || 0,
+          support_ticket_code: item.support_ticket_code || '',
+          ticket_status: item.ticket_status || 'active'
+        }));
+        
+        console.log("Transformed data:", transformedData);
+        setData(transformedData);
+        
+        // Fetch support replies for each message
+        transformedData.forEach(msg => {
+          if (msg.id) fetchSupportReplies(msg.id);
+        });
+      }
+    } catch (error) {
+      console.error("Error in fetchMessages:", error);
+      toast.error("Σφάλμα κατά τη φόρτωση των μηνυμάτων");
+    } finally {
+      setDataLoading(false);
     }
-    setLoading(false);
   };
 
   const openRepliesModal = async (chatId: string) => {
@@ -126,10 +147,21 @@ const AdminChatbot: React.FC = () => {
     }
   };
 
-  if (!isAdmin) {
+  // Show loading while checking authentication
+  if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-screen text-gray-400">
-        Admin access only
+        Loading...
+      </div>
+    );
+  }
+
+  // Redirect to auth if not authenticated or not admin
+  if (!isAuthenticated || !isAdmin) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen text-gray-400">
+        <p>Admin access only</p>
+        <p className="text-sm mt-2">Please log in as an administrator to access this page.</p>
       </div>
     );
   }
@@ -173,10 +205,13 @@ const AdminChatbot: React.FC = () => {
       <Card className="bg-slate-50 border border-blue-200 shadow-sm">
         <CardHeader>
           <CardTitle>Chatbot Conversations</CardTitle>
+          <div className="text-sm text-gray-600">
+            Total conversations: {data.length}
+          </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="w-full flex justify-center items-center py-24">Loading...</div>
+          {dataLoading ? (
+            <div className="w-full flex justify-center items-center py-24">Loading conversations...</div>
           ) : (
             <ConversationsList
               data={data}
