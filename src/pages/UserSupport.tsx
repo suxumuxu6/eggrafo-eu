@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { UserSupportFileUpload } from "@/components/support/UserSupportFileUpload";
+import UserSupportFileUpload from "@/components/support/UserSupportFileUpload";
 import { sendAdminNotificationForUserReply } from "@/utils/chatUtils";
 
 interface ChatMessage {
@@ -56,11 +55,13 @@ const UserSupport: React.FC = () => {
         return;
       }
 
-      setConversation(data.messages || []);
+      // Properly cast messages with type checking
+      const messages = Array.isArray(data.messages) ? data.messages as ChatMessage[] : [];
+      setConversation(messages);
       setChatId(data.id);
       setConversationFound(true);
       
-      // Fetch replies
+      // Fetch replies with proper type casting
       const { data: repliesData, error: repliesError } = await supabase
         .from("support_replies")
         .select("*")
@@ -68,7 +69,15 @@ const UserSupport: React.FC = () => {
         .order("created_at", { ascending: true });
 
       if (!repliesError && repliesData) {
-        setReplies(repliesData);
+        // Transform and type-cast the replies data
+        const typedReplies: SupportReply[] = repliesData.map(reply => ({
+          id: reply.id,
+          message: reply.message,
+          sender: reply.sender as "user" | "admin",
+          created_at: reply.created_at,
+          file_url: reply.file_url
+        }));
+        setReplies(typedReplies);
       }
 
       toast.success("Συνομιλία βρέθηκε!");
@@ -103,8 +112,17 @@ const UserSupport: React.FC = () => {
         return;
       }
 
+      // Type-cast the returned data
+      const newReplyData: SupportReply = {
+        id: data.id,
+        message: data.message,
+        sender: data.sender as "user" | "admin",
+        created_at: data.created_at,
+        file_url: data.file_url
+      };
+
       // Add to local state
-      setReplies(prev => [...prev, data]);
+      setReplies(prev => [...prev, newReplyData]);
       
       // Send notification to admin about user reply
       await sendAdminNotificationForUserReply(email, ticketCode, chatId, newReply.trim());
