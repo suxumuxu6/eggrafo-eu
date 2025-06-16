@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,12 +34,42 @@ const CATEGORIES = [
   }
 ];
 
+const STORAGE_KEY = 'upload_form_data';
+
 const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadProgress, errorMessage }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [category, setCategory] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
+
+  // Load form data from localStorage on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setTitle(parsed.title || '');
+        setDescription(parsed.description || '');
+        setTags(parsed.tags || '');
+        setCategory(parsed.category || '');
+        // Note: File cannot be restored from localStorage due to security restrictions
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const formData = {
+      title,
+      description,
+      tags,
+      category
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+  }, [title, description, tags, category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,13 +80,20 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
     if (!category) {
       return;
     }
-    await onSubmit({
+    
+    const success = await onSubmit({
       title,
       description,
       tags,
       category,
       file
     });
+
+    // Clear saved data on successful submission
+    if (success) {
+      localStorage.removeItem(STORAGE_KEY);
+      resetForm();
+    }
   };
 
   const resetForm = () => {
@@ -65,6 +102,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
     setTags('');
     setCategory('');
     setFile(null);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
@@ -150,13 +188,23 @@ const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isUploading, uploadPr
         uploadProgress={uploadProgress}
       />
 
-      <Button 
-        type="submit" 
-        className="w-full bg-blue-600 hover:bg-blue-700"
-        disabled={isUploading || !file || !category}
-      >
-        {isUploading ? 'Uploading...' : 'Upload Document'}
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          type="submit" 
+          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          disabled={isUploading || !file || !category}
+        >
+          {isUploading ? 'Uploading...' : 'Upload Document'}
+        </Button>
+        <Button 
+          type="button" 
+          variant="outline"
+          onClick={resetForm}
+          disabled={isUploading}
+        >
+          Clear Form
+        </Button>
+      </div>
     </form>
   );
 };

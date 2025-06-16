@@ -17,10 +17,6 @@ const Navbar: React.FC = () => {
 
   console.log('Navbar render:', { isAuthenticated, isAdmin, loading, hasUser: !!user });
 
-  const handleOpenLogin = () => {
-    navigate("/auth");
-  };
-
   return (
     <nav className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,14 +58,6 @@ const Navbar: React.FC = () => {
                   <span>Έξοδος</span>
                 </Button>
               </>
-            ) : !isAuthenticated ? (
-              <Button 
-                variant="outline" 
-                onClick={handleOpenLogin}
-                className="flex items-center gap-2"
-              >
-                <span>Σύνδεση</span>
-              </Button>
             ) : null}
           </div>
         </div>

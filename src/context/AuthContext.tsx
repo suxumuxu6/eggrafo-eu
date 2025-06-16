@@ -166,6 +166,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setSession(null);
     toast.info("Αποσυνδεθήκατε");
+    // Redirect to home page
+    window.location.href = '/';
   };
 
   const contextValue = {
