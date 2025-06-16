@@ -143,31 +143,25 @@ export const LiveChatWidget: React.FC = () => {
     const ticketCode = generateSupportTicketCode();
     setSupportTicketCode(ticketCode);
     
-    const supportInstructions = `Ο κωδικός πρόσβασης για το αίτημά σας: ${ticketCode}
+    const confirmationMessage = `Το αίτημά σας έχει καταχωρηθεί με επιτυχία!
 
-ΟΔΗΓΙΕΣ ΠΡΟΣΒΑΣΗΣ:
+Κωδικός αιτήματος: ${ticketCode}
 
-1. Επισκεφτείτε τη σελίδα υποστήριξης: https://eggrafo.work/support
+Θα λάβετε ειδοποίηση στο email σας με οδηγίες πρόσβασης και όταν υπάρχει νέα απάντηση από την ομάδα υποστήριξης.
 
-2. Εισάγετε τα στοιχεία σας:
-   • Email: ${userEmail}
-   • Κωδικός: ${ticketCode}
-
-3. Θα μπορείτε να δείτε την πρόοδο του αιτήματός σας και να λάβετε απαντήσεις από την ομάδα μας.
-
-Θα λάβετε ειδοποίηση στο email σας όταν υπάρχει νέα απάντηση.`;
+Ευχαριστούμε για την επικοινωνία!`;
     
     setTimeout(() => {
       setMessages(msgs => [...msgs, { 
         sender: "bot", 
-        text: supportInstructions
+        text: confirmationMessage
       }]);
       saveChatToSupabase([
         ...messages, 
         { sender: "user", text: userEmail }, 
         { 
           sender: "bot", 
-          text: supportInstructions
+          text: confirmationMessage
         }
       ], userEmail, ticketCode);
       const nextStep = step === "techIssue_waitingForEmail" ? "techIssue_ended" : "ended";
