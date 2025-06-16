@@ -104,29 +104,9 @@ serve(async (req: Request) => {
       });
     }
 
-    // Save reply to database using service role key for bypassing RLS
-    if (chatId) {
-      const supabaseServiceRole = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-
-      const { error: dbError } = await supabaseServiceRole
-        .from("chatbot_replies")
-        .insert({
-          chatbot_message_id: chatId,
-          email: email,
-          subject: subject,
-          body: message,
-          file_url: null,
-        });
-
-      if (dbError) {
-        console.error("Database error:", dbError);
-      } else {
-        console.log("Reply saved to database successfully");
-      }
-    }
+    // For user replies from the ChatbotReply page, we don't need to save to the database
+    // The email itself serves as the record of the user's response
+    // Only admin replies from the admin panel should be saved to chatbot_replies table
 
     console.log("Email sent successfully:", sendResult.data?.id);
     return new Response(JSON.stringify({ 
