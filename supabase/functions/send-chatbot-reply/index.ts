@@ -57,12 +57,11 @@ serve(async (req: Request) => {
     }
 
     // Use your verified email address or a domain you've verified with Resend
-    // Replace "gemhdesk@gmail.com" with your verified domain email
-    const fromEmail = Deno.env.get("FROM_EMAIL") || "gemhdesk@gmail.com";
+    const fromEmail = Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev";
     
-    // Create reply link - fix the URL construction
-    const baseUrl = "https://eggrafo.work"; // Change to your actual domain
-    const replyLink = chatId ? `${baseUrl}/reply?chat=${chatId}` : null;
+    // Create reply link - use the request origin to get the correct base URL
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || "https://eggrafo.work";
+    const replyLink = chatId ? `${origin}/reply?chat=${chatId}` : null;
     
     // Add signature and reply link to the message
     let messageWithSignature = `${message}\n\n---\nSupport Team - Eggrafo.work`;
