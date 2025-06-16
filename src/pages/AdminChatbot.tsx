@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -99,6 +100,14 @@ const AdminChatbot: React.FC = () => {
       console.log("Body length:", replyBody.length);
       console.log("Chat ID:", replyTo.chatId);
       
+      // Get the current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Authentication required. Please log in again.");
+        return;
+      }
+      
       const formData = new FormData();
       formData.append("email", replyTo.email);
       formData.append("subject", replySubject);
@@ -115,6 +124,10 @@ const AdminChatbot: React.FC = () => {
         "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
         {
           method: "POST",
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
+          },
           body: formData,
         }
       );
