@@ -50,28 +50,52 @@ export const saveChatToSupabase = async (
       ticketCode 
     });
 
-    // Convert messages to JSON format compatible with Supabase
-    const messagesJson = JSON.parse(JSON.stringify(messages));
+    // Convert messages to a plain object structure that Supabase can handle
+    const messagesData = messages.map(msg => ({
+      sender: msg.sender,
+      text: msg.text,
+      ...(msg.imageUrl && { imageUrl: msg.imageUrl })
+    }));
+
+    console.log('Converted messages data:', messagesData);
+
+    const insertData = {
+      email: email.trim(),
+      messages: messagesData,
+      support_ticket_code: ticketCode.trim(),
+      ticket_status: 'active',
+      status: 'unread',
+      submitted_at: new Date().toISOString()
+    };
+
+    console.log('Insert data:', insertData);
 
     const { data, error } = await supabase
       .from('chatbot_messages')
-      .insert({
-        email: email,
-        messages: messagesJson,
-        support_ticket_code: ticketCode,
-        ticket_status: 'active',
-        status: 'unread',
-        submitted_at: new Date().toISOString()
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
-      console.error('Error saving chat:', error);
+      console.error('Supabase insert error:', error);
       return false;
     }
 
     console.log('Chat saved successfully:', data);
+
+    // Verify the data was saved by trying to fetch it
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('chatbot_messages')
+      .select('*')
+      .eq('support_ticket_code', ticketCode.trim())
+      .eq('email', email.trim())
+      .single();
+
+    if (verifyError) {
+      console.error('Verification error:', verifyError);
+    } else {
+      console.log('Verification successful:', verifyData);
+    }
 
     // Send email notification to admin about new ticket
     try {

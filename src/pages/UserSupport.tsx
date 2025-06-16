@@ -46,21 +46,56 @@ const UserSupport: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
+    const trimmedEmail = email.trim();
+    const trimmedCode = accessCode.trim();
+
     try {
-      console.log("Attempting to find ticket with:", { email: email.trim(), code: accessCode.trim() });
+      console.log("Attempting to find ticket with:", { 
+        email: trimmedEmail, 
+        code: trimmedCode 
+      });
+      
+      // First, let's check what tickets exist
+      const { data: allTickets, error: allError } = await supabase
+        .from("chatbot_messages")
+        .select("email, support_ticket_code, ticket_status")
+        .limit(10);
+
+      console.log("All tickets in database:", allTickets);
+      console.log("All tickets error:", allError);
       
       const { data: rawData, error } = await supabase
         .from("chatbot_messages")
         .select("*")
-        .eq("email", email.trim())
-        .eq("support_ticket_code", accessCode.trim())
-        .single();
+        .eq("email", trimmedEmail)
+        .eq("support_ticket_code", trimmedCode)
+        .maybeSingle();
 
       console.log("Query result:", { data: rawData, error });
 
-      if (error || !rawData) {
-        console.error("Error finding ticket:", error);
-        toast.error("Δεν βρέθηκε αίτημα με αυτά τα στοιχεία. Παρακαλώ ελέγξτε το email και τον κωδικό.");
+      if (error) {
+        console.error("Database error:", error);
+        toast.error("Σφάλμα βάσης δεδομένων: " + error.message);
+        return;
+      }
+
+      if (!rawData) {
+        console.error("No ticket found with provided credentials");
+        
+        // Let's check if there's a ticket with just the code
+        const { data: codeOnlyData } = await supabase
+          .from("chatbot_messages")
+          .select("email, support_ticket_code")
+          .eq("support_ticket_code", trimmedCode)
+          .maybeSingle();
+        
+        if (codeOnlyData) {
+          console.log("Found ticket with code but different email:", codeOnlyData);
+          toast.error("Βρέθηκε αίτημα με αυτόν τον κωδικό αλλά με διαφορετικό email. Παρακαλώ ελέγξτε το email σας.");
+        } else {
+          console.log("No ticket found with this code at all");
+          toast.error("Δεν βρέθηκε αίτημα με αυτά τα στοιχεία. Παρακαλώ ελέγξτε το email και τον κωδικό.");
+        }
         return;
       }
 
@@ -82,13 +117,15 @@ const UserSupport: React.FC = () => {
         submitted_at: rawData.submitted_at || ''
       };
 
+      console.log("Transformed conversation data:", transformedData);
+
       setConversation(transformedData);
       setIsAuthenticated(true);
       await fetchReplies(transformedData.id);
       toast.success("Επιτυχής σύνδεση!");
     } catch (error) {
       console.error("Error authenticating:", error);
-      toast.error("Σφάλμα κατά τη σύνδεση");
+      toast.error("Σφάλμα κατά τη σύνδεση: " + (error as Error).message);
     } finally {
       setLoading(false);
     }
