@@ -150,7 +150,8 @@ Email χρήστη: ${email}
 
 Μήνυμα χρήστη: "${newReply.trim()}"
 
-Μπορείτε να δείτε και να απαντήσετε στο αίτημα: https://eggrafo.work/admin-chatbot`
+Μπορείτε να δείτε και να απαντήσετε στο αίτημα: https://eggrafo.work/admin-chatbot`,
+          file: null
         };
         
         await sendEmailViaApi("dldigiweb@gmail.com", chatId, adminEmailData);

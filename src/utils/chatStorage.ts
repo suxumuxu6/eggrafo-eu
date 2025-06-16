@@ -65,7 +65,8 @@ export const saveChatToSupabase = async (
 Email χρήστη: ${email}
 Χρόνος: ${new Date().toLocaleString('el-GR')}
 
-Μπορείτε να δείτε το αίτημα στο admin panel: https://eggrafo.work/admin-chatbot`
+Μπορείτε να δείτε το αίτημα στο admin panel: https://eggrafo.work/admin-chatbot`,
+        file: null
       };
       
       await sendEmailViaApi("dldigiweb@gmail.com", data.id, adminEmailData);
@@ -97,7 +98,8 @@ Email χρήστη: ${email}
 Θα λάβετε ειδοποίηση στο email σας όταν υπάρχει νέα απάντηση.
 
 Με εκτίμηση,
-Η ομάδα υποστήριξης eggrafo.work`
+Η ομάδα υποστήριξης eggrafo.work`,
+        file: null
       };
       
       await sendEmailViaApi(email, data.id, userEmailData);

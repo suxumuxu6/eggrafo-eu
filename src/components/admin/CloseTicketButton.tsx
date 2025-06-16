@@ -53,7 +53,8 @@ const CloseTicketButton: React.FC<CloseTicketButtonProps> = ({
 Σας ευχαριστούμε για την εμπιστοσύνη σας.
 
 Με εκτίμηση,
-Η ομάδα υποστήριξης eggrafo.work`
+Η ομάδα υποστήριξης eggrafo.work`,
+          file: null
         };
 
         await sendEmailViaApi(email, chatId, closureEmailData);
