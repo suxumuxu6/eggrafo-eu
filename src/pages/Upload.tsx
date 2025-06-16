@@ -11,38 +11,39 @@ import { DocumentFormData } from "../components/upload/UploadForm";
 const UploadPage: React.FC = () => {
   const { isAuthenticated, isAdmin, loading, user } = useAuth();
   const navigate = useNavigate();
-  const { uploadDocument, isUploading, uploadProgress, errorMessage } =
-    useFileUpload();
-  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+  const { uploadDocument, isUploading, uploadProgress, errorMessage } = useFileUpload();
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
+
+  console.log('Upload page render:', { isAuthenticated, isAdmin, loading, hasUser: !!user });
 
   useEffect(() => {
-    // Περιμένουμε να ολοκληρωθεί το loading και στη συνέχεια κάνουμε τον έλεγχο
-    if (!loading && !hasCheckedAuth) {
-      if (!isAuthenticated) {
+    // Wait for auth to load completely
+    if (!loading) {
+      console.log('Auth loading complete, checking permissions');
+      
+      // Check if user is not authenticated
+      if (!isAuthenticated || !user) {
+        console.log('User not authenticated, redirecting to home');
         toast.error("Πρέπει να συνδεθείτε για πρόσβαση στη σελίδα.");
         navigate("/home");
-      } else if (!isAdmin) {
-        // Περιμένουμε λίγο ακόμα για να είμαστε σίγουροι ότι ο έλεγχος isAdmin έχει ολοκληρωθεί
-        setTimeout(() => {
-          if (!isAdmin) {
-            toast.error("Πρέπει να είστε διαχειριστής για upload.");
-            navigate("/home");
-          }
-        }, 100);
+        return;
       }
-      setHasCheckedAuth(true);
-    }
-  }, [isAuthenticated, isAdmin, loading, navigate, hasCheckedAuth]);
 
-  // Reset hasCheckedAuth when loading changes (π.χ. όταν αλλάζει tab)
-  useEffect(() => {
-    if (loading) {
-      setHasCheckedAuth(false);
-    }
-  }, [loading]);
+      // Check if user is not admin
+      if (!isAdmin) {
+        console.log('User not admin, redirecting to home');
+        toast.error("Πρέπει να είστε διαχειριστής για upload.");
+        navigate("/home");
+        return;
+      }
 
-  if (loading || !hasCheckedAuth) {
-    // Δείχνουμε loading state όσο ελέγχουμε τα δικαιώματα
+      console.log('User is authenticated admin, allowing access');
+      setAuthCheckComplete(true);
+    }
+  }, [isAuthenticated, isAdmin, loading, user, navigate]);
+
+  // Show loading while auth is being checked
+  if (loading || !authCheckComplete) {
     return (
       <div className="min-h-screen bg-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -53,12 +54,11 @@ const UploadPage: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated || !isAdmin) {
-    // Αυτό θα εκτελεστεί μόνο αν πραγματικά δεν έχουμε δικαιώματα
+  // Final safety check - this should not render if user doesn't have proper permissions
+  if (!isAuthenticated || !isAdmin || !user) {
     return null;
   }
 
-  // Handle document upload with the correct type
   const handleUpload = async (formData: DocumentFormData) => {
     return await uploadDocument(formData);
   };
