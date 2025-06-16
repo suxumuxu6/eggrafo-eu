@@ -15,6 +15,7 @@ Email χρήστη: ${email}
     formData.append("chatId", chatId);
     formData.append("isAdminReply", "false");
 
+    console.log("Making request to send-chatbot-reply function...");
     const adminRes = await fetch(
       "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
       {
@@ -26,14 +27,19 @@ Email χρήστη: ${email}
       }
     );
 
+    console.log("Admin notification response status:", adminRes.status);
+    
     if (!adminRes.ok) {
       const errorText = await adminRes.text();
-      console.warn("Failed to send admin notification:", adminRes.status, errorText);
+      console.error("Failed to send admin notification:", adminRes.status, errorText);
+      throw new Error(`Admin notification failed: ${adminRes.status} - ${errorText}`);
     } else {
-      console.log("Admin notification sent successfully");
+      const responseData = await adminRes.json();
+      console.log("Admin notification sent successfully:", responseData);
     }
   } catch (emailError) {
-    console.warn("Failed to send admin notification:", emailError);
+    console.error("Failed to send admin notification:", emailError);
+    throw emailError;
   }
 };
 
@@ -64,6 +70,7 @@ export const sendUserNotificationForNewTicket = async (email: string, ticketCode
     userFormData.append("chatId", chatId);
     userFormData.append("isAdminReply", "false");
 
+    console.log("Making request to send user notification...");
     const userRes = await fetch(
       "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
       {
@@ -75,14 +82,19 @@ export const sendUserNotificationForNewTicket = async (email: string, ticketCode
       }
     );
 
+    console.log("User notification response status:", userRes.status);
+    
     if (!userRes.ok) {
       const errorText = await userRes.text();
-      console.warn("Failed to send user notification:", userRes.status, errorText);
+      console.error("Failed to send user notification:", userRes.status, errorText);
+      throw new Error(`User notification failed: ${userRes.status} - ${errorText}`);
     } else {
-      console.log("User notification sent successfully");
+      const responseData = await userRes.json();
+      console.log("User notification sent successfully:", responseData);
     }
   } catch (emailError) {
-    console.warn("Failed to send user notification:", emailError);
+    console.error("Failed to send user notification:", emailError);
+    throw emailError;
   }
 };
 
@@ -104,6 +116,7 @@ Email χρήστη: ${email}
     formData.append("chatId", chatId);
     formData.append("isAdminReply", "false");
 
+    console.log("Making request to send admin reply notification...");
     const adminRes = await fetch(
       "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
       {
@@ -115,13 +128,18 @@ Email χρήστη: ${email}
       }
     );
 
+    console.log("Admin reply notification response status:", adminRes.status);
+    
     if (!adminRes.ok) {
       const errorText = await adminRes.text();
-      console.warn("Failed to send admin notification for user reply:", adminRes.status, errorText);
+      console.error("Failed to send admin notification for user reply:", adminRes.status, errorText);
+      throw new Error(`Admin reply notification failed: ${adminRes.status} - ${errorText}`);
     } else {
-      console.log("Admin notification for user reply sent successfully");
+      const responseData = await adminRes.json();
+      console.log("Admin notification for user reply sent successfully:", responseData);
     }
   } catch (emailError) {
-    console.warn("Failed to send admin notification for user reply:", emailError);
+    console.error("Failed to send admin notification for user reply:", emailError);
+    throw emailError;
   }
 };

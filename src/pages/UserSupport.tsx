@@ -148,14 +148,15 @@ const UserSupport: React.FC = () => {
       try {
         await sendAdminNotificationForUserReply(email, ticketCode, chatId, newReply.trim());
         console.log("Admin notification sent successfully");
+        toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
       } catch (notificationError) {
         console.error("Failed to send admin notification:", notificationError);
         // Don't fail the whole operation if notification fails
+        toast.success("Το μήνυμά σας εστάλη!");
       }
       
       setNewReply("");
       setUploadedFile(null);
-      toast.success("Το μήνυμά σας εστάλη!");
     } catch (error) {
       console.error("Error sending reply:", error);
       toast.error("Σφάλμα αποστολής μηνύματος.");

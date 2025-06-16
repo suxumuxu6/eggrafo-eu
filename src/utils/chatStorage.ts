@@ -48,9 +48,19 @@ export const saveChatToSupabase = async (
 
     console.log('Chat saved successfully:', data);
 
-    // Send email notifications
-    await sendAdminNotificationForNewTicket(email, ticketCode, data.id);
-    await sendUserNotificationForNewTicket(email, ticketCode, data.id);
+    // Send email notifications with proper error handling
+    try {
+      console.log('Starting to send notifications...');
+      await sendAdminNotificationForNewTicket(email, ticketCode, data.id);
+      console.log('Admin notification completed');
+      await sendUserNotificationForNewTicket(email, ticketCode, data.id);
+      console.log('User notification completed');
+      console.log('Both notifications sent successfully');
+    } catch (notificationError) {
+      console.error('Notification sending failed:', notificationError);
+      // Don't fail the entire save operation if notifications fail
+      // The chat is already saved successfully
+    }
 
     return true;
   } catch (error) {
