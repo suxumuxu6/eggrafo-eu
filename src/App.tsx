@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import AdminAuthPage from "./pages/AdminAuth";
 import AdminChatbot from "./pages/AdminChatbot";
 import Navbar from "@/components/Navbar";
 import ChatbotReply from "@/pages/ChatbotReply";
+import UserSupport from "@/pages/UserSupport";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,7 @@ function App() {
               <Route path="/payment-cancel" element={<PaymentCancel />} />
               <Route path="/admin-chatbot" element={<AdminChatbot />} />
               <Route path="/reply" element={<ChatbotReply />} />
+              <Route path="/support" element={<UserSupport />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

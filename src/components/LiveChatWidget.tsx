@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,16 @@ const uploadImageToSupabase = async (file: File): Promise<string | null> => {
   return data?.publicUrl || null;
 };
 
+// Helper to generate support ticket code
+const generateSupportTicketCode = (): string => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 export const LiveChatWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,6 +56,7 @@ export const LiveChatWidget: React.FC = () => {
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [supportTicketCode, setSupportTicketCode] = useState<string>("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,6 +71,7 @@ export const LiveChatWidget: React.FC = () => {
       setEmailInput("");
       setImageFile(null);
       setImagePreviewUrl(null);
+      setSupportTicketCode("");
     }
   }, [open]);
   useEffect(() => {
@@ -164,19 +177,36 @@ export const LiveChatWidget: React.FC = () => {
     const userEmail = emailInput;
     setMessages(msgs => [...msgs, { sender: "user", text: userEmail }]);
     setEmailInput("");
+    
+    // Generate support ticket code
+    const ticketCode = generateSupportTicketCode();
+    setSupportTicketCode(ticketCode);
+    
     setTimeout(() => {
-      setMessages(msgs => [...msgs, { sender: "bot", text: "Τέλος - Αποστολή" }]);
-      saveChatToSupabase([...messages, { sender: "user", text: userEmail }, { sender: "bot", text: "Τέλος - Αποστολή" }], userEmail);
+      setMessages(msgs => [...msgs, { 
+        sender: "bot", 
+        text: `Ο κωδικός πρόσβασης για το αίτημά σας: ${ticketCode}\n\nΜπορείτε να παρακολουθήσετε την πρόοδο του αιτήματός σας στη σελίδα υποστήριξης χρησιμοποιώντας το email σας και αυτόν τον κωδικό.` 
+      }]);
+      saveChatToSupabase([
+        ...messages, 
+        { sender: "user", text: userEmail }, 
+        { 
+          sender: "bot", 
+          text: `Ο κωδικός πρόσβασης για το αίτημά σας: ${ticketCode}\n\nΜπορείτε να παρακολουθήσετε την πρόοδο του αιτήματός σας στη σελίδα υποστήριξης χρησιμοποιώντας το email σας και αυτόν τον κωδικό.` 
+        }
+      ], userEmail, ticketCode);
       const nextStep = step === "techIssue_waitingForEmail" ? "techIssue_ended" : "ended";
       setStep(nextStep as ChatStep);
     }, 500);
   };
 
-  const saveChatToSupabase = async (finalMessages: ChatMessage[], email: string) => {
+  const saveChatToSupabase = async (finalMessages: ChatMessage[], email: string, ticketCode: string) => {
     try {
       await supabase.from("chatbot_messages").insert({
         email: email || null,
-        messages: finalMessages as unknown as import("@/integrations/supabase/types").Json
+        messages: finalMessages as unknown as import("@/integrations/supabase/types").Json,
+        support_ticket_code: ticketCode,
+        ticket_status: "active"
       });
     } catch (err) {
       console.error("Failed to save chatbot conversation:", err);
@@ -192,6 +222,7 @@ export const LiveChatWidget: React.FC = () => {
       setEmailInput("");
       setImageFile(null);
       setImagePreviewUrl(null);
+      setSupportTicketCode("");
     }, 300);
   };
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -215,6 +246,7 @@ export const LiveChatWidget: React.FC = () => {
     setEmailInput("");
     setImageFile(null);
     setImagePreviewUrl(null);
+    setSupportTicketCode("");
   };
 
   // Image file select handler
@@ -255,7 +287,7 @@ export const LiveChatWidget: React.FC = () => {
               <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`rounded-xl px-3 py-2 text-sm max-w-[85%] mt-1 mb-1 ${msg.sender === "user" ? "bg-blue-100 text-blue-900" : "bg-gray-100 text-gray-700"}`}>
                   {msg.text && (
-                    <div>
+                    <div className="whitespace-pre-line">
                       {msg.text}
                     </div>
                   )}
@@ -320,7 +352,14 @@ export const LiveChatWidget: React.FC = () => {
                 <Button className="self-end" type="submit" disabled={!isEmailValid}>OK</Button>
               </form>}
             {(step === "ended" || step === "techIssue_ended") && <div className="flex flex-col gap-2 mt-2 items-center">
-                <Button className="w-full" onClick={handleEndChat} variant="secondary">Τέλος - Αποστολή</Button>
+                {supportTicketCode && (
+                  <div className="w-full p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <p className="text-sm text-green-700 font-medium">Κωδικός Αιτήματος:</p>
+                    <p className="text-lg font-bold text-green-800 tracking-wider">{supportTicketCode}</p>
+                    <p className="text-xs text-green-600 mt-1">Κρατήστε αυτόν τον κωδικό για μελλοντική αναφορά</p>
+                  </div>
+                )}
+                <Button className="w-full" onClick={handleEndChat} variant="secondary">Τέλος</Button>
               </div>}
             <div ref={bottomRef}></div>
           </div>

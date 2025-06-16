@@ -12,30 +12,39 @@ export type Database = {
       chatbot_messages: {
         Row: {
           admin_reply_count: number
+          closed_at: string | null
           email: string | null
           id: string
           last_admin_reply_at: string | null
           messages: Json
           status: string
           submitted_at: string | null
+          support_ticket_code: string | null
+          ticket_status: string | null
         }
         Insert: {
           admin_reply_count?: number
+          closed_at?: string | null
           email?: string | null
           id?: string
           last_admin_reply_at?: string | null
           messages: Json
           status?: string
           submitted_at?: string | null
+          support_ticket_code?: string | null
+          ticket_status?: string | null
         }
         Update: {
           admin_reply_count?: number
+          closed_at?: string | null
           email?: string | null
           id?: string
           last_admin_reply_at?: string | null
           messages?: Json
           status?: string
           submitted_at?: string | null
+          support_ticket_code?: string | null
+          ticket_status?: string | null
         }
         Relationships: []
       }
@@ -177,6 +186,38 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      support_replies: {
+        Row: {
+          chatbot_message_id: string
+          created_at: string
+          id: string
+          message: string
+          sender: string
+        }
+        Insert: {
+          chatbot_message_id: string
+          created_at?: string
+          id?: string
+          message: string
+          sender: string
+        }
+        Update: {
+          chatbot_message_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          sender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_replies_chatbot_message_id_fkey"
+            columns: ["chatbot_message_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
