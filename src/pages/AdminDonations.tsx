@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Mail, RefreshCw, Calendar, Euro, User, FileText, Trash2, Send } from 'lucide-react';
+import { Mail, RefreshCw, Calendar, Euro, User, FileText, Trash2, Send, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import { el } from 'date-fns/locale';
 
@@ -31,10 +31,14 @@ const AdminDonations: React.FC = () => {
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [sendingFile, setSendingFile] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [selectedDonations, setSelectedDonations] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchDonations = async () => {
     try {
       setLoading(true);
+      console.log('Fetching donations...');
+      
       const { data, error } = await supabase
         .from('donations')
         .select(`
@@ -47,9 +51,11 @@ const AdminDonations: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Supabase error:', error);
         throw error;
       }
 
+      console.log('Donations fetched:', data?.length || 0);
       setDonations(data || []);
     } catch (error: any) {
       console.error('Error fetching donations:', error);
@@ -77,7 +83,7 @@ const AdminDonations: React.FC = () => {
       }
 
       toast.success('Η δωρεά διαγράφηκε επιτυχώς');
-      await fetchDonations(); // Refresh the list
+      await fetchDonations();
     } catch (error: any) {
       console.error('Error deleting donation:', error);
       toast.error(`Αποτυχία διαγραφής δωρεάς: ${error.message}`);
@@ -86,11 +92,61 @@ const AdminDonations: React.FC = () => {
     }
   };
 
+  const bulkDeleteDonations = async () => {
+    if (selectedDonations.size === 0) {
+      toast.error('Παρακαλώ επιλέξτε δωρεές για διαγραφή');
+      return;
+    }
+
+    if (!confirm(`Είστε σίγουροι ότι θέλετε να διαγράψετε ${selectedDonations.size} δωρεές;`)) {
+      return;
+    }
+
+    try {
+      setBulkDeleting(true);
+      
+      const { error } = await supabase
+        .from('donations')
+        .delete()
+        .in('id', Array.from(selectedDonations));
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success(`${selectedDonations.size} δωρεές διαγράφηκαν επιτυχώς`);
+      setSelectedDonations(new Set());
+      await fetchDonations();
+    } catch (error: any) {
+      console.error('Error bulk deleting donations:', error);
+      toast.error(`Αποτυχία διαγραφής δωρεών: ${error.message}`);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const toggleDonationSelection = (donationId: string) => {
+    const newSelected = new Set(selectedDonations);
+    if (newSelected.has(donationId)) {
+      newSelected.delete(donationId);
+    } else {
+      newSelected.add(donationId);
+    }
+    setSelectedDonations(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDonations.size === donations.length) {
+      setSelectedDonations(new Set());
+    } else {
+      setSelectedDonations(new Set(donations.map(d => d.id)));
+    }
+  };
+
   const sendDownloadEmail = async (donation: Donation) => {
     try {
       setSendingEmail(donation.id);
       
-      // Create download link with the link_token
       const downloadUrl = `https://eggrafo.work/download?token=${donation.link_token}`;
       
       const emailBody = `Αγαπητέ/ή χρήστη,
@@ -105,7 +161,6 @@ ${downloadUrl}
 Με εκτίμηση,
 Η ομάδα eggrafo.work`;
 
-      // Send email using Resend edge function
       const { data, error } = await supabase.functions.invoke('send-download-email', {
         body: {
           to: donation.email,
@@ -146,7 +201,6 @@ ${donation.documents.file_url}
 Με εκτίμηση,
 Η ομάδα eggrafo.work`;
 
-      // Send email using Resend edge function
       const { data, error } = await supabase.functions.invoke('send-download-email', {
         body: {
           to: donation.email,
@@ -205,22 +259,61 @@ ${donation.documents.file_url}
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-900">Διαχείριση Δωρεών</h1>
-          <Button onClick={fetchDonations} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Ανανέωση
-          </Button>
+          <div className="flex gap-2">
+            {selectedDonations.size > 0 && (
+              <Button 
+                onClick={bulkDeleteDonations}
+                disabled={bulkDeleting}
+                variant="destructive"
+                size="sm"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {bulkDeleting ? 'Διαγραφή...' : `Διαγραφή (${selectedDonations.size})`}
+              </Button>
+            )}
+            <Button onClick={fetchDonations} variant="outline" size="sm" disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Ανανέωση
+            </Button>
+          </div>
         </div>
+
+        {donations.length > 0 && (
+          <div className="mb-4 flex items-center gap-2">
+            <Button
+              onClick={toggleSelectAll}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              {selectedDonations.size === donations.length ? 
+                <CheckSquare className="h-4 w-4" /> : 
+                <Square className="h-4 w-4" />
+              }
+              {selectedDonations.size === donations.length ? 'Αποεπιλογή όλων' : 'Επιλογή όλων'}
+            </Button>
+            <span className="text-sm text-gray-600">
+              {selectedDonations.size} από {donations.length} επιλεγμένα
+            </span>
+          </div>
+        )}
 
         <div className="grid gap-3">
           {donations.map((donation) => (
             <Card key={donation.id} className="w-full">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Euro className="h-4 w-4 text-green-600" />
-                    {donation.amount}€
-                    {getStatusBadge(donation.status)}
-                  </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedDonations.has(donation.id)}
+                      onCheckedChange={() => toggleDonationSelection(donation.id)}
+                    />
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Euro className="h-4 w-4 text-green-600" />
+                      {donation.amount}€
+                      {getStatusBadge(donation.status)}
+                    </CardTitle>
+                  </div>
                   <div className="text-xs text-gray-500">
                     {format(new Date(donation.created_at), 'dd/MM/yyyy HH:mm', { locale: el })}
                   </div>
