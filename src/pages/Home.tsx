@@ -20,7 +20,7 @@ const EXCLUDED_TITLES = [
 
 const Home: React.FC = () => {
   const { isAdmin } = useAuth();
-  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount, fetchDocuments } = useDocuments();
+  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount, fetchDocuments, clearCache } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -99,6 +99,13 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleClearCacheAndRetry = () => {
+    clearCache();
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
   // Show loading state
   if (loading) {
     console.log('🔄 Showing loading state');
@@ -108,14 +115,20 @@ const Home: React.FC = () => {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kb-purple mx-auto mb-4"></div>
             <p className="text-gray-500 mb-4">Φόρτωση εγγράφων...</p>
-            <p className="text-sm text-gray-400">Εάν αυτό διαρκεί πολύ, δοκιμάστε να ανανεώσετε τη σελίδα</p>
+            <p className="text-sm text-gray-400 mb-4">Εάν αυτό διαρκεί πολύ, δοκιμάστε να καθαρίσετε την cache</p>
+            <button 
+              onClick={handleClearCacheAndRetry}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm"
+            >
+              Καθαρισμός Cache & Ανανέωση
+            </button>
           </div>
         </main>
       </div>
     );
   }
 
-  // Show error state with more details
+  // Show error state with more details and cache clearing option
   if (error) {
     console.log('❌ Showing error state:', error);
     return (
@@ -134,6 +147,12 @@ const Home: React.FC = () => {
                 className="bg-kb-purple text-white px-4 py-2 rounded hover:bg-kb-purple/80 transition-colors mr-2"
               >
                 Δοκιμάστε Ξανά
+              </button>
+              <button 
+                onClick={handleClearCacheAndRetry}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors mr-2"
+              >
+                Καθαρισμός Cache & Ανανέωση
               </button>
               <button 
                 onClick={() => window.location.reload()} 

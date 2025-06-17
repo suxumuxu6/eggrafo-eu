@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../utils/searchUtils';
 import { toast } from 'sonner';
@@ -9,7 +9,7 @@ export const useDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     console.log('🔄 fetchDocuments: Starting...');
     
     try {
@@ -18,60 +18,96 @@ export const useDocuments = () => {
       
       console.log('📡 Fetching from Supabase...');
       
-      // Add timeout to prevent infinite loading
+      // Clear any existing timeouts and use a shorter, more reasonable timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ Request timeout - aborting');
+        controller.abort();
+      }, 5000); // Reduced to 5 seconds
       
-      const { data, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .abortSignal(controller.signal);
+      // Add retry logic
+      let retries = 0;
+      const maxRetries = 2;
+      let lastError;
 
-      clearTimeout(timeoutId);
+      while (retries <= maxRetries) {
+        try {
+          const { data, error: fetchError } = await supabase
+            .from('documents')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .abortSignal(controller.signal);
 
-      console.log('📊 Supabase response:', { data, fetchError });
+          clearTimeout(timeoutId);
 
-      if (fetchError) {
-        console.error('❌ Fetch error:', fetchError);
-        throw new Error(`Failed to fetch documents: ${fetchError.message}`);
+          if (fetchError) {
+            throw new Error(`Supabase error: ${fetchError.message}`);
+          }
+
+          console.log('📊 Supabase response successful:', { count: data?.length || 0 });
+
+          if (!data) {
+            console.log('⚠️ No data returned');
+            setDocuments([]);
+            return;
+          }
+
+          // Transform the data
+          const transformedDocuments: Document[] = data.map(doc => ({
+            id: doc.id,
+            title: doc.title || 'Untitled',
+            description: doc.description || '',
+            tags: Array.isArray(doc.tags) ? doc.tags : [],
+            category: doc.category || '',
+            url: doc.file_url || '',
+            view_count: doc.view_count || 0
+          }));
+
+          console.log('✅ Setting documents:', transformedDocuments.length);
+          setDocuments(transformedDocuments);
+          return; // Success, exit retry loop
+          
+        } catch (retryError: any) {
+          lastError = retryError;
+          retries++;
+          
+          if (retryError.name === 'AbortError') {
+            console.log(`⏰ Request ${retries} timed out`);
+          } else {
+            console.log(`❌ Attempt ${retries} failed:`, retryError.message);
+          }
+          
+          if (retries <= maxRetries) {
+            console.log(`🔄 Retrying in ${retries}s... (${retries}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, retries * 1000));
+          }
+        }
       }
-
-      if (!data) {
-        console.log('⚠️ No data returned');
-        setDocuments([]);
-        return;
-      }
-
-      // Transform the data
-      const transformedDocuments: Document[] = data.map(doc => ({
-        id: doc.id,
-        title: doc.title || 'Untitled',
-        description: doc.description || '',
-        tags: Array.isArray(doc.tags) ? doc.tags : [],
-        category: doc.category || '',
-        url: doc.file_url || '',
-        view_count: doc.view_count || 0
-      }));
-
-      console.log('✅ Setting documents:', transformedDocuments.length);
-      setDocuments(transformedDocuments);
+      
+      // If we get here, all retries failed
+      throw lastError;
       
     } catch (err: any) {
-      console.error('💥 Error in fetchDocuments:', err);
+      console.error('💥 Final error in fetchDocuments:', err);
+      
+      let errorMessage = 'Σφάλμα φόρτωσης εγγράφων';
+      
       if (err.name === 'AbortError') {
-        setError('Η φόρτωση διήρκεσε πολύ. Παρακαλώ δοκιμάστε ξανά.');
+        errorMessage = 'Η φόρτωση διήρκεσε πολύ. Δοκιμάστε να καθαρίσετε την cache του browser.';
+      } else if (err.message?.includes('Failed to fetch')) {
+        errorMessage = 'Πρόβλημα σύνδεσης. Ελέγξτε τη σύνδεσή σας στο internet.';
       } else {
-        const errorMessage = err.message || 'Unknown error occurred';
-        setError(errorMessage);
+        errorMessage = err.message || 'Άγνωστο σφάλμα';
       }
+      
+      setError(errorMessage);
       setDocuments([]);
-      toast.error(`Failed to load documents: ${err.message || 'Timeout'}`);
+      toast.error(errorMessage);
     } finally {
       console.log('🏁 Setting loading to false');
       setLoading(false);
     }
-  };
+  }, []);
 
   const incrementViewCount = async (documentId: string) => {
     try {
@@ -167,10 +203,33 @@ export const useDocuments = () => {
     );
   };
 
+  // Clear browser cache programmatically if needed
+  const clearCache = useCallback(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => registration.unregister());
+      });
+    }
+    
+    // Clear localStorage data that might be causing issues
+    try {
+      const keysToKeep = ['donatedDocs']; // Keep important data
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
+        if (!keysToKeep.includes(key)) {
+          localStorage.removeItem(key);
+        }
+      });
+      console.log('🧹 Cache cleared');
+    } catch (e) {
+      console.log('Could not clear localStorage:', e);
+    }
+  }, []);
+
   useEffect(() => {
     console.log('🚀 useDocuments: Mounting and fetching documents');
     fetchDocuments();
-  }, []);
+  }, [fetchDocuments]);
 
   return {
     documents,
@@ -180,6 +239,7 @@ export const useDocuments = () => {
     searchDocuments,
     updateDocument,
     deleteDocument,
-    incrementViewCount
+    incrementViewCount,
+    clearCache
   };
 };
