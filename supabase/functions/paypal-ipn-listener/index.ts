@@ -18,6 +18,55 @@ function parseURLEncoded(body: string): Record<string, string> {
   }, {} as Record<string, string>);
 }
 
+async function sendDownloadEmail(donation: any) {
+  try {
+    // Create download link with the link_token
+    const downloadUrl = `https://eggrafo.work/download?token=${donation.link_token}`;
+    
+    const emailBody = `Αγαπητέ/ή χρήστη,
+
+Σας ευχαριστούμε για τη δωρεά σας των ${donation.amount}€!
+
+Μπορείτε να κατεβάσετε το έγγραφο από τον παρακάτω σύνδεσμο:
+${downloadUrl}
+
+ΠΡΟΣΟΧΗ: Ο σύνδεσμος λήγει σε 24 ώρες από την πληρωμή.
+
+Με εκτίμηση,
+Η ομάδα eggrafo.work`;
+
+    // Send email using Resend
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY not configured');
+      return;
+    }
+
+    const emailResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'eggrafo.work <no-reply@eggrafo.work>',
+        to: [donation.email],
+        subject: 'Ευχαριστούμε για τη δωρεά σας - Download Link',
+        text: emailBody,
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      console.error('Failed to send email:', errorText);
+    } else {
+      console.log('Download email sent successfully to:', donation.email);
+    }
+  } catch (error) {
+    console.error('Error sending download email:', error);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -83,10 +132,19 @@ serve(async (req) => {
             status: "completed",
             paypal_transaction_id: txnId,
             amount: amount,
-            email: payerEmail
+            email: payerEmail,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
           })
-          .eq("id", donationId);
+          .eq("id", donationId)
+          .select()
+          .single();
+        
         console.log(`[IPN] Updated donation ${donationId}:`, result);
+        
+        // Send download email automatically
+        if (result.data && !result.error) {
+          await sendDownloadEmail(result.data);
+        }
       } else {
         // Create a new donation record (fallback for donations without custom field)
         const { data: newDonation, error: insertError } = await supabase
@@ -96,13 +154,19 @@ serve(async (req) => {
             paypal_transaction_id: txnId,
             amount: amount,
             email: payerEmail,
-            document_id: null // We don't know which document this is for
+            document_id: null, // We don't know which document this is for
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
           })
           .select()
           .single();
         
         result = { error: insertError };
         console.log("[IPN] Created new donation:", newDonation);
+        
+        // Send download email automatically
+        if (newDonation && !insertError) {
+          await sendDownloadEmail(newDonation);
+        }
       }
 
       if (result.error) {

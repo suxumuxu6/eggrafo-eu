@@ -8,6 +8,7 @@ import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./components/PaymentSuccess";
 import PaymentCancel from "./components/PaymentCancel";
+import DocumentDownload from "./pages/DocumentDownload";
 import { AuthProvider } from "./context/AuthContext";
 import AdminAuthPage from "./pages/AdminAuth";
 import AdminChatbot from "./pages/AdminChatbot";
@@ -33,6 +34,7 @@ function App() {
               <Route path="/auth" element={<AdminAuthPage />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-cancel" element={<PaymentCancel />} />
+              <Route path="/download" element={<DocumentDownload />} />
               <Route path="/admin-chatbot" element={<AdminChatbot />} />
               <Route path="/reply" element={<ChatbotReply />} />
               <Route path="/support" element={<UserSupport />} />

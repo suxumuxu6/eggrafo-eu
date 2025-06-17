@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PaymentSuccess: React.FC = () => {
@@ -12,6 +12,7 @@ const PaymentSuccess: React.FC = () => {
   const [verifying, setVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
     // Check if there's a pending donation in localStorage
@@ -21,6 +22,7 @@ const PaymentSuccess: React.FC = () => {
         if (pending) {
           const donationData = JSON.parse(pending);
           console.log('Found pending donation:', donationData);
+          setUserEmail(donationData.email || '');
           
           // Start polling for payment completion
           pollForPaymentCompletion(donationData.donationId);
@@ -61,16 +63,8 @@ const PaymentSuccess: React.FC = () => {
 
         if (donation && donation.status === 'completed') {
           setVerified(true);
-          toast.success('Η πληρωμή επιβεβαιώθηκε επιτυχώς! Τώρα έχετε πρόσβαση στο έγγραφο.');
+          toast.success('Η πληρωμή επιβεβαιώθηκε επιτυχώς! Ελέγξτε το email σας για το download link.');
           
-          // Store payment verification in localStorage for access validation
-          localStorage.setItem('verifiedPayment', JSON.stringify({
-            donationId,
-            paymentId: donation.paypal_transaction_id,
-            timestamp: Date.now(),
-            verified: true
-          }));
-
           // Clear pending donation from localStorage
           localStorage.removeItem('pendingDonation');
           setVerifying(false);
@@ -122,9 +116,22 @@ const PaymentSuccess: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Η Πληρωμή Ολοκληρώθηκε!
             </h2>
-            <p className="text-gray-600 mb-6">
-              Σας ευχαριστούμε για τη δωρεά σας. Τώρα έχετε πρόσβαση στο έγγραφο.
-            </p>
+            <div className="text-gray-600 mb-6 space-y-3">
+              <p>Σας ευχαριστούμε για τη δωρεά σας!</p>
+              
+              <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                <div className="flex items-center gap-2 text-green-800 text-sm mb-1">
+                  <Mail className="h-4 w-4" />
+                  <span className="font-medium">Email εστάλη!</span>
+                </div>
+                <p className="text-xs text-green-700">
+                  Στείλαμε download link στο {userEmail}
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  Το link λήγει σε 24 ώρες
+                </p>
+              </div>
+            </div>
             <Button onClick={handleReturnHome} className="w-full bg-kb-blue hover:bg-kb-blue/90">
               Επιστροφή στα Έγγραφα
             </Button>
