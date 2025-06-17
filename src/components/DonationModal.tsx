@@ -100,9 +100,10 @@ const DonationModal: React.FC<DonationModalProps> = ({
         timestamp: Date.now()
       }));
 
-      // Construct PayPal hosted button URL with return URL
+      // Construct PayPal hosted button URL with return URL and cancel URL
       const returnUrl = encodeURIComponent('https://eggrafo.work/payment-success');
-      const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U&custom=${donationData.id}&return=${returnUrl}`;
+      const cancelUrl = encodeURIComponent('https://eggrafo.work/payment-cancel');
+      const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U&custom=${donationData.id}&return=${returnUrl}&cancel_return=${cancelUrl}`;
 
       toast.success('Ανακατεύθυνση στο PayPal για πληρωμή...');
       console.log('[DonationModal] Redirecting to PayPal hosted button:', paypalUrl);
@@ -167,7 +168,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
               <span className="font-medium">Δωρεά 12€</span>
             </div>
             <p className="text-xs text-yellow-700 mt-1">
-              Θα μεταφερθείτε στο PayPal για να ολοκληρώσετε την δωρεά.
+              Θα μεταφερθείτε στο PayPal για να ολοκληρώσετε την δωρεά και θα επιστρέψετε αυτόματα.
             </p>
           </div>
           <div className="flex gap-2 pt-2">
