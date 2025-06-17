@@ -45,6 +45,12 @@ const Navbar: React.FC = () => {
               <div className="text-sm text-gray-500">Loading...</div>
             ) : isAuthenticated && isAdmin && user ? (
               <>
+                <Link to="/admin-donations">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span>Δωρεές</span>
+                  </Button>
+                </Link>
                 <Link to="/admin-chatbot">
                   <Button variant="outline" className="flex items-center gap-2">
                     <Bot className="h-4 w-4" />

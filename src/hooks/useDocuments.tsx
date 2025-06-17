@@ -17,10 +17,18 @@ export const useDocuments = () => {
       setError(null);
       
       console.log('📡 Fetching from Supabase...');
+      
+      // Add timeout to prevent infinite loading
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const { data, error: fetchError } = await supabase
         .from('documents')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
+
+      clearTimeout(timeoutId);
 
       console.log('📊 Supabase response:', { data, fetchError });
 
@@ -51,10 +59,14 @@ export const useDocuments = () => {
       
     } catch (err: any) {
       console.error('💥 Error in fetchDocuments:', err);
-      const errorMessage = err.message || 'Unknown error occurred';
-      setError(errorMessage);
+      if (err.name === 'AbortError') {
+        setError('Η φόρτωση διήρκεσε πολύ. Παρακαλώ δοκιμάστε ξανά.');
+      } else {
+        const errorMessage = err.message || 'Unknown error occurred';
+        setError(errorMessage);
+      }
       setDocuments([]);
-      toast.error(`Failed to load documents: ${errorMessage}`);
+      toast.error(`Failed to load documents: ${err.message || 'Timeout'}`);
     } finally {
       console.log('🏁 Setting loading to false');
       setLoading(false);

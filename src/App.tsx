@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -12,6 +11,7 @@ import DocumentDownload from "./pages/DocumentDownload";
 import { AuthProvider } from "./context/AuthContext";
 import AdminAuthPage from "./pages/AdminAuth";
 import AdminChatbot from "./pages/AdminChatbot";
+import AdminDonations from "./pages/AdminDonations";
 import Navbar from "@/components/Navbar";
 import ChatbotReply from "@/pages/ChatbotReply";
 import UserSupport from "@/pages/UserSupport";
@@ -36,6 +36,7 @@ function App() {
               <Route path="/payment-cancel" element={<PaymentCancel />} />
               <Route path="/download" element={<DocumentDownload />} />
               <Route path="/admin-chatbot" element={<AdminChatbot />} />
+              <Route path="/admin-donations" element={<AdminDonations />} />
               <Route path="/reply" element={<ChatbotReply />} />
               <Route path="/support" element={<UserSupport />} />
               <Route path="*" element={<NotFound />} />

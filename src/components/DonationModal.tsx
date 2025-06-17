@@ -78,6 +78,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
           email: userData.email,
           status: 'pending',
           link_token,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
         })
         .select()
         .single();
@@ -99,8 +100,9 @@ const DonationModal: React.FC<DonationModalProps> = ({
         timestamp: Date.now()
       }));
 
-      // Construct PayPal hosted button URL with custom field containing donation ID
-      const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U&custom=${donationData.id}`;
+      // Construct PayPal hosted button URL with return URL
+      const returnUrl = encodeURIComponent('https://eggrafo.work/payment-success');
+      const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U&custom=${donationData.id}&return=${returnUrl}`;
 
       toast.success('Ανακατεύθυνση στο PayPal για πληρωμή...');
       console.log('[DonationModal] Redirecting to PayPal hosted button:', paypalUrl);
