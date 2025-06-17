@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Upload, LogOut, Bot, HelpCircle } from "lucide-react";
+import { Upload, LogOut, Bot, HelpCircle, CreditCard } from "lucide-react";
 
 const Navbar: React.FC = () => {
   const {
