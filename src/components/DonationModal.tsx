@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -13,12 +14,12 @@ interface DonationModalProps {
   documentTitle: string;
   documentId?: string;
 }
+
 interface UserData {
   name: string;
   email: string;
 }
 
-// Note: We no longer use the simple hosted PayPal URL, restored advanced logic!
 const DonationModal: React.FC<DonationModalProps> = ({
   isOpen,
   onClose,
@@ -31,7 +32,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
     email: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [errorDetails, setErrorDetails] = useState<{step?: string, error?: string, details?: any} | null>(null);
 
   const handleInputChange = (field: keyof UserData, value: string) => {
     setUserData(prev => ({
@@ -44,7 +44,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
 
   const handlePayPalDonation = async () => {
     console.log('[DonationModal] handlePayPalDonation triggered');
-    setErrorDetails(null);
 
     // Validate required fields before redirecting
     if (!userData.name.trim() || !userData.email.trim()) {
@@ -59,67 +58,60 @@ const DonationModal: React.FC<DonationModalProps> = ({
 
     setIsProcessing(true);
     try {
-      // Call the edge function to create a PayPal payment
-      const { data, error } = await supabase.functions.invoke('create-paypal-payment', {
-        body: {
-          userData,
-          documentId,
-          documentTitle,
-          donationAmount: PAYPAL_DONATION_AMOUNT, // Add amount here
+      // Generate a unique, secure link_token
+      function generateLinkToken(len = 32) {
+        const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        let token = "";
+        for (let i = 0; i < len; i++) {
+          token += charset.charAt(Math.floor(Math.random() * charset.length));
         }
-      });
-
-      if (error) {
-        console.error('PayPal payment creation error:', error);
-        throw new Error(error.message || 'Failed to create payment');
+        return token;
       }
 
-      // Handle if data is a string (sometimes returned by supabase.functions.invoke for edge functions)
-      let parsedData: any = data;
-      if (typeof data === 'string') {
-        try {
-          parsedData = JSON.parse(data);
-        } catch (e) {
-          throw new Error("Could not parse server response");
-        }
+      // Create donation record in database with pending status
+      const link_token = generateLinkToken();
+      const { data: donationData, error: donationError } = await supabase
+        .from('donations')
+        .insert({
+          amount: PAYPAL_DONATION_AMOUNT,
+          document_id: documentId || null,
+          email: userData.email,
+          status: 'pending',
+          link_token,
+        })
+        .select()
+        .single();
+
+      if (donationError) {
+        console.error('Error creating donation:', donationError);
+        throw donationError;
       }
 
-      console.log('[DonationModal] PayPal API response:', parsedData);
-
-      if (!parsedData.success) {
-        setIsProcessing(false);
-        setErrorDetails({
-          step: parsedData.step,
-          error: parsedData.error,
-          details: parsedData.details
-        });
-        toast.error(`Payment creation failed: ${parsedData.error || 'Unknown error'}`);
-        return;
-      }
+      console.log('[DonationModal] Created donation record:', donationData.id);
 
       // Store user data and donation info for later verification
       localStorage.setItem('pendingDonation', JSON.stringify({
         ...userData,
         documentTitle,
         documentId,
-        donationId: parsedData.donationId,
-        paymentId: parsedData.paymentId,
+        donationId: donationData.id,
+        link_token: link_token,
         timestamp: Date.now()
       }));
 
-      toast.success('Redirecting to PayPal for payment...');
-      console.log('[DonationModal] Redirecting to:', parsedData.approvalUrl);
-      window.location.href = parsedData.approvalUrl;
-      console.log('[DonationModal] Redirect call should have triggered');
+      // Construct PayPal hosted button URL with custom field containing donation ID
+      const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=NUHKAVN99YZ9U&custom=${donationData.id}`;
+
+      toast.success('Ανακατεύθυνση στο PayPal για πληρωμή...');
+      console.log('[DonationModal] Redirecting to PayPal hosted button:', paypalUrl);
+      
+      // Redirect to PayPal hosted button
+      window.location.href = paypalUrl;
+      
     } catch (error: any) {
       console.error('Payment creation error:', error);
       setIsProcessing(false);
-      if (error?.response?.data) {
-        setErrorDetails(error.response.data);
-      } else {
-        setErrorDetails({ error: error.message });
-      }
-      toast.error(`Payment creation failed: ${error.message}`);
+      toast.error(`Αποτυχία δημιουργίας πληρωμής: ${error.message}`);
     }
   };
 
@@ -129,7 +121,6 @@ const DonationModal: React.FC<DonationModalProps> = ({
         name: '',
         email: ''
       });
-      setErrorDetails(null);
       onClose();
     }
   };
@@ -177,25 +168,11 @@ const DonationModal: React.FC<DonationModalProps> = ({
               Θα μεταφερθείτε στο PayPal για να ολοκληρώσετε την δωρεά.
             </p>
           </div>
-          {/* Detailed error panel if PayPal fails */}
-          {errorDetails && (
-            <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded text-sm">
-              <div className="font-semibold mb-1">Αποτυχία δημιουργίας πληρωμής</div>
-              {errorDetails.step && <div><span className="font-semibold">Βήμα:</span> {errorDetails.step}</div>}
-              {errorDetails.error && <div><span className="font-semibold">Σφάλμα:</span> {errorDetails.error}</div>}
-              {errorDetails.details && (
-                <details className="mt-1 max-h-48 overflow-auto text-xs">
-                  <summary>Λεπτομέρειες σφάλματος</summary>
-                  <pre>{JSON.stringify(errorDetails.details, null, 2)}</pre>
-                </details>
-              )}
-            </div>
-          )}
           <div className="flex gap-2 pt-2">
             <Button onClick={handlePayPalDonation} className="flex-1 bg-kb-blue hover:bg-kb-blue/90 text-white" disabled={isProcessing || !userData.name.trim() || !userData.email.trim()}>
-              {isProcessing ? 'Creating Payment...' : <>
+              {isProcessing ? 'Δημιουργία Πληρωμής...' : <>
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Δωρεά μέσω Paypal
+                  Δωρεά μέσω PayPal
                 </>}
             </Button>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isProcessing}>
@@ -209,4 +186,5 @@ const DonationModal: React.FC<DonationModalProps> = ({
       </DialogContent>
     </Dialog>;
 };
+
 export default DonationModal;

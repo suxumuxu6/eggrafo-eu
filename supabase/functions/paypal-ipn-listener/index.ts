@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -59,54 +60,49 @@ serve(async (req) => {
       const supabase = createClient(supabaseUrl, supabaseKey);
 
       // Extract info
-      const donationId = params["custom"] || null; // As before
+      const donationId = params["custom"] || null; // donation ID passed in the custom field
       const payerEmail = params["payer_email"];
       const txnId = params["txn_id"];
       const amount = Number(params["mc_gross"]);
       const currency = params["mc_currency"] || "EUR";
 
-      // Retrieve the link_token if donationId was provided (for convenience)
-      let link_token = null;
-      if (donationId) {
-        const { data: existingDonation } = await supabase
-          .from("donations")
-          .select("link_token")
-          .eq("id", donationId)
-          .maybeSingle();
-        link_token = existingDonation?.link_token || null;
+      console.log("Processing payment:", { donationId, payerEmail, txnId, amount, currency });
+
+      // Verify amount is at least 12 EUR
+      if (amount < 12) {
+        console.warn(`Payment amount ${amount} is less than required 12 EUR`);
+        return new Response("INSUFFICIENT_AMOUNT", { status: 400, headers: corsHeaders });
       }
 
-      // Prepare upsert data
-      let upsertData: any = {
-        status: "completed",
-        paypal_transaction_id: txnId,
-        amount,
-        email: payerEmail,
-      };
-      if (donationId) upsertData.id = donationId;
-      if (link_token) upsertData.link_token = link_token;
-
-      // Try to update by PayPal txn_id, fall back to id (if custom field provided)
       let result;
       if (donationId) {
-        // If we know the local donationId (custom field): update it
+        // Update the existing donation record
         result = await supabase
           .from("donations")
-          .update(upsertData)
+          .update({
+            status: "completed",
+            paypal_transaction_id: txnId,
+            amount: amount,
+            email: payerEmail
+          })
           .eq("id", donationId);
         console.log(`[IPN] Updated donation ${donationId}:`, result);
-      } else if (txnId) {
-        // Try to update by paypal_transaction_id
-        result = await supabase
-          .from("donations")
-          .update(upsertData)
-          .eq("paypal_transaction_id", txnId);
-        console.log(`[IPN] Updated by txn_id=${txnId}:`, result);
       } else {
-        // Else, just insert with email/amount (not ideal—there's no way to link to document!)
-        upsertData.status = "unlinked";
-        result = await supabase.from("donations").insert(upsertData);
-        console.log("[IPN] Inserted fallback donation:", result);
+        // Create a new donation record (fallback for donations without custom field)
+        const { data: newDonation, error: insertError } = await supabase
+          .from("donations")
+          .insert({
+            status: "completed",
+            paypal_transaction_id: txnId,
+            amount: amount,
+            email: payerEmail,
+            document_id: null // We don't know which document this is for
+          })
+          .select()
+          .single();
+        
+        result = { error: insertError };
+        console.log("[IPN] Created new donation:", newDonation);
       }
 
       if (result.error) {
@@ -114,6 +110,7 @@ serve(async (req) => {
         return new Response("DB ERROR: " + result.error.message, { status: 500, headers: corsHeaders });
       }
 
+      console.log(`[IPN] Successfully processed payment ${txnId} for amount ${amount} EUR`);
       return new Response("OK: VERIFIED+PROCESSED", { status: 200, headers: corsHeaders });
     } else {
       // Not a completed payment
