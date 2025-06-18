@@ -9,64 +9,51 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
   const timeoutId = setTimeout(() => {
     console.log('⏰ Request timeout - aborting');
     controller.abort();
-  }, 5000);
+  }, 8000); // Increased timeout
   
-  let retries = 0;
-  const maxRetries = 2;
-  let lastError;
+  try {
+    const { data, error: fetchError } = await supabase
+      .from('documents')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .abortSignal(controller.signal);
 
-  while (retries <= maxRetries) {
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .abortSignal(controller.signal);
+    clearTimeout(timeoutId);
 
-      clearTimeout(timeoutId);
-
-      if (fetchError) {
-        throw new Error(`Supabase error: ${fetchError.message}`);
-      }
-
-      console.log('📊 Supabase response successful:', { count: data?.length || 0 });
-
-      if (!data) {
-        console.log('⚠️ No data returned');
-        return [];
-      }
-
-      const transformedDocuments: Document[] = data.map(doc => ({
-        id: doc.id,
-        title: doc.title || 'Untitled',
-        description: doc.description || '',
-        tags: Array.isArray(doc.tags) ? doc.tags : [],
-        category: doc.category || '',
-        url: doc.file_url || '',
-        view_count: doc.view_count || 0
-      }));
-
-      console.log('✅ Setting documents:', transformedDocuments.length);
-      return transformedDocuments;
-      
-    } catch (retryError: any) {
-      lastError = retryError;
-      retries++;
-      
-      if (retryError.name === 'AbortError') {
-        console.log(`⏰ Request ${retries} timed out`);
-      } else {
-        console.log(`❌ Attempt ${retries} failed:`, retryError.message);
-      }
-      
-      if (retries <= maxRetries) {
-        console.log(`🔄 Retrying in ${retries}s... (${retries}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, retries * 1000));
-      }
+    if (fetchError) {
+      throw new Error(`Supabase error: ${fetchError.message}`);
     }
+
+    console.log('📊 Supabase response successful:', { count: data?.length || 0 });
+
+    if (!data) {
+      console.log('⚠️ No data returned');
+      return [];
+    }
+
+    const transformedDocuments: Document[] = data.map(doc => ({
+      id: doc.id,
+      title: doc.title || 'Untitled',
+      description: doc.description || '',
+      tags: Array.isArray(doc.tags) ? doc.tags : [],
+      category: doc.category || '',
+      url: doc.file_url || '',
+      view_count: doc.view_count || 0
+    }));
+
+    console.log('✅ Documents transformed successfully:', transformedDocuments.length);
+    return transformedDocuments;
+    
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - please check your connection');
+    }
+    
+    console.error('❌ Fetch error:', error);
+    throw error;
   }
-  
-  throw lastError;
 };
 
 export const incrementDocumentViewCount = async (documentId: string): Promise<void> => {

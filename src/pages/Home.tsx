@@ -99,7 +99,7 @@ const Home: React.FC = () => {
     }
   };
 
-  // Show loading state
+  // Show loading state with simpler message
   if (loading) {
     console.log('🔄 Showing loading state');
     return (
@@ -108,14 +108,13 @@ const Home: React.FC = () => {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kb-purple mx-auto mb-4"></div>
             <p className="text-gray-500 mb-4">Φόρτωση εγγράφων...</p>
-            <p className="text-sm text-gray-400">Εκτελείται αυτόματος καθαρισμός cache...</p>
           </div>
         </main>
       </div>
     );
   }
 
-  // Show error state with more details and cache clearing option
+  // Show error state with retry option
   if (error) {
     console.log('❌ Showing error state:', error);
     return (

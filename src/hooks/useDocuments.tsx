@@ -22,8 +22,8 @@ export const useDocuments = () => {
       setLoading(true);
       setError(null);
       
-      // Run automatic cleanup before fetching
-      await cleanupCache();
+      // Run cleanup in background, don't wait for it
+      cleanupCache().catch(e => console.log('Background cleanup failed:', e));
       
       const transformedDocuments = await fetchDocumentsFromSupabase();
       setDocuments(transformedDocuments);
@@ -33,10 +33,8 @@ export const useDocuments = () => {
       
       let errorMessage = 'Σφάλμα φόρτωσης εγγράφων';
       
-      if (err.name === 'AbortError') {
-        errorMessage = 'Η φόρτωση διήρκεσε πολύ. Η σελίδα θα ανανεωθεί αυτόματα.';
-        // Auto-reload on timeout
-        setTimeout(() => window.location.reload(), 2000);
+      if (err.message?.includes('timeout')) {
+        errorMessage = 'Η φόρτωση διήρκεσε πολύ. Δοκιμάστε ξανά.';
       } else if (err.message?.includes('Failed to fetch')) {
         errorMessage = 'Πρόβλημα σύνδεσης. Ελέγξτε τη σύνδεσή σας στο internet.';
       } else {
