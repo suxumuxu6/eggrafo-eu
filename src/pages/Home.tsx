@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
@@ -96,13 +97,6 @@ const Home: React.FC = () => {
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const handleClearCacheAndRetry = () => {
-    clearCache();
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
   };
 
   // Show loading state
