@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { sendEmailViaApi } from "@/utils/emailApi";
+import { sendChatbotNotification } from "@/utils/notificationApi";
 
 interface CloseTicketButtonProps {
   chatId: string;
@@ -40,21 +40,20 @@ const CloseTicketButton: React.FC<CloseTicketButtonProps> = ({
 
       if (updateError) throw updateError;
 
-      // Send closure notification email using the working email API
+      // Send closure notification email using the new notification system
       try {
-        const closureEmailData = {
-          subject: `Το αίτημά σας ${ticketCode} έχει κλείσει`,
-          body: `Αγαπητέ/ή χρήστη,
-
-Το αίτημά σας με κωδικό: ${ticketCode} Έχει κλείσει και ολοκληρωθεί.
-
-Με εκτίμηση,
-Η ομάδα υποστήριξης eggrafo.work`,
-          file: null
-        };
-
-        await sendEmailViaApi(email, chatId, closureEmailData);
-        console.log("Closure notification email sent successfully");
+        console.log("Sending ticket closure notification...");
+        const notificationSuccess = await sendChatbotNotification('ticket_closed', {
+          email,
+          ticketCode,
+          chatId
+        });
+        
+        if (notificationSuccess) {
+          console.log("Closure notification sent successfully");
+        } else {
+          console.warn("Failed to send closure notification");
+        }
       } catch (emailError) {
         console.warn("Failed to send closure email:", emailError);
       }
