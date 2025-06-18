@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { sendEmailViaApi } from "@/utils/emailApi";
+import { sendChatbotNotification } from "@/utils/notificationApi";
 
 interface ChatMessage {
   sender: "bot" | "user" | "admin";
@@ -137,26 +136,23 @@ export const useUserSupportData = () => {
       // Add to local state
       setReplies(prev => [...prev, newReplyData]);
       
-      // Send notification to admin about user reply using working email API
+      // Send notification to admin about user reply using new notification system
       console.log("Sending admin notification for user reply...");
       try {
-        const adminEmailData = {
-          subject: `Νέα απάντηση από χρήστη: ${ticketCode}`,
-          body: `Ο χρήστης έστειλε νέα απάντηση.
-
-Κωδικός αιτήματος: ${ticketCode}
-Email χρήστη: ${email}
-Χρόνος: ${new Date().toLocaleString('el-GR')}
-
-Μήνυμα χρήστη: "${newReply.trim()}"
-
-Μπορείτε να δείτε και να απαντήσετε στο αίτημα: https://eggrafo.work/admin-chatbot`,
-          file: null
-        };
+        const notificationSuccess = await sendChatbotNotification('user_reply', {
+          email,
+          ticketCode,
+          chatId,
+          userMessage: newReply.trim()
+        });
         
-        await sendEmailViaApi("dldigiweb@gmail.com", chatId, adminEmailData);
-        console.log("Admin notification sent successfully");
-        toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
+        if (notificationSuccess) {
+          console.log("Admin notification sent successfully");
+          toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
+        } else {
+          console.error("Failed to send admin notification");
+          toast.success("Το μήνυμά σας εστάλη!");
+        }
       } catch (notificationError) {
         console.error("Failed to send admin notification:", notificationError);
         toast.success("Το μήνυμά σας εστάλη!");

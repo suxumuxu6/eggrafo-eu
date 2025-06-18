@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Mail, RefreshCw, Calendar, Euro, User, FileText, Trash2, Send, CheckSquare, Square } from 'lucide-react';
+import { Mail, RefreshCw, Calendar, Euro, User, FileText, Trash2, Send, CheckSquare, Square, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { el } from 'date-fns/locale';
 
@@ -222,6 +222,53 @@ ${donation.documents.file_url}
     }
   };
 
+  const sendPdfDirectly = async (donation: Donation) => {
+    if (!donation.documents?.file_url) {
+      toast.error('Δεν υπάρχει αρχείο PDF για αποστολή');
+      return;
+    }
+
+    try {
+      setSendingFile(donation.id);
+      
+      // Create a more comprehensive email with the PDF link
+      const emailBody = `Αγαπητέ/ή χρήστη,
+
+Σας ευχαριστούμε για τη δωρεά σας των ${donation.amount}€!
+
+Παρακάτω θα βρείτε το αρχείο PDF που ζητήσατε:
+
+📄 Τίτλος: ${donation.documents.title}
+🔗 Σύνδεσμος: ${donation.documents.file_url}
+
+Μπορείτε να κάνετε κλικ στον παραπάνω σύνδεσμο για να κατεβάσετε το αρχείο.
+
+Εάν αντιμετωπίζετε οποιοδήποτε πρόβλημα με τη λήψη, παρακαλώ επικοινωνήστε μαζί μας.
+
+Με εκτίμηση,
+Η ομάδα eggrafo.work`;
+
+      const { data, error } = await supabase.functions.invoke('send-download-email', {
+        body: {
+          to: donation.email,
+          subject: `Αρχείο PDF: ${donation.documents.title}`,
+          text: emailBody,
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success(`Αρχείο PDF στάλθηκε επιτυχώς στο ${donation.email}`);
+    } catch (error: any) {
+      console.error('Error sending PDF:', error);
+      toast.error(`Αποτυχία αποστολής PDF: ${error.message}`);
+    } finally {
+      setSendingFile(null);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
@@ -363,16 +410,28 @@ ${donation.documents.file_url}
                       </Button>
                       
                       {donation.documents?.file_url && (
-                        <Button
-                          onClick={() => sendFileDirectly(donation)}
-                          disabled={sendingFile === donation.id}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7"
-                        >
-                          <Send className="h-3 w-3 mr-1" />
-                          {sendingFile === donation.id ? 'Αποστολή...' : 'Αποστολή Αρχείου'}
-                        </Button>
+                        <>
+                          <Button
+                            onClick={() => sendFileDirectly(donation)}
+                            disabled={sendingFile === donation.id}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7"
+                          >
+                            <Send className="h-3 w-3 mr-1" />
+                            {sendingFile === donation.id ? 'Αποστολή...' : 'Αποστολή Αρχείου'}
+                          </Button>
+                          
+                          <Button
+                            onClick={() => sendPdfDirectly(donation)}
+                            disabled={sendingFile === donation.id}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-xs h-7"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            {sendingFile === donation.id ? 'Αποστολή...' : 'Αποστολή PDF'}
+                          </Button>
+                        </>
                       )}
                       
                       {donation.link_token && (

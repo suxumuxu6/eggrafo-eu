@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ChatMessage } from "@/types/chat";
-import { sendEmailViaApi } from "./emailApi";
+import { sendChatbotNotification } from "./notificationApi";
 
 export const saveChatToSupabase = async (
   messages: ChatMessage[], 
@@ -48,30 +48,21 @@ export const saveChatToSupabase = async (
 
     console.log('Chat saved successfully with ID:', data.id);
 
-    // Send notifications using the working email API method
+    // Send notifications using the new notification system
     console.log('Starting notification process...');
     
     let adminNotificationSuccess = false;
     let userNotificationSuccess = false;
     
-    // Send admin notification first
+    // Send admin notification
     try {
       console.log('Sending admin notification...');
-      const adminEmailData = {
-        subject: `Νέο αίτημα υποστήριξης: ${ticketCode}`,
-        body: `Νέο αίτημα υποστήριξης έχει δημιουργηθεί.
-
-Κωδικός: ${ticketCode}
-Email χρήστη: ${email}
-Χρόνος: ${new Date().toLocaleString('el-GR')}
-
-Μπορείτε να δείτε το αίτημα στο admin panel: https://eggrafo.work/admin-chatbot`,
-        file: null
-      };
-      
-      await sendEmailViaApi("dldigiweb@gmail.com", data.id, adminEmailData);
-      adminNotificationSuccess = true;
-      console.log('Admin notification sent successfully');
+      adminNotificationSuccess = await sendChatbotNotification('new_ticket', {
+        email,
+        ticketCode,
+        chatId: data.id
+      });
+      console.log('Admin notification result:', adminNotificationSuccess);
     } catch (adminError) {
       console.error('Admin notification error:', adminError);
     }
@@ -79,32 +70,12 @@ Email χρήστη: ${email}
     // Send user notification
     try {
       console.log('Sending user notification...');
-      const userEmailData = {
-        subject: `Κωδικός πρόσβασης για το αίτημά σας: ${ticketCode}`,
-        body: `Αγαπητέ/ή χρήστη,
-
-Το αίτημά σας έχει καταχωρηθεί με επιτυχία!
-
-ΟΔΗΓΙΕΣ ΠΡΟΣΒΑΣΗΣ:
-
-1. Επισκεφτείτε τη σελίδα υποστήριξης: https://eggrafo.work/support
-
-2. Εισάγετε τα στοιχεία σας:
-   • Email: ${email}
-   • Κωδικός: ${ticketCode}
-
-3. Θα μπορείτε να δείτε την πρόοδο του αιτήματός σας και να λάβετε απαντήσεις από την ομάδα μας.
-
-Θα λάβετε ειδοποίηση στο email σας όταν υπάρχει νέα απάντηση.
-
-Με εκτίμηση,
-Η ομάδα υποστήριξης eggrafo.work`,
-        file: null
-      };
-      
-      await sendEmailViaApi(email, data.id, userEmailData);
-      userNotificationSuccess = true;
-      console.log('User notification sent successfully');
+      userNotificationSuccess = await sendChatbotNotification('user_welcome', {
+        email,
+        ticketCode,
+        chatId: data.id
+      });
+      console.log('User notification result:', userNotificationSuccess);
     } catch (userError) {
       console.error('User notification error:', userError);
     }

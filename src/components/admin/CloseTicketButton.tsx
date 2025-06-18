@@ -46,7 +46,7 @@ const CloseTicketButton: React.FC<CloseTicketButtonProps> = ({
           subject: `Το αίτημά σας ${ticketCode} έχει κλείσει`,
           body: `Αγαπητέ/ή χρήστη,
 
-Tο αίτημά σας με κωδικό: ${ticketCode} έχει κλείσει και διαγράφηκε.
+Το αίτημά σας με κωδικό: ${ticketCode} Έχει κλείσει και ολοκληρωθεί.
 
 Με εκτίμηση,
 Η ομάδα υποστήριξης eggrafo.work`,
