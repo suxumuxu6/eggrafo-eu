@@ -1,13 +1,83 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../utils/searchUtils';
 import { toast } from 'sonner';
 
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `eggrafo-cache-${CACHE_VERSION}`;
+
 export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Automatic cache cleanup
+  const cleanupCache = useCallback(async () => {
+    try {
+      // Clear old caches
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter(name => name.startsWith('eggrafo-cache-') && name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      );
+
+      // Clear corrupted session data
+      try {
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach(key => {
+          try {
+            const data = sessionStorage.getItem(key);
+            if (data && key.startsWith('supabase')) {
+              JSON.parse(data); // Test if data is valid JSON
+            }
+          } catch (e) {
+            console.log(`Removing corrupted session data: ${key}`);
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        console.log('Could not clean session storage:', e);
+      }
+
+      // Clear problematic localStorage entries (keep important ones)
+      try {
+        const keysToKeep = ['donatedDocs'];
+        const allKeys = Object.keys(localStorage);
+        allKeys.forEach(key => {
+          if (!keysToKeep.includes(key)) {
+            try {
+              const data = localStorage.getItem(key);
+              if (data) {
+                JSON.parse(data); // Test if data is valid JSON
+              }
+            } catch (e) {
+              console.log(`Removing corrupted localStorage data: ${key}`);
+              localStorage.removeItem(key);
+            }
+          }
+        });
+      } catch (e) {
+        console.log('Could not clean localStorage:', e);
+      }
+
+      // Handle stuck service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            // Only unregister if it's causing issues
+            if (registration.installing || registration.waiting) {
+              registration.unregister();
+            }
+          });
+        });
+      }
+
+      console.log('🧹 Automatic cache cleanup completed');
+    } catch (e) {
+      console.log('Cache cleanup error:', e);
+    }
+  }, []);
 
   const fetchDocuments = useCallback(async () => {
     console.log('🔄 fetchDocuments: Starting...');
@@ -16,16 +86,17 @@ export const useDocuments = () => {
       setLoading(true);
       setError(null);
       
+      // Run automatic cleanup before fetching
+      await cleanupCache();
+      
       console.log('📡 Fetching from Supabase...');
       
-      // Clear any existing timeouts and use a shorter, more reasonable timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         console.log('⏰ Request timeout - aborting');
         controller.abort();
-      }, 5000); // Reduced to 5 seconds
+      }, 5000);
       
-      // Add retry logic
       let retries = 0;
       const maxRetries = 2;
       let lastError;
@@ -52,7 +123,6 @@ export const useDocuments = () => {
             return;
           }
 
-          // Transform the data
           const transformedDocuments: Document[] = data.map(doc => ({
             id: doc.id,
             title: doc.title || 'Untitled',
@@ -65,7 +135,7 @@ export const useDocuments = () => {
 
           console.log('✅ Setting documents:', transformedDocuments.length);
           setDocuments(transformedDocuments);
-          return; // Success, exit retry loop
+          return;
           
         } catch (retryError: any) {
           lastError = retryError;
@@ -84,7 +154,6 @@ export const useDocuments = () => {
         }
       }
       
-      // If we get here, all retries failed
       throw lastError;
       
     } catch (err: any) {
@@ -93,7 +162,9 @@ export const useDocuments = () => {
       let errorMessage = 'Σφάλμα φόρτωσης εγγράφων';
       
       if (err.name === 'AbortError') {
-        errorMessage = 'Η φόρτωση διήρκεσε πολύ. Δοκιμάστε να καθαρίσετε την cache του browser.';
+        errorMessage = 'Η φόρτωση διήρκεσε πολύ. Η σελίδα θα ανανεωθεί αυτόματα.';
+        // Auto-reload on timeout
+        setTimeout(() => window.location.reload(), 2000);
       } else if (err.message?.includes('Failed to fetch')) {
         errorMessage = 'Πρόβλημα σύνδεσης. Ελέγξτε τη σύνδεσή σας στο internet.';
       } else {
@@ -107,7 +178,7 @@ export const useDocuments = () => {
       console.log('🏁 Setting loading to false');
       setLoading(false);
     }
-  }, []);
+  }, [cleanupCache]);
 
   const incrementViewCount = async (documentId: string) => {
     try {

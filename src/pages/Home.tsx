@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
@@ -20,7 +19,7 @@ const EXCLUDED_TITLES = [
 
 const Home: React.FC = () => {
   const { isAdmin } = useAuth();
-  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount, fetchDocuments, clearCache } = useDocuments();
+  const { documents: allDocuments, loading, error, searchDocuments, updateDocument, deleteDocument, incrementViewCount, fetchDocuments } = useDocuments();
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -115,13 +114,7 @@ const Home: React.FC = () => {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kb-purple mx-auto mb-4"></div>
             <p className="text-gray-500 mb-4">Φόρτωση εγγράφων...</p>
-            <p className="text-sm text-gray-400 mb-4">Εάν αυτό διαρκεί πολύ, δοκιμάστε να καθαρίσετε την cache</p>
-            <button 
-              onClick={handleClearCacheAndRetry}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm"
-            >
-              Καθαρισμός Cache & Ανανέωση
-            </button>
+            <p className="text-sm text-gray-400">Εκτελείται αυτόματος καθαρισμός cache...</p>
           </div>
         </main>
       </div>
@@ -141,26 +134,12 @@ const Home: React.FC = () => {
               </svg>
             </div>
             <p className="text-red-500 mb-4">Σφάλμα φόρτωσης εγγράφων: {error}</p>
-            <div className="space-y-2">
-              <button 
-                onClick={fetchDocuments} 
-                className="bg-kb-purple text-white px-4 py-2 rounded hover:bg-kb-purple/80 transition-colors mr-2"
-              >
-                Δοκιμάστε Ξανά
-              </button>
-              <button 
-                onClick={handleClearCacheAndRetry}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors mr-2"
-              >
-                Καθαρισμός Cache & Ανανέωση
-              </button>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-              >
-                Ανανέωση Σελίδας
-              </button>
-            </div>
+            <button 
+              onClick={fetchDocuments} 
+              className="bg-kb-purple text-white px-4 py-2 rounded hover:bg-kb-purple/80 transition-colors"
+            >
+              Δοκιμάστε Ξανά
+            </button>
           </div>
         </main>
       </div>
