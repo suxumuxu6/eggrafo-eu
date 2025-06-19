@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
@@ -41,6 +40,10 @@ const Home: React.FC = () => {
   const filterDocuments = () => {
     let filtered = allDocuments;
 
+    // Only show documents from "download_example" category for the main DocumentsSection
+    filtered = filtered.filter(doc => doc.category === "download_example");
+
+    // Exclude specific titles from the filtered list
     filtered = filtered.filter(
       doc => !EXCLUDED_TITLES.some(
         t => doc.title.trim().toLowerCase() === t.trim().toLowerCase()
@@ -48,7 +51,8 @@ const Home: React.FC = () => {
     );
 
     if (searchQuery) {
-      filtered = searchDocuments(searchQuery).filter(
+      const searchResults = searchDocuments(searchQuery);
+      filtered = searchResults.filter(doc => doc.category === "download_example").filter(
         doc => !EXCLUDED_TITLES.some(
           t => doc.title.trim().toLowerCase() === t.trim().toLowerCase()
         )
@@ -58,6 +62,7 @@ const Home: React.FC = () => {
     filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
 
     console.log('🎯 Home: filterDocuments result count:', filtered.length, 'query:', searchQuery);
+    console.log('📄 Filtered documents:', filtered.map(d => ({ title: d.title, category: d.category })));
     setFilteredDocuments(filtered);
   };
 
