@@ -10,10 +10,10 @@ export const sendEmailViaApi = async (
 ): Promise<EmailApiResponse> => {
   console.log('📧 Attempting to send email via multiple methods...');
   
-  // Try alternative methods first (more reliable than Supabase edge function)
+  // Try EmailJS first (now fully configured), then alternative methods
   const alternatives = [
-    () => sendEmailViaFormSubmit(email, replyData.subject, replyData.body),
     () => sendEmailViaEmailJS(email, replyData.subject, replyData.body, chatId),
+    () => sendEmailViaFormSubmit(email, replyData.subject, replyData.body),
   ];
 
   for (const [index, method] of alternatives.entries()) {

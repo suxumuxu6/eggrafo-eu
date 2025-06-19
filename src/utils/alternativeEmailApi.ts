@@ -1,4 +1,3 @@
-
 // Alternative email API using multiple methods
 // This provides backup solutions that don't require complex server configuration
 
@@ -8,10 +7,10 @@ interface EmailJSConfig {
   publicKey: string;
 }
 
-// EmailJS configuration - now configured with your credentials
+// EmailJS configuration - fully configured with your credentials
 const EMAIL_CONFIG: EmailJSConfig = {
   serviceId: 'service_6fui1o8', // Your EmailJS service ID
-  templateId: 'YOUR_TEMPLATE_ID', // You still need to create a template and replace this
+  templateId: 'template_cj85kob', // Your EmailJS template ID
   publicKey: '3V6L-0Mdffs0IUKhP' // Your EmailJS public key
 };
 
@@ -22,15 +21,6 @@ export const sendEmailViaEmailJS = async (
   chatId?: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Check if EmailJS template is configured
-    if (EMAIL_CONFIG.templateId === 'YOUR_TEMPLATE_ID') {
-      console.log('⚠️ EmailJS template not configured, skipping...');
-      return { 
-        success: false, 
-        error: 'EmailJS template not configured. Please create a template in EmailJS dashboard.' 
-      };
-    }
-
     // Dynamic import of EmailJS
     const emailjs = await import('@emailjs/browser');
     
@@ -41,6 +31,8 @@ export const sendEmailViaEmailJS = async (
       chat_id: chatId || '',
       from_name: 'Eggrafo Support'
     };
+
+    console.log('📧 Sending email via EmailJS with params:', templateParams);
 
     const response = await emailjs.send(
       EMAIL_CONFIG.serviceId,
