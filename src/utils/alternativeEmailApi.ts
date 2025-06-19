@@ -8,11 +8,11 @@ interface EmailJSConfig {
   publicKey: string;
 }
 
-// Free EmailJS configuration - user needs to set this up
+// EmailJS configuration - now configured with your credentials
 const EMAIL_CONFIG: EmailJSConfig = {
-  serviceId: 'YOUR_SERVICE_ID', // User needs to replace
-  templateId: 'YOUR_TEMPLATE_ID', // User needs to replace  
-  publicKey: 'YOUR_PUBLIC_KEY' // User needs to replace
+  serviceId: 'service_6fui1o8', // Your EmailJS service ID
+  templateId: 'YOUR_TEMPLATE_ID', // You still need to create a template and replace this
+  publicKey: '3V6L-0Mdffs0IUKhP' // Your EmailJS public key
 };
 
 export const sendEmailViaEmailJS = async (
@@ -22,12 +22,12 @@ export const sendEmailViaEmailJS = async (
   chatId?: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Check if EmailJS is configured
-    if (EMAIL_CONFIG.serviceId === 'YOUR_SERVICE_ID') {
-      console.log('⚠️ EmailJS not configured, skipping...');
+    // Check if EmailJS template is configured
+    if (EMAIL_CONFIG.templateId === 'YOUR_TEMPLATE_ID') {
+      console.log('⚠️ EmailJS template not configured, skipping...');
       return { 
         success: false, 
-        error: 'EmailJS not configured. Please set up your EmailJS credentials.' 
+        error: 'EmailJS template not configured. Please create a template in EmailJS dashboard.' 
       };
     }
 
