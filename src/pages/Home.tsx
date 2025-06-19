@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DocumentsHeader from '../components/DocumentsHeader';
 import DocumentsSection from '../components/DocumentsSection';
@@ -62,7 +63,6 @@ const Home: React.FC = () => {
     filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
 
     console.log('🎯 Home: filterDocuments result count:', filtered.length, 'query:', searchQuery);
-    console.log('📄 Filtered documents:', filtered.map(d => ({ title: d.title, category: d.category })));
     setFilteredDocuments(filtered);
   };
 
@@ -104,7 +104,12 @@ const Home: React.FC = () => {
     }
   };
 
-  // Show loading state with simpler message
+  const handleRetry = () => {
+    console.log('🔄 Manual retry triggered');
+    fetchDocuments();
+  };
+
+  // Show loading state with improved UI
   if (loading) {
     console.log('🔄 Showing loading state');
     return (
@@ -112,7 +117,8 @@ const Home: React.FC = () => {
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kb-purple mx-auto mb-4"></div>
-            <p className="text-gray-500 mb-4">Φόρτωση εγγράφων...</p>
+            <p className="text-gray-600 mb-2">Φόρτωση εγγράφων...</p>
+            <p className="text-sm text-gray-500">Παρακαλώ περιμένετε...</p>
           </div>
         </main>
       </div>
@@ -125,19 +131,23 @@ const Home: React.FC = () => {
     return (
       <div className="min-h-screen bg-blue-50">
         <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
+          <div className="text-center py-12 max-w-md mx-auto">
             <div className="text-red-500 mb-4">
               <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <p className="text-red-500 mb-4">Σφάλμα φόρτωσης εγγράφων: {error}</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Πρόβλημα Φόρτωσης</h3>
+            <p className="text-red-600 mb-4 text-sm">{error}</p>
             <button 
-              onClick={fetchDocuments} 
-              className="bg-kb-purple text-white px-4 py-2 rounded hover:bg-kb-purple/80 transition-colors"
+              onClick={handleRetry} 
+              className="bg-kb-purple text-white px-6 py-2 rounded hover:bg-kb-purple/80 transition-colors font-medium"
             >
               Δοκιμάστε Ξανά
             </button>
+            <p className="text-xs text-gray-500 mt-3">
+              Αν το πρόβλημα συνεχίζεται, παρακαλώ επικοινωνήστε με την υποστήριξη
+            </p>
           </div>
         </main>
       </div>

@@ -1,38 +1,50 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from './searchUtils';
 
 export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
-  console.log('📡 Starting Supabase fetch with improved error handling...');
+  console.log('📡 Starting Supabase fetch with timeout protection...');
   
   try {
-    // Try a simple connection test first
+    // Quick connection test with shorter timeout
+    const testController = new AbortController();
+    const testTimeoutId = setTimeout(() => testController.abort(), 5000);
+    
     const { data: testData, error: testError } = await supabase
       .from('documents')
-      .select('count')
+      .select('id')
       .limit(1)
-      .maybeSingle();
+      .abortSignal(testController.signal);
+    
+    clearTimeout(testTimeoutId);
     
     if (testError) {
       console.error('❌ Connection test failed:', testError);
-      throw new Error(`Database connection failed: ${testError.message}`);
+      throw new Error(`Πρόβλημα σύνδεσης με τη βάση δεδομένων: ${testError.message}`);
     }
     
     console.log('✅ Connection test passed, fetching documents...');
     
-    // Main query with shorter timeout and better error handling
+    // Main query with timeout protection
+    const mainController = new AbortController();
+    const mainTimeoutId = setTimeout(() => mainController.abort(), 10000);
+    
     const { data, error: fetchError } = await supabase
       .from('documents')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .abortSignal(mainController.signal);
+
+    clearTimeout(mainTimeoutId);
 
     if (fetchError) {
       console.error('❌ Fetch error:', fetchError);
-      throw new Error(`Database query failed: ${fetchError.message}`);
+      throw new Error(`Σφάλμα ανάκτησης δεδομένων: ${fetchError.message}`);
     }
 
-    console.log('📊 Raw Supabase response:', { count: data?.length || 0, sample: data?.[0] });
+    console.log('📊 Raw Supabase response:', { count: data?.length || 0 });
 
-    if (!data) {
+    if (!data || data.length === 0) {
       console.log('⚠️ No data returned, returning empty array');
       return [];
     }
@@ -63,16 +75,16 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
     return transformedDocuments;
     
   } catch (error: any) {
-    console.error('❌ Complete fetch error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      cause: error.cause
-    });
+    console.error('❌ Complete fetch error details:', error);
+    
+    // Handle abort errors specifically
+    if (error.name === 'AbortError') {
+      throw new Error('Η αίτηση διήρκεσε πολύ. Παρακαλώ δοκιμάστε ξανά.');
+    }
     
     // Provide more specific error messages
-    if (error.message?.includes('JWT')) {
-      throw new Error('Πρόβλημα εξουσιοδότησης. Παρακαλώ συνδεθείτε ξανά.');
+    if (error.message?.includes('JWT') || error.message?.includes('auth')) {
+      throw new Error('Πρόβλημα εξουσιοδότησης. Παρακαλώ ανανεώστε τη σελίδα.');
     } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
       throw new Error('Πρόβλημα δικτύου. Ελέγξτε τη σύνδεσή σας.');
     } else if (error.message?.includes('timeout')) {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Document } from '../utils/searchUtils';
 import { toast } from 'sonner';
@@ -14,78 +15,92 @@ export const useDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
-  const fetchAttemptRef = useRef(0);
-  const retryCountRef = useRef(0);
-  const maxRetries = 2;
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = useRef(false);
 
   const fetchDocuments = useCallback(async () => {
     if (!isMountedRef.current) return;
     
-    const currentAttempt = ++fetchAttemptRef.current;
-    console.log('🔄 fetchDocuments: Starting attempt', currentAttempt, 'retry:', retryCountRef.current);
+    console.log('🔄 fetchDocuments: Starting fetch attempt');
+    
+    // Clear any existing timeout
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+      fetchTimeoutRef.current = null;
+    }
     
     try {
       setLoading(true);
       setError(null);
       
+      // Add a maximum timeout for the entire fetch operation
+      const timeoutPromise = new Promise((_, reject) => {
+        fetchTimeoutRef.current = setTimeout(() => {
+          reject(new Error('Η αίτηση διήρκεσε πολύ. Δοκιμάστε ξανά.'));
+        }, 15000); // 15 second timeout
+      });
+      
       // Run cleanup in background without waiting
       cleanupCache();
       
-      const transformedDocuments = await fetchDocumentsFromSupabase();
+      const fetchPromise = fetchDocumentsFromSupabase();
       
-      if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
+      // Race between fetch and timeout
+      const transformedDocuments = await Promise.race([fetchPromise, timeoutPromise]) as Document[];
+      
+      // Clear timeout if fetch completed successfully
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+        fetchTimeoutRef.current = null;
+      }
+      
+      if (isMountedRef.current) {
         setDocuments(transformedDocuments);
         setError(null);
-        retryCountRef.current = 0; // Reset retry count on success
         console.log('✅ Documents loaded successfully:', transformedDocuments.length);
       }
       
     } catch (err: any) {
       console.error('💥 Fetch error in useDocuments:', err);
       
-      if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
+      // Clear timeout on error
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+        fetchTimeoutRef.current = null;
+      }
+      
+      if (isMountedRef.current) {
         const errorMessage = err.message || 'Σφάλμα φόρτωσης εγγράφων';
-        
-        // Only retry if we haven't exceeded max retries and it's a recoverable error
-        if (retryCountRef.current < maxRetries && 
-            (err.message?.includes('network') || err.message?.includes('timeout') || err.message?.includes('connection'))) {
-          
-          retryCountRef.current++;
-          console.log(`🔄 Retrying... (${retryCountRef.current}/${maxRetries})`);
-          
-          // Retry after a delay
-          setTimeout(() => {
-            if (isMountedRef.current) {
-              fetchDocuments();
-            }
-          }, 2000 * retryCountRef.current); // Exponential backoff
-          
-          return; // Don't set error state yet, we're retrying
-        }
-        
-        // Set error state after max retries or non-recoverable error
         setError(errorMessage);
         setDocuments([]);
-        toast.error(errorMessage);
-        retryCountRef.current = 0; // Reset for next manual retry
+        
+        // Only show toast if it's not the initial load
+        if (hasInitializedRef.current) {
+          toast.error(errorMessage);
+        }
       }
     } finally {
-      if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
-        console.log('🏁 Setting loading to false for attempt', currentAttempt);
+      if (isMountedRef.current) {
+        console.log('🏁 Setting loading to false');
         setLoading(false);
+        hasInitializedRef.current = true;
       }
     }
   }, []);
 
   const incrementViewCount = async (documentId: string) => {
-    await incrementDocumentViewCount(documentId);
-    
-    // Update local state
-    setDocuments(prev => prev.map(doc => 
-      doc.id === documentId 
-        ? { ...doc, view_count: (doc.view_count || 0) + 1 }
-        : doc
-    ));
+    try {
+      await incrementDocumentViewCount(documentId);
+      
+      // Update local state
+      setDocuments(prev => prev.map(doc => 
+        doc.id === documentId 
+          ? { ...doc, view_count: (doc.view_count || 0) + 1 }
+          : doc
+      ));
+    } catch (err) {
+      console.error('Error incrementing view count:', err);
+    }
   };
 
   const updateDocument = async (id: string, updates: { title: string; description: string; tags: string[]; category?: string }) => {
@@ -143,13 +158,16 @@ export const useDocuments = () => {
   useEffect(() => {
     console.log('🚀 useDocuments: Mounting and fetching documents');
     isMountedRef.current = true;
-    retryCountRef.current = 0;
     fetchDocuments();
 
     // Cleanup function to prevent state updates after unmount
     return () => {
       console.log('🔄 useDocuments: Unmounting');
       isMountedRef.current = false;
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+        fetchTimeoutRef.current = null;
+      }
     };
   }, []); // Only run once on mount
 
