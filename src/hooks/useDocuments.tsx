@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Document } from '../utils/searchUtils';
 import { toast } from 'sonner';
@@ -22,8 +21,8 @@ export const useDocuments = () => {
       setLoading(true);
       setError(null);
       
-      // Run cleanup in background, don't wait for it
-      cleanupCache().catch(e => console.log('Background cleanup failed:', e));
+      // Run cleanup in background without waiting - this prevents blocking
+      cleanupCache();
       
       const transformedDocuments = await fetchDocumentsFromSupabase();
       setDocuments(transformedDocuments);
