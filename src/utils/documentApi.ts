@@ -2,50 +2,51 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from './searchUtils';
 
+// Add exponential backoff for retries
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      const delayTime = baseDelay * Math.pow(2, i);
+      console.log(`🔄 Retry ${i + 1}/${maxRetries} after ${delayTime}ms`);
+      await delay(delayTime);
+    }
+  }
+  throw new Error('Max retries exceeded');
+};
+
 export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
-  console.log('📡 Starting Supabase fetch with timeout protection...');
+  console.log('📡 Starting Supabase fetch with improved retry logic...');
   
   try {
-    // Quick connection test with shorter timeout
-    const testController = new AbortController();
-    const testTimeoutId = setTimeout(() => testController.abort(), 5000);
-    
-    const { data: testData, error: testError } = await supabase
-      .from('documents')
-      .select('id')
-      .limit(1)
-      .abortSignal(testController.signal);
-    
-    clearTimeout(testTimeoutId);
-    
-    if (testError) {
-      console.error('❌ Connection test failed:', testError);
-      throw new Error(`Πρόβλημα σύνδεσης με τη βάση δεδομένων: ${testError.message}`);
-    }
-    
-    console.log('✅ Connection test passed, fetching documents...');
-    
-    // Main query with timeout protection
-    const mainController = new AbortController();
-    const mainTimeoutId = setTimeout(() => mainController.abort(), 10000);
-    
-    const { data, error: fetchError } = await supabase
-      .from('documents')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .abortSignal(mainController.signal);
+    // Try with retry and exponential backoff
+    const data = await retryWithBackoff(async () => {
+      console.log('🔄 Attempting Supabase connection...');
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    clearTimeout(mainTimeoutId);
+      if (error) {
+        console.error('❌ Supabase query error:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
 
-    if (fetchError) {
-      console.error('❌ Fetch error:', fetchError);
-      throw new Error(`Σφάλμα ανάκτησης δεδομένων: ${fetchError.message}`);
-    }
-
-    console.log('📊 Raw Supabase response:', { count: data?.length || 0 });
+      console.log('✅ Supabase query successful:', { count: data?.length || 0 });
+      return data;
+    }, 2, 2000); // 2 retries with 2 second base delay
 
     if (!data || data.length === 0) {
-      console.log('⚠️ No data returned, returning empty array');
+      console.log('⚠️ No documents found, returning empty array');
       return [];
     }
 
@@ -75,22 +76,17 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
     return transformedDocuments;
     
   } catch (error: any) {
-    console.error('❌ Complete fetch error details:', error);
+    console.error('❌ All fetch attempts failed:', error);
     
-    // Handle abort errors specifically
-    if (error.name === 'AbortError') {
-      throw new Error('Η αίτηση διήρκεσε πολύ. Παρακαλώ δοκιμάστε ξανά.');
-    }
-    
-    // Provide more specific error messages
+    // Provide more specific error messages based on error type
     if (error.message?.includes('JWT') || error.message?.includes('auth')) {
       throw new Error('Πρόβλημα εξουσιοδότησης. Παρακαλώ ανανεώστε τη σελίδα.');
     } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
-      throw new Error('Πρόβλημα δικτύου. Ελέγξτε τη σύνδεσή σας.');
+      throw new Error('Πρόβλημα δικτύου. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.');
     } else if (error.message?.includes('timeout')) {
-      throw new Error('Η αίτηση διήρκεσε πολύ. Δοκιμάστε ξανά.');
+      throw new Error('Η σύνδεση διήρκεσε πολύ. Δοκιμάστε ξανά σε λίγο.');
     } else {
-      throw new Error(error.message || 'Άγνωστο σφάλμα κατά τη φόρτωση');
+      throw new Error('Πρόβλημα φόρτωσης εγγράφων. Δοκιμάστε ξανά.');
     }
   }
 };

@@ -15,7 +15,7 @@ export const useDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasInitializedRef = useRef(false);
 
   const fetchDocuments = useCallback(async () => {
@@ -23,36 +23,20 @@ export const useDocuments = () => {
     
     console.log('🔄 fetchDocuments: Starting fetch attempt');
     
-    // Clear any existing timeout
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-      fetchTimeoutRef.current = null;
+    // Clear any existing retry timeout
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
     }
     
     try {
       setLoading(true);
       setError(null);
       
-      // Add a maximum timeout for the entire fetch operation
-      const timeoutPromise = new Promise((_, reject) => {
-        fetchTimeoutRef.current = setTimeout(() => {
-          reject(new Error('Η αίτηση διήρκεσε πολύ. Δοκιμάστε ξανά.'));
-        }, 15000); // 15 second timeout
-      });
-      
       // Run cleanup in background without waiting
       cleanupCache();
       
-      const fetchPromise = fetchDocumentsFromSupabase();
-      
-      // Race between fetch and timeout
-      const transformedDocuments = await Promise.race([fetchPromise, timeoutPromise]) as Document[];
-      
-      // Clear timeout if fetch completed successfully
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-        fetchTimeoutRef.current = null;
-      }
+      const transformedDocuments = await fetchDocumentsFromSupabase();
       
       if (isMountedRef.current) {
         setDocuments(transformedDocuments);
@@ -62,12 +46,6 @@ export const useDocuments = () => {
       
     } catch (err: any) {
       console.error('💥 Fetch error in useDocuments:', err);
-      
-      // Clear timeout on error
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-        fetchTimeoutRef.current = null;
-      }
       
       if (isMountedRef.current) {
         const errorMessage = err.message || 'Σφάλμα φόρτωσης εγγράφων';
@@ -164,9 +142,9 @@ export const useDocuments = () => {
     return () => {
       console.log('🔄 useDocuments: Unmounting');
       isMountedRef.current = false;
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-        fetchTimeoutRef.current = null;
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
     };
   }, []); // Only run once on mount
