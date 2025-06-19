@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmailReplyData, EmailApiResponse } from "@/types/emailReply";
-import { sendEmailViaEmailJS, sendEmailViaFormSubmit } from "./alternativeEmailApi";
+import { sendEmailViaEmailJS, sendEmailViaFormSubmit, sendEmailViaMailto } from "./alternativeEmailApi";
 
 export const sendEmailViaApi = async (
   email: string,
@@ -10,10 +10,10 @@ export const sendEmailViaApi = async (
 ): Promise<EmailApiResponse> => {
   console.log('📧 Attempting to send email via multiple methods...');
   
-  // Try alternative methods first (more reliable)
+  // Try alternative methods first (more reliable than Supabase edge function)
   const alternatives = [
+    () => sendEmailViaFormSubmit(email, replyData.subject, replyData.body),
     () => sendEmailViaEmailJS(email, replyData.subject, replyData.body, chatId),
-    () => sendEmailViaFormSubmit(email, replyData.subject, replyData.body)
   ];
 
   for (const [index, method] of alternatives.entries()) {
@@ -32,14 +32,15 @@ export const sendEmailViaApi = async (
     }
   }
 
-  // Fallback to original Supabase method
+  // Fallback to original Supabase method with shorter timeout
   try {
     console.log('🔄 Falling back to Supabase edge function...');
     
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      throw new Error("Authentication required. Please log in again.");
+      console.log('❌ No session, trying mailto fallback...');
+      return await sendEmailViaMailto(email, replyData.subject, replyData.body);
     }
 
     const { data: ticketData } = await supabase
@@ -72,7 +73,7 @@ https://eggrafo.work/support
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduced timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // Shorter timeout
 
     const res = await fetch(
       "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
@@ -98,7 +99,18 @@ https://eggrafo.work/support
     return JSON.parse(responseText);
     
   } catch (error: any) {
-    console.error('❌ All email methods failed:', error);
+    console.error('❌ Supabase method failed, trying mailto fallback:', error);
+    
+    // Final fallback to mailto
+    try {
+      const result = await sendEmailViaMailto(email, replyData.subject, replyData.body);
+      if (result.success) {
+        return { success: true, id: `mailto-${Date.now()}` };
+      }
+    } catch (mailtoError) {
+      console.error('❌ All email methods including mailto failed');
+    }
+    
     throw new Error(`All email methods failed. Last error: ${error.message}`);
   }
 };

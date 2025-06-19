@@ -1,6 +1,6 @@
 
-// Alternative email API using EmailJS (free service, no backend needed)
-// This is a backup solution that doesn't require server configuration
+// Alternative email API using multiple methods
+// This provides backup solutions that don't require complex server configuration
 
 interface EmailJSConfig {
   serviceId: string;
@@ -24,10 +24,14 @@ export const sendEmailViaEmailJS = async (
   try {
     // Check if EmailJS is configured
     if (EMAIL_CONFIG.serviceId === 'YOUR_SERVICE_ID') {
-      throw new Error('EmailJS not configured. Please set up your EmailJS credentials.');
+      console.log('⚠️ EmailJS not configured, skipping...');
+      return { 
+        success: false, 
+        error: 'EmailJS not configured. Please set up your EmailJS credentials.' 
+      };
     }
 
-    // Dynamic import of EmailJS to avoid bundle size issues
+    // Dynamic import of EmailJS
     const emailjs = await import('@emailjs/browser');
     
     const templateParams = {
@@ -65,22 +69,33 @@ export const sendEmailViaFormSubmit = async (
   try {
     // Using formsubmit.co as a free alternative
     const formData = new FormData();
-    formData.append('email', toEmail);
-    formData.append('subject', subject);
+    formData.append('_to', toEmail);
+    formData.append('_subject', subject);
     formData.append('message', message);
     formData.append('_replyto', 'support@eggrafo.work');
     formData.append('_captcha', 'false');
+    formData.append('_template', 'table');
 
     const response = await fetch('https://formsubmit.co/ajax/support@eggrafo.work', {
       method: 'POST',
-      body: formData
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        _to: toEmail,
+        _subject: subject,
+        message: message,
+        _replyto: 'support@eggrafo.work',
+        _captcha: false
+      })
     });
 
     if (response.ok) {
       console.log('✅ Email sent via FormSubmit');
       return { success: true };
     } else {
-      throw new Error('FormSubmit request failed');
+      throw new Error(`FormSubmit request failed: ${response.status}`);
     }
 
   } catch (error: any) {
@@ -92,39 +107,28 @@ export const sendEmailViaFormSubmit = async (
   }
 };
 
-// Simple SMTP.js alternative (frontend only)
-export const sendEmailViaSMTPJS = async (
+// Simple mailto fallback (opens user's email client)
+export const sendEmailViaMailto = async (
   toEmail: string,
   subject: string,
   message: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // This requires SMTP.js library and SMTP configuration
-    // User would need to include: <script src="https://smtpjs.com/v3/smtp.js"></script>
+    const encodedSubject = encodeURIComponent(subject);
+    const encodedMessage = encodeURIComponent(message);
+    const mailtoUrl = `mailto:${toEmail}?subject=${encodedSubject}&body=${encodedMessage}`;
     
-    const Email = (window as any).Email;
-    if (!Email) {
-      throw new Error('SMTP.js not loaded. Include the SMTP.js script in your HTML.');
-    }
-
-    await Email.send({
-      Host: "smtp.elasticemail.com", // Or other SMTP service
-      Username: "your-email@domain.com", // User needs to configure
-      Password: "your-smtp-password", // User needs to configure
-      To: toEmail,
-      From: "support@eggrafo.work",
-      Subject: subject,
-      Body: message
-    });
-
-    console.log('✅ Email sent via SMTP.js');
+    // Open the user's email client
+    window.open(mailtoUrl, '_self');
+    
+    console.log('✅ Email client opened via mailto');
     return { success: true };
 
   } catch (error: any) {
-    console.error('❌ SMTP.js error:', error);
+    console.error('❌ Mailto error:', error);
     return { 
       success: false, 
-      error: error.message || 'Failed to send email via SMTP.js' 
+      error: error.message || 'Failed to open email client' 
     };
   }
 };
