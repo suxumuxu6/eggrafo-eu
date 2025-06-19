@@ -59,15 +59,17 @@ export const useFileUpload = () => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Upload progress simulation
+      // Smoother progress simulation
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
-          const newProgress = prev + 5;
-          return newProgress > 90 ? 90 : newProgress;
+          const newProgress = prev + 2;
+          return newProgress > 85 ? 85 : newProgress;
         });
-      }, 200);
+      }, 150);
 
-      // Upload file to Supabase Storage documents bucket
+      console.log('🔄 Starting file upload to Supabase storage...');
+
+      // Upload file to Supabase Storage documents bucket with improved options
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
@@ -76,13 +78,16 @@ export const useFileUpload = () => {
         });
 
       clearInterval(progressInterval);
-      setUploadProgress(95);
 
       if (uploadError) {
+        console.error('❌ Storage upload error:', uploadError);
         setErrorMessage("Error uploading PDF. Please try again.");
         toast.error('Error uploading file: ' + uploadError.message);
         return false;
       }
+
+      console.log('✅ File uploaded successfully:', uploadData);
+      setUploadProgress(90);
 
       // Generate the public URL for the uploaded file
       const { data: publicUrlData } = supabase.storage
@@ -95,10 +100,13 @@ export const useFileUpload = () => {
         return false;
       }
 
+      setUploadProgress(95);
       const fileUrl = publicUrlData.publicUrl;
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
-      // Save document metadata
+      console.log('🔄 Saving document metadata to database...');
+
+      // Save document metadata with better error handling
       const { error: metadataError, data: insertData } = await supabase
         .from('documents')
         .insert({
@@ -108,22 +116,35 @@ export const useFileUpload = () => {
           category,
           file_url: fileUrl,
           created_by: user.id,
-        });
+        })
+        .select()
+        .single();
 
       if (metadataError) {
+        console.error('❌ Database insert error:', metadataError);
         setErrorMessage('Error saving document metadata.');
-        toast.error('Error saving document metadata.');
+        toast.error('Error saving document metadata: ' + metadataError.message);
+        
+        // Try to clean up the uploaded file
+        try {
+          await supabase.storage.from('documents').remove([filePath]);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup uploaded file:', cleanupError);
+        }
+        
         return false;
       }
 
+      console.log('✅ Document metadata saved successfully:', insertData);
       setUploadProgress(100);
 
       toast.success(`Document "${title}" uploaded successfully!`);
       navigate('/home');
       return true;
     } catch (error: any) {
+      console.error('❌ Upload process failed:', error);
       setErrorMessage(error.message || 'Failed to upload document. Please try again.');
-      toast.error('Failed to upload document. Please try again.');
+      toast.error('Failed to upload document: ' + (error.message || 'Unknown error'));
       return false;
     } finally {
       setIsUploading(false);

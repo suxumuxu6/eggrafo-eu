@@ -1,3 +1,4 @@
+
 // Alternative email API using multiple methods
 // This provides backup solutions that don't require complex server configuration
 
@@ -7,11 +8,11 @@ interface EmailJSConfig {
   publicKey: string;
 }
 
-// EmailJS configuration - fully configured with your credentials
+// EmailJS configuration as backup only
 const EMAIL_CONFIG: EmailJSConfig = {
-  serviceId: 'service_6fui1o8', // Your EmailJS service ID
-  templateId: 'template_cj85kob', // Your EmailJS template ID
-  publicKey: '3V6L-0Mdffs0IUKhP' // Your EmailJS public key
+  serviceId: 'service_6fui1o8',
+  templateId: 'template_cj85kob',
+  publicKey: '3V6L-0Mdffs0IUKhP'
 };
 
 export const sendEmailViaEmailJS = async (
@@ -59,15 +60,6 @@ export const sendEmailViaFormSubmit = async (
   message: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Using formsubmit.co as a free alternative
-    const formData = new FormData();
-    formData.append('_to', toEmail);
-    formData.append('_subject', subject);
-    formData.append('message', message);
-    formData.append('_replyto', 'support@eggrafo.work');
-    formData.append('_captcha', 'false');
-    formData.append('_template', 'table');
-
     const response = await fetch('https://formsubmit.co/ajax/support@eggrafo.work', {
       method: 'POST',
       headers: {

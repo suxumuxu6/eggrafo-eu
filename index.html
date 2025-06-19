@@ -1,27 +1,52 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- Cache-busting headers to prevent loading issues -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knowledge Base Portal</title>
-    <meta name="description" content="Secure document knowledge base portal" />
-    <meta name="author" content="Knowledge Base" />
-
-    <meta property="og:title" content="Knowledge Base Portal" />
-    <meta property="og:description" content="Secure document knowledge base portal" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <title>Eggrafo</title>
+    
+    <!-- Debugging script for loading issues -->
+    <script>
+      window.addEventListener('load', function() {
+        const failed = [];
+        performance.getEntriesByType('resource').forEach(r => {
+          if (r.duration === 0) failed.push(r.name);
+        });
+        if (failed.length) console.error('Failed to load resources:', failed);
+        
+        // Clear problematic caches on load
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            const oldCaches = cacheNames.filter(name => 
+              name.startsWith('eggrafo-cache-') && !name.includes('v5')
+            );
+            oldCaches.forEach(cacheName => caches.delete(cacheName));
+          });
+        }
+      });
+      
+      // Unregister any problematic service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            if (registration.scope.includes('localhost') || registration.scope.includes('old-domain')) {
+              registration.unregister();
+            }
+          });
+        });
+      }
+    </script>
   </head>
-
   <body>
     <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

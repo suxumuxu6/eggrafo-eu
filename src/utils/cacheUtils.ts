@@ -1,5 +1,5 @@
 
-const CACHE_VERSION = 'v5'; // Incremented to force cache refresh
+const CACHE_VERSION = 'v6'; // Incremented to force cache refresh
 const CACHE_NAME = `eggrafo-cache-${CACHE_VERSION}`;
 
 export const cleanupCache = async (): Promise<void> => {
@@ -23,7 +23,7 @@ export const cleanupCache = async (): Promise<void> => {
 };
 
 const performCacheCleanup = async () => {
-  // Only clean truly problematic data, keep everything else
+  // Clear all old caches aggressively
   if ('caches' in window) {
     const cacheNames = await caches.keys();
     const oldCaches = cacheNames.filter(name => 
@@ -32,10 +32,11 @@ const performCacheCleanup = async () => {
     
     if (oldCaches.length > 0) {
       await Promise.allSettled(oldCaches.map(name => caches.delete(name)));
+      console.log('🧹 Deleted old caches:', oldCaches);
     }
   }
 
-  // Clear problematic browser storage
+  // Clear all problematic browser storage more aggressively
   if ('sessionStorage' in window) {
     try {
       // Test if sessionStorage is accessible
@@ -43,39 +44,23 @@ const performCacheCleanup = async () => {
       sessionStorage.setItem(testKey, 'test');
       sessionStorage.removeItem(testKey);
       
-      // If accessible, clean specific problematic keys
-      const keysToCheck = Object.keys(sessionStorage);
-      keysToCheck.forEach(key => {
-        if (key.startsWith('temp-') || 
-            key.startsWith('cache-') || 
-            key.includes('supabase-auth-token') ||
-            key.includes('sb-auth-token')) {
-          try {
-            sessionStorage.removeItem(key);
-          } catch (e) {
-            // Ignore individual removal failures
-          }
-        }
-      });
+      // Clear ALL session storage to avoid any conflicts
+      sessionStorage.clear();
+      console.log('🧹 Cleared all sessionStorage');
     } catch (e) {
-      // If sessionStorage is corrupted, try to clear it completely
-      try {
-        sessionStorage.clear();
-        console.log('🧹 Cleared corrupted sessionStorage');
-      } catch (clearError) {
-        console.log('Could not clear sessionStorage:', clearError);
-      }
+      console.log('SessionStorage not accessible or already cleared');
     }
   }
 
-  // Clear potentially problematic localStorage items
+  // Clear specific localStorage items that cause issues
   if ('localStorage' in window) {
     try {
       const problematicKeys = [
         'supabase.auth.token',
         'sb-auth-token', 
         'documents-cache',
-        'auth-session-cache'
+        'auth-session-cache',
+        'upload_form_data' // Clear any stuck upload form data
       ];
       
       problematicKeys.forEach(key => {
@@ -85,6 +70,8 @@ const performCacheCleanup = async () => {
           // Ignore individual removal failures
         }
       });
+      
+      console.log('🧹 Cleared problematic localStorage keys');
     } catch (e) {
       console.log('localStorage cleanup failed:', e);
     }
@@ -98,6 +85,18 @@ export const clearCache = (): void => {
     // Force clear browser storage
     if ('sessionStorage' in window) {
       sessionStorage.clear();
+    }
+    
+    if ('localStorage' in window) {
+      // Clear specific keys that might be causing upload issues
+      const keysToRemove = ['upload_form_data', 'supabase.auth.token', 'sb-auth-token'];
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {
+          // Ignore failures
+        }
+      });
     }
     
     // Clear service worker cache if available
