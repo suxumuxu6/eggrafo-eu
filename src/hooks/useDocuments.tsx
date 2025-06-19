@@ -18,6 +18,43 @@ export const useDocuments = () => {
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasInitializedRef = useRef(false);
 
+  // Clear problematic browser storage on mount
+  const clearProblematicStorage = useCallback(() => {
+    try {
+      // Clear potentially corrupted session data
+      const keysToRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.includes('supabase') || key.includes('auth') || key.includes('documents'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => {
+        try {
+          sessionStorage.removeItem(key);
+        } catch (e) {
+          console.log('Could not remove session key:', key);
+        }
+      });
+
+      // Clear specific localStorage items that might cause issues
+      const localKeysToCheck = ['supabase.auth.token', 'sb-auth-token', 'documents-cache'];
+      localKeysToCheck.forEach(key => {
+        try {
+          if (localStorage.getItem(key)) {
+            localStorage.removeItem(key);
+            console.log('Cleared potentially problematic localStorage key:', key);
+          }
+        } catch (e) {
+          console.log('Could not access localStorage key:', key);
+        }
+      });
+
+    } catch (e) {
+      console.log('Storage cleanup completed with some errors (non-critical)');
+    }
+  }, []);
+
   const fetchDocuments = useCallback(async () => {
     if (!isMountedRef.current) return;
     
@@ -136,7 +173,16 @@ export const useDocuments = () => {
   useEffect(() => {
     console.log('🚀 useDocuments: Mounting and fetching documents');
     isMountedRef.current = true;
-    fetchDocuments();
+    
+    // Clear problematic storage first
+    clearProblematicStorage();
+    
+    // Add a small delay to ensure storage clearing is complete
+    const initTimer = setTimeout(() => {
+      if (isMountedRef.current) {
+        fetchDocuments();
+      }
+    }, 100);
 
     // Cleanup function to prevent state updates after unmount
     return () => {
@@ -145,6 +191,9 @@ export const useDocuments = () => {
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
+      }
+      if (initTimer) {
+        clearTimeout(initTimer);
       }
     };
   }, []); // Only run once on mount
@@ -158,6 +207,9 @@ export const useDocuments = () => {
     updateDocument,
     deleteDocument,
     incrementViewCount,
-    clearCache
+    clearCache: () => {
+      clearProblematicStorage();
+      clearCache();
+    }
   };
 };

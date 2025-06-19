@@ -1,4 +1,5 @@
-const CACHE_VERSION = 'v4';
+
+const CACHE_VERSION = 'v5'; // Incremented to force cache refresh
 const CACHE_NAME = `eggrafo-cache-${CACHE_VERSION}`;
 
 export const cleanupCache = async (): Promise<void> => {
@@ -34,33 +35,92 @@ const performCacheCleanup = async () => {
     }
   }
 
-  // Only remove corrupted session data, not all
+  // Clear problematic browser storage
   if ('sessionStorage' in window) {
     try {
+      // Test if sessionStorage is accessible
       const testKey = 'cache-test-' + Date.now();
       sessionStorage.setItem(testKey, 'test');
       sessionStorage.removeItem(testKey);
-    } catch (e) {
-      // Storage is full or corrupted, clear only non-essential items
-      try {
-        const keysToCheck = Object.keys(sessionStorage);
-        keysToCheck.forEach(key => {
-          if (key.startsWith('temp-') || key.startsWith('cache-')) {
-            try {
-              sessionStorage.removeItem(key);
-            } catch (e) {
-              // Ignore individual removal failures
-            }
+      
+      // If accessible, clean specific problematic keys
+      const keysToCheck = Object.keys(sessionStorage);
+      keysToCheck.forEach(key => {
+        if (key.startsWith('temp-') || 
+            key.startsWith('cache-') || 
+            key.includes('supabase-auth-token') ||
+            key.includes('sb-auth-token')) {
+          try {
+            sessionStorage.removeItem(key);
+          } catch (e) {
+            // Ignore individual removal failures
           }
-        });
-      } catch (e) {
-        // Ignore cleanup failures
+        }
+      });
+    } catch (e) {
+      // If sessionStorage is corrupted, try to clear it completely
+      try {
+        sessionStorage.clear();
+        console.log('🧹 Cleared corrupted sessionStorage');
+      } catch (clearError) {
+        console.log('Could not clear sessionStorage:', clearError);
       }
+    }
+  }
+
+  // Clear potentially problematic localStorage items
+  if ('localStorage' in window) {
+    try {
+      const problematicKeys = [
+        'supabase.auth.token',
+        'sb-auth-token', 
+        'documents-cache',
+        'auth-session-cache'
+      ];
+      
+      problematicKeys.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {
+          // Ignore individual removal failures
+        }
+      });
+    } catch (e) {
+      console.log('localStorage cleanup failed:', e);
     }
   }
 };
 
 export const clearCache = (): void => {
-  console.log('🧹 Cache clear requested (minimal impact)');
-  // Don't actually clear anything critical, just log
+  console.log('🧹 Manual cache clear requested');
+  
+  try {
+    // Force clear browser storage
+    if ('sessionStorage' in window) {
+      sessionStorage.clear();
+    }
+    
+    // Clear service worker cache if available
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => {
+          if (name.startsWith('eggrafo-cache-')) {
+            caches.delete(name);
+          }
+        });
+      });
+    }
+    
+    console.log('🧹 Manual cache clear completed');
+    
+    // Force page reload after cache clear
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+    
+  } catch (e) {
+    console.error('Manual cache clear failed:', e);
+    // Still try to reload the page
+    window.location.reload();
+  }
 };
