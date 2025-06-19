@@ -1,29 +1,56 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmailReplyData, EmailApiResponse } from "@/types/emailReply";
+import { sendEmailViaEmailJS, sendEmailViaFormSubmit } from "./alternativeEmailApi";
 
 export const sendEmailViaApi = async (
   email: string,
   chatId: string,
   replyData: EmailReplyData
 ): Promise<EmailApiResponse> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  console.log('📧 Attempting to send email via multiple methods...');
   
-  if (!session) {
-    throw new Error("Authentication required. Please log in again.");
+  // Try alternative methods first (more reliable)
+  const alternatives = [
+    () => sendEmailViaEmailJS(email, replyData.subject, replyData.body, chatId),
+    () => sendEmailViaFormSubmit(email, replyData.subject, replyData.body)
+  ];
+
+  for (const [index, method] of alternatives.entries()) {
+    try {
+      console.log(`🔄 Trying email method ${index + 1}...`);
+      const result = await method();
+      
+      if (result.success) {
+        console.log(`✅ Email sent successfully via method ${index + 1}`);
+        return { success: true, id: `alt-${index + 1}-${Date.now()}` };
+      } else {
+        console.warn(`⚠️ Method ${index + 1} failed:`, result.error);
+      }
+    } catch (error) {
+      console.warn(`⚠️ Method ${index + 1} error:`, error);
+    }
   }
 
-  // Get the support ticket code for the notification
-  const { data: ticketData } = await supabase
-    .from("chatbot_messages")
-    .select("support_ticket_code")
-    .eq("id", chatId)
-    .single();
+  // Fallback to original Supabase method
+  try {
+    console.log('🔄 Falling back to Supabase edge function...');
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error("Authentication required. Please log in again.");
+    }
 
-  const supportTicketCode = ticketData?.support_ticket_code;
-  
-  // Create simplified notification message
-  const notificationMessage = `Αγαπητέ/ή χρήστη,
+    const { data: ticketData } = await supabase
+      .from("chatbot_messages")
+      .select("support_ticket_code")
+      .eq("id", chatId)
+      .single();
+
+    const supportTicketCode = ticketData?.support_ticket_code;
+    
+    const notificationMessage = `Αγαπητέ/ή χρήστη,
 
 Έχετε λάβει νέα απάντηση για το αίτημά σας με κωδικό: ${supportTicketCode}
 
@@ -32,22 +59,21 @@ https://eggrafo.work/support
 
 Με εκτίμηση,
 Η ομάδα υποστήριξης eggrafo.work`;
-  
-  const formData = new FormData();
-  formData.append("email", email);
-  formData.append("subject", "Νέα απάντηση στο αίτημά σας");
-  formData.append("message", notificationMessage);
-  formData.append("chatId", chatId);
-  formData.append("isAdminReply", "false");
-  
-  if (replyData.file) {
-    formData.append("file", replyData.file);
-  }
+    
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("subject", "Νέα απάντηση στο αίτημά σας");
+    formData.append("message", notificationMessage);
+    formData.append("chatId", chatId);
+    formData.append("isAdminReply", "false");
+    
+    if (replyData.file) {
+      formData.append("file", replyData.file);
+    }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduced timeout
 
-  try {
     const res = await fetch(
       "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
       {
@@ -70,8 +96,9 @@ https://eggrafo.work/support
 
     const responseText = await res.text();
     return JSON.parse(responseText);
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
+    
+  } catch (error: any) {
+    console.error('❌ All email methods failed:', error);
+    throw new Error(`All email methods failed. Last error: ${error.message}`);
   }
 };

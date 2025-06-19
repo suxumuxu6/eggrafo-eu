@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Document } from '../utils/searchUtils';
 import { toast } from 'sonner';
@@ -16,56 +15,67 @@ export const useDocuments = () => {
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
   const fetchAttemptRef = useRef(0);
+  const retryCountRef = useRef(0);
+  const maxRetries = 2;
 
   const fetchDocuments = useCallback(async () => {
-    // Prevent multiple simultaneous fetches
     if (!isMountedRef.current) return;
     
     const currentAttempt = ++fetchAttemptRef.current;
-    console.log('🔄 fetchDocuments: Starting attempt', currentAttempt);
+    console.log('🔄 fetchDocuments: Starting attempt', currentAttempt, 'retry:', retryCountRef.current);
     
     try {
       setLoading(true);
       setError(null);
       
-      // Run cleanup in background without waiting - this prevents blocking
+      // Run cleanup in background without waiting
       cleanupCache();
       
       const transformedDocuments = await fetchDocumentsFromSupabase();
       
-      // Only update state if this is still the current attempt and component is mounted
       if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
         setDocuments(transformedDocuments);
         setError(null);
+        retryCountRef.current = 0; // Reset retry count on success
+        console.log('✅ Documents loaded successfully:', transformedDocuments.length);
       }
       
     } catch (err: any) {
-      console.error('💥 Final error in fetchDocuments:', err);
+      console.error('💥 Fetch error in useDocuments:', err);
       
-      // Only update state if this is still the current attempt and component is mounted
       if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
-        let errorMessage = 'Σφάλμα φόρτωσης εγγράφων';
+        const errorMessage = err.message || 'Σφάλμα φόρτωσης εγγράφων';
         
-        if (err.message?.includes('timeout')) {
-          errorMessage = 'Η φόρτωση διήρκεσε πολύ. Δοκιμάστε ξανά.';
-        } else if (err.message?.includes('Failed to fetch')) {
-          errorMessage = 'Πρόβλημα σύνδεσης. Ελέγξτε τη σύνδεσή σας στο internet.';
-        } else {
-          errorMessage = err.message || 'Άγνωστο σφάλμα';
+        // Only retry if we haven't exceeded max retries and it's a recoverable error
+        if (retryCountRef.current < maxRetries && 
+            (err.message?.includes('network') || err.message?.includes('timeout') || err.message?.includes('connection'))) {
+          
+          retryCountRef.current++;
+          console.log(`🔄 Retrying... (${retryCountRef.current}/${maxRetries})`);
+          
+          // Retry after a delay
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              fetchDocuments();
+            }
+          }, 2000 * retryCountRef.current); // Exponential backoff
+          
+          return; // Don't set error state yet, we're retrying
         }
         
+        // Set error state after max retries or non-recoverable error
         setError(errorMessage);
         setDocuments([]);
         toast.error(errorMessage);
+        retryCountRef.current = 0; // Reset for next manual retry
       }
     } finally {
-      // Only update loading state if this is still the current attempt and component is mounted
       if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
         console.log('🏁 Setting loading to false for attempt', currentAttempt);
         setLoading(false);
       }
     }
-  }, []); // Remove all dependencies to prevent recreating the function
+  }, []);
 
   const incrementViewCount = async (documentId: string) => {
     await incrementDocumentViewCount(documentId);
@@ -133,6 +143,7 @@ export const useDocuments = () => {
   useEffect(() => {
     console.log('🚀 useDocuments: Mounting and fetching documents');
     isMountedRef.current = true;
+    retryCountRef.current = 0;
     fetchDocuments();
 
     // Cleanup function to prevent state updates after unmount

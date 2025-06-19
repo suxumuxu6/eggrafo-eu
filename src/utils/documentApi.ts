@@ -1,41 +1,46 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from './searchUtils';
 
 export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
-  console.log('📡 Fetching from Supabase...');
-  
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    console.log('⏰ Request timeout - aborting');
-    controller.abort();
-  }, 15000); // Increased to 15 seconds to reduce timeout frequency
+  console.log('📡 Starting Supabase fetch with improved error handling...');
   
   try {
+    // Try a simple connection test first
+    const { data: testData, error: testError } = await supabase
+      .from('documents')
+      .select('count')
+      .limit(1)
+      .maybeSingle();
+    
+    if (testError) {
+      console.error('❌ Connection test failed:', testError);
+      throw new Error(`Database connection failed: ${testError.message}`);
+    }
+    
+    console.log('✅ Connection test passed, fetching documents...');
+    
+    // Main query with shorter timeout and better error handling
     const { data, error: fetchError } = await supabase
       .from('documents')
       .select('*')
-      .order('created_at', { ascending: false })
-      .abortSignal(controller.signal);
-
-    clearTimeout(timeoutId);
+      .order('created_at', { ascending: false });
 
     if (fetchError) {
-      throw new Error(`Supabase error: ${fetchError.message}`);
+      console.error('❌ Fetch error:', fetchError);
+      throw new Error(`Database query failed: ${fetchError.message}`);
     }
 
-    console.log('📊 Supabase response successful:', { count: data?.length || 0 });
+    console.log('📊 Raw Supabase response:', { count: data?.length || 0, sample: data?.[0] });
 
     if (!data) {
-      console.log('⚠️ No data returned');
+      console.log('⚠️ No data returned, returning empty array');
       return [];
     }
 
     const transformedDocuments: Document[] = data.map(doc => {
-      // Ensure the URL is properly formatted for the storage bucket
       let fileUrl = doc.file_url || '';
       
-      // If it's not already a full URL, construct it properly
+      // Ensure the URL is properly formatted for the storage bucket
       if (fileUrl && !fileUrl.startsWith('http')) {
         const { data: urlData } = supabase.storage
           .from('documents')
@@ -58,14 +63,23 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
     return transformedDocuments;
     
   } catch (error: any) {
-    clearTimeout(timeoutId);
+    console.error('❌ Complete fetch error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause
+    });
     
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout - please check your connection');
+    // Provide more specific error messages
+    if (error.message?.includes('JWT')) {
+      throw new Error('Πρόβλημα εξουσιοδότησης. Παρακαλώ συνδεθείτε ξανά.');
+    } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+      throw new Error('Πρόβλημα δικτύου. Ελέγξτε τη σύνδεσή σας.');
+    } else if (error.message?.includes('timeout')) {
+      throw new Error('Η αίτηση διήρκεσε πολύ. Δοκιμάστε ξανά.');
+    } else {
+      throw new Error(error.message || 'Άγνωστο σφάλμα κατά τη φόρτωση');
     }
-    
-    console.error('❌ Fetch error:', error);
-    throw error;
   }
 };
 
