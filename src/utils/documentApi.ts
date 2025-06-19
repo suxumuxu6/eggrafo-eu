@@ -9,7 +9,7 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
   const timeoutId = setTimeout(() => {
     console.log('⏰ Request timeout - aborting');
     controller.abort();
-  }, 5000); // Reduced timeout to 5 seconds
+  }, 10000); // 10 seconds timeout
   
   try {
     const { data, error: fetchError } = await supabase
@@ -31,15 +31,28 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
       return [];
     }
 
-    const transformedDocuments: Document[] = data.map(doc => ({
-      id: doc.id,
-      title: doc.title || 'Untitled',
-      description: doc.description || '',
-      tags: Array.isArray(doc.tags) ? doc.tags : [],
-      category: doc.category || '',
-      url: doc.file_url || '',
-      view_count: doc.view_count || 0
-    }));
+    const transformedDocuments: Document[] = data.map(doc => {
+      // Ensure the URL is properly formatted for the storage bucket
+      let fileUrl = doc.file_url || '';
+      
+      // If it's not already a full URL, construct it properly
+      if (fileUrl && !fileUrl.startsWith('http')) {
+        const { data: urlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(fileUrl);
+        fileUrl = urlData?.publicUrl || fileUrl;
+      }
+
+      return {
+        id: doc.id,
+        title: doc.title || 'Untitled',
+        description: doc.description || '',
+        tags: Array.isArray(doc.tags) ? doc.tags : [],
+        category: doc.category || '',
+        url: fileUrl,
+        view_count: doc.view_count || 0
+      };
+    });
 
     console.log('✅ Documents transformed successfully:', transformedDocuments.length);
     return transformedDocuments;
@@ -92,6 +105,40 @@ export const updateDocumentInSupabase = async (
 };
 
 export const deleteDocumentFromSupabase = async (id: string): Promise<void> => {
+  // First get the document to find the file path
+  const { data: doc, error: fetchError } = await supabase
+    .from('documents')
+    .select('file_url')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) {
+    throw fetchError;
+  }
+
+  // Extract file path from URL for storage deletion
+  if (doc?.file_url) {
+    try {
+      const url = new URL(doc.file_url);
+      const pathParts = url.pathname.split('/');
+      const fileName = pathParts[pathParts.length - 1];
+      
+      // Delete file from storage
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([fileName]);
+
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+        // Continue with database deletion even if storage deletion fails
+      }
+    } catch (urlError) {
+      console.error('Error parsing file URL:', urlError);
+      // Continue with database deletion
+    }
+  }
+
+  // Delete document record from database
   const { error: deleteError } = await supabase
     .from('documents')
     .delete()

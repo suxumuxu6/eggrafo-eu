@@ -59,7 +59,6 @@ export const useFileUpload = () => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Check that storage bucket is present and private (if not, migration handles creation)
       // Upload progress simulation
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -68,7 +67,7 @@ export const useFileUpload = () => {
         });
       }, 200);
 
-      // Upload file to PRIVATE Supabase Storage
+      // Upload file to Supabase Storage documents bucket
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
@@ -85,28 +84,28 @@ export const useFileUpload = () => {
         return false;
       }
 
-      // Generate a signed URL (private access, 1 hour expiration)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      // Generate the public URL for the uploaded file
+      const { data: publicUrlData } = supabase.storage
         .from('documents')
-        .createSignedUrl(filePath, 60 * 60); // 1 hour
+        .getPublicUrl(filePath);
 
-      if (signedUrlError || !signedUrlData?.signedUrl) {
-        setErrorMessage("Unable to generate a secure file URL.");
+      if (!publicUrlData?.publicUrl) {
+        setErrorMessage("Unable to generate a file URL.");
         toast.error('Failed to create download link. Please contact admin.');
         return false;
       }
-      const fileUrl = signedUrlData.signedUrl;
 
+      const fileUrl = publicUrlData.publicUrl;
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
-      // Save document metadata (category now set properly)
+      // Save document metadata
       const { error: metadataError, data: insertData } = await supabase
         .from('documents')
         .insert({
           title, 
           description,
           tags: tagsArray, 
-          category, // set the category from form
+          category,
           file_url: fileUrl,
           created_by: user.id,
         });
