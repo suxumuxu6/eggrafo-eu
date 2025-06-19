@@ -9,7 +9,7 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
   const timeoutId = setTimeout(() => {
     console.log('⏰ Request timeout - aborting');
     controller.abort();
-  }, 10000); // 10 seconds timeout
+  }, 15000); // Increased to 15 seconds to reduce timeout frequency
   
   try {
     const { data, error: fetchError } = await supabase

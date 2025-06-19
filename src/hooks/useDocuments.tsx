@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Document } from '../utils/searchUtils';
 import { toast } from 'sonner';
 import { cleanupCache, clearCache } from '../utils/cacheUtils';
@@ -13,9 +14,15 @@ export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
+  const fetchAttemptRef = useRef(0);
 
   const fetchDocuments = useCallback(async () => {
-    console.log('🔄 fetchDocuments: Starting...');
+    // Prevent multiple simultaneous fetches
+    if (!isMountedRef.current) return;
+    
+    const currentAttempt = ++fetchAttemptRef.current;
+    console.log('🔄 fetchDocuments: Starting attempt', currentAttempt);
     
     try {
       setLoading(true);
@@ -25,29 +32,40 @@ export const useDocuments = () => {
       cleanupCache();
       
       const transformedDocuments = await fetchDocumentsFromSupabase();
-      setDocuments(transformedDocuments);
+      
+      // Only update state if this is still the current attempt and component is mounted
+      if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
+        setDocuments(transformedDocuments);
+        setError(null);
+      }
       
     } catch (err: any) {
       console.error('💥 Final error in fetchDocuments:', err);
       
-      let errorMessage = 'Σφάλμα φόρτωσης εγγράφων';
-      
-      if (err.message?.includes('timeout')) {
-        errorMessage = 'Η φόρτωση διήρκεσε πολύ. Δοκιμάστε ξανά.';
-      } else if (err.message?.includes('Failed to fetch')) {
-        errorMessage = 'Πρόβλημα σύνδεσης. Ελέγξτε τη σύνδεσή σας στο internet.';
-      } else {
-        errorMessage = err.message || 'Άγνωστο σφάλμα';
+      // Only update state if this is still the current attempt and component is mounted
+      if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
+        let errorMessage = 'Σφάλμα φόρτωσης εγγράφων';
+        
+        if (err.message?.includes('timeout')) {
+          errorMessage = 'Η φόρτωση διήρκεσε πολύ. Δοκιμάστε ξανά.';
+        } else if (err.message?.includes('Failed to fetch')) {
+          errorMessage = 'Πρόβλημα σύνδεσης. Ελέγξτε τη σύνδεσή σας στο internet.';
+        } else {
+          errorMessage = err.message || 'Άγνωστο σφάλμα';
+        }
+        
+        setError(errorMessage);
+        setDocuments([]);
+        toast.error(errorMessage);
       }
-      
-      setError(errorMessage);
-      setDocuments([]);
-      toast.error(errorMessage);
     } finally {
-      console.log('🏁 Setting loading to false');
-      setLoading(false);
+      // Only update loading state if this is still the current attempt and component is mounted
+      if (currentAttempt === fetchAttemptRef.current && isMountedRef.current) {
+        console.log('🏁 Setting loading to false for attempt', currentAttempt);
+        setLoading(false);
+      }
     }
-  }, []);
+  }, []); // Remove all dependencies to prevent recreating the function
 
   const incrementViewCount = async (documentId: string) => {
     await incrementDocumentViewCount(documentId);
@@ -114,8 +132,15 @@ export const useDocuments = () => {
 
   useEffect(() => {
     console.log('🚀 useDocuments: Mounting and fetching documents');
+    isMountedRef.current = true;
     fetchDocuments();
-  }, [fetchDocuments]);
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      console.log('🔄 useDocuments: Unmounting');
+      isMountedRef.current = false;
+    };
+  }, []); // Only run once on mount
 
   return {
     documents,
