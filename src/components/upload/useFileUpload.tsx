@@ -60,11 +60,34 @@ export const useFileUpload = () => {
       const filePath = `${fileName}`;
 
       console.log('🔄 Starting file upload to Supabase storage...');
+      console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
-      // Improved progress tracking - start immediately
-      setUploadProgress(10);
+      // Start progress immediately
+      setUploadProgress(5);
 
-      // Upload file to Supabase Storage documents bucket with improved options
+      // Check if documents bucket exists and is accessible
+      try {
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        console.log('Available buckets:', buckets);
+        
+        if (bucketsError) {
+          console.error('❌ Error listing buckets:', bucketsError);
+          throw new Error('Storage configuration error. Please contact admin.');
+        }
+
+        const documentsBucket = buckets?.find(bucket => bucket.id === 'documents');
+        if (!documentsBucket) {
+          throw new Error('Documents storage bucket not found. Please contact admin.');
+        }
+      } catch (bucketError: any) {
+        console.error('❌ Bucket check failed:', bucketError);
+        throw new Error('Storage access error. Please try again or contact admin.');
+      }
+
+      setUploadProgress(15);
+
+      // Upload file to Supabase Storage with improved error handling
+      console.log('📤 Uploading file to storage...');
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
@@ -74,15 +97,36 @@ export const useFileUpload = () => {
 
       if (uploadError) {
         console.error('❌ Storage upload error:', uploadError);
-        setErrorMessage("Error uploading PDF. Please try again.");
-        toast.error('Error uploading file: ' + uploadError.message);
-        return false;
+        
+        // Handle specific upload errors
+        if (uploadError.message.includes('The resource already exists')) {
+          // Try with a different filename
+          const newFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 20)}.${fileExt}`;
+          const newFilePath = `${newFileName}`;
+          
+          const { error: retryError, data: retryData } = await supabase.storage
+            .from('documents')
+            .upload(newFilePath, file, {
+              upsert: false,
+              cacheControl: '3600',
+            });
+            
+          if (retryError) {
+            throw new Error(`Upload failed: ${retryError.message}`);
+          }
+          
+          console.log('✅ File uploaded successfully on retry:', retryData);
+          setUploadProgress(60);
+        } else {
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+      } else {
+        console.log('✅ File uploaded successfully:', uploadData);
+        setUploadProgress(60);
       }
 
-      console.log('✅ File uploaded successfully:', uploadData);
-      setUploadProgress(70);
-
       // Generate the public URL for the uploaded file
+      console.log('🔗 Generating public URL...');
       const { data: publicUrlData } = supabase.storage
         .from('documents')
         .getPublicUrl(filePath);
@@ -93,11 +137,11 @@ export const useFileUpload = () => {
         return false;
       }
 
-      setUploadProgress(85);
+      setUploadProgress(75);
       const fileUrl = publicUrlData.publicUrl;
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
-      console.log('🔄 Saving document metadata to database...');
+      console.log('💾 Saving document metadata to database...');
 
       // Save document metadata with better error handling
       const { error: metadataError, data: insertData } = await supabase
@@ -121,6 +165,7 @@ export const useFileUpload = () => {
         // Try to clean up the uploaded file
         try {
           await supabase.storage.from('documents').remove([filePath]);
+          console.log('🧹 Cleaned up uploaded file after metadata error');
         } catch (cleanupError) {
           console.error('Failed to cleanup uploaded file:', cleanupError);
         }
