@@ -15,56 +15,11 @@ export const useDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasInitializedRef = useRef(false);
-
-  // Clear problematic browser storage on mount
-  const clearProblematicStorage = useCallback(() => {
-    try {
-      // Clear potentially corrupted session data
-      const keysToRemove = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && (key.includes('supabase') || key.includes('auth') || key.includes('documents'))) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => {
-        try {
-          sessionStorage.removeItem(key);
-        } catch (e) {
-          console.log('Could not remove session key:', key);
-        }
-      });
-
-      // Clear specific localStorage items that might cause issues
-      const localKeysToCheck = ['supabase.auth.token', 'sb-auth-token', 'documents-cache'];
-      localKeysToCheck.forEach(key => {
-        try {
-          if (localStorage.getItem(key)) {
-            localStorage.removeItem(key);
-            console.log('Cleared potentially problematic localStorage key:', key);
-          }
-        } catch (e) {
-          console.log('Could not access localStorage key:', key);
-        }
-      });
-
-    } catch (e) {
-      console.log('Storage cleanup completed with some errors (non-critical)');
-    }
-  }, []);
 
   const fetchDocuments = useCallback(async () => {
     if (!isMountedRef.current) return;
     
-    console.log('🔄 fetchDocuments: Starting fetch attempt');
-    
-    // Clear any existing retry timeout
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
+    console.log('🔄 Starting document fetch');
     
     try {
       setLoading(true);
@@ -82,23 +37,17 @@ export const useDocuments = () => {
       }
       
     } catch (err: any) {
-      console.error('💥 Fetch error in useDocuments:', err);
+      console.error('💥 Fetch error:', err);
       
       if (isMountedRef.current) {
         const errorMessage = err.message || 'Σφάλμα φόρτωσης εγγράφων';
         setError(errorMessage);
         setDocuments([]);
-        
-        // Only show toast if it's not the initial load
-        if (hasInitializedRef.current) {
-          toast.error(errorMessage);
-        }
+        toast.error(errorMessage);
       }
     } finally {
       if (isMountedRef.current) {
-        console.log('🏁 Setting loading to false');
         setLoading(false);
-        hasInitializedRef.current = true;
       }
     }
   }, []);
@@ -107,7 +56,6 @@ export const useDocuments = () => {
     try {
       await incrementDocumentViewCount(documentId);
       
-      // Update local state
       setDocuments(prev => prev.map(doc => 
         doc.id === documentId 
           ? { ...doc, view_count: (doc.view_count || 0) + 1 }
@@ -122,7 +70,6 @@ export const useDocuments = () => {
     try {
       await updateDocumentInSupabase(id, updates);
 
-      // Update local state
       setDocuments(prev => prev.map(doc => 
         doc.id === id 
           ? { 
@@ -147,7 +94,6 @@ export const useDocuments = () => {
     try {
       await deleteDocumentFromSupabase(id);
 
-      // Update local state
       setDocuments(prev => prev.filter(doc => doc.id !== id));
       toast.success('Document deleted successfully');
     } catch (err: any) {
@@ -171,30 +117,15 @@ export const useDocuments = () => {
   };
 
   useEffect(() => {
-    console.log('🚀 useDocuments: Mounting and fetching documents');
+    console.log('🚀 useDocuments: Initializing');
     isMountedRef.current = true;
     
-    // Clear problematic storage first
-    clearProblematicStorage();
-    
-    // Add a small delay to ensure storage clearing is complete
-    const initTimer = setTimeout(() => {
-      if (isMountedRef.current) {
-        fetchDocuments();
-      }
-    }, 100);
+    // Start fetching immediately - no delays
+    fetchDocuments();
 
-    // Cleanup function to prevent state updates after unmount
     return () => {
-      console.log('🔄 useDocuments: Unmounting');
+      console.log('🔄 useDocuments: Cleanup');
       isMountedRef.current = false;
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-        retryTimeoutRef.current = null;
-      }
-      if (initTimer) {
-        clearTimeout(initTimer);
-      }
     };
   }, []); // Only run once on mount
 
@@ -207,9 +138,6 @@ export const useDocuments = () => {
     updateDocument,
     deleteDocument,
     incrementViewCount,
-    clearCache: () => {
-      clearProblematicStorage();
-      clearCache();
-    }
+    clearCache
   };
 };

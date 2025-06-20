@@ -1,94 +1,35 @@
-const CACHE_VERSION = 'v7'; // Incremented for new caching strategy
+
+const CACHE_VERSION = 'v8'; // Simplified caching strategy
 const CACHE_NAME = `eggrafo-cache-${CACHE_VERSION}`;
 
 export const cleanupCache = async (): Promise<void> => {
-  // Make cache cleanup completely non-blocking and fast
+  // Run cache cleanup asynchronously without blocking
   setTimeout(async () => {
     try {
-      // Quick 1-second timeout for all cache operations
-      const cleanupPromise = Promise.race([
-        performCacheCleanup(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Cache cleanup timeout')), 1000)
-        )
-      ]);
-      
-      await cleanupPromise;
-      console.log('🧹 Background cache cleanup completed');
-    } catch (e) {
-      console.log('Cache cleanup skipped (non-critical):', e);
-    }
-  }, 0); // Run asynchronously after current execution
-};
-
-const performCacheCleanup = async () => {
-  // Implement smart caching strategy
-  if ('caches' in window) {
-    const cacheNames = await caches.keys();
-    const oldCaches = cacheNames.filter(name => 
-      name.startsWith('eggrafo-cache-') && name !== CACHE_NAME
-    );
-    
-    if (oldCaches.length > 0) {
-      await Promise.allSettled(oldCaches.map(name => caches.delete(name)));
-      console.log('🧹 Deleted old caches:', oldCaches);
-    }
-  }
-
-  // Only clear problematic storage items, keep useful ones
-  if ('sessionStorage' in window) {
-    try {
-      // Clear only authentication-related items that might cause issues
-      const keysToRemove = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && (key.includes('auth-token') || key.includes('temp-session'))) {
-          keysToRemove.push(key);
+      // Simple cache cleanup - only remove old cache versions
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        const oldCaches = cacheNames.filter(name => 
+          name.startsWith('eggrafo-cache-') && name !== CACHE_NAME
+        );
+        
+        if (oldCaches.length > 0) {
+          await Promise.allSettled(oldCaches.map(name => caches.delete(name)));
         }
       }
-      keysToRemove.forEach(key => sessionStorage.removeItem(key));
-      console.log('🧹 Cleaned problematic session storage');
     } catch (e) {
-      console.log('SessionStorage cleanup skipped');
+      // Silent fail - non-critical operation
     }
-  }
-
-  // Selective localStorage cleanup
-  if ('localStorage' in window) {
-    try {
-      const problematicKeys = [
-        'supabase.auth.token',
-        'sb-auth-token', 
-        'auth-session-cache'
-      ];
-      
-      problematicKeys.forEach(key => {
-        try {
-          if (localStorage.getItem(key)) {
-            localStorage.removeItem(key);
-          }
-        } catch (e) {
-          // Ignore individual removal failures
-        }
-      });
-      
-      console.log('🧹 Cleaned problematic localStorage keys');
-    } catch (e) {
-      console.log('localStorage cleanup failed:', e);
-    }
-  }
+  }, 2000); // Delay to not block initial load
 };
 
 export const clearCache = (): void => {
-  console.log('🧹 Manual cache clear requested');
-  
   try {
-    // Force clear browser storage
+    // Quick cache clear for manual requests
     if ('sessionStorage' in window) {
       sessionStorage.clear();
     }
     
-    // Clear service worker cache if available
     if ('caches' in window) {
       caches.keys().then(names => {
         names.forEach(name => {
@@ -99,16 +40,10 @@ export const clearCache = (): void => {
       });
     }
     
-    console.log('🧹 Manual cache clear completed');
-    
-    // Force page reload after cache clear
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-    
+    // Force reload after cache clear
+    window.location.reload();
   } catch (e) {
-    console.error('Manual cache clear failed:', e);
-    // Still try to reload the page
+    // Fallback to simple reload
     window.location.reload();
   }
 };
