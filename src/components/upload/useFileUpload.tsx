@@ -59,15 +59,10 @@ export const useFileUpload = () => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Smoother progress simulation
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const newProgress = prev + 2;
-          return newProgress > 85 ? 85 : newProgress;
-        });
-      }, 150);
-
       console.log('🔄 Starting file upload to Supabase storage...');
+
+      // Improved progress tracking - start immediately
+      setUploadProgress(10);
 
       // Upload file to Supabase Storage documents bucket with improved options
       const { error: uploadError, data: uploadData } = await supabase.storage
@@ -77,8 +72,6 @@ export const useFileUpload = () => {
           cacheControl: '3600',
         });
 
-      clearInterval(progressInterval);
-
       if (uploadError) {
         console.error('❌ Storage upload error:', uploadError);
         setErrorMessage("Error uploading PDF. Please try again.");
@@ -87,7 +80,7 @@ export const useFileUpload = () => {
       }
 
       console.log('✅ File uploaded successfully:', uploadData);
-      setUploadProgress(90);
+      setUploadProgress(70);
 
       // Generate the public URL for the uploaded file
       const { data: publicUrlData } = supabase.storage
@@ -100,7 +93,7 @@ export const useFileUpload = () => {
         return false;
       }
 
-      setUploadProgress(95);
+      setUploadProgress(85);
       const fileUrl = publicUrlData.publicUrl;
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
@@ -136,6 +129,8 @@ export const useFileUpload = () => {
       }
 
       console.log('✅ Document metadata saved successfully:', insertData);
+      
+      // Complete progress
       setUploadProgress(100);
 
       toast.success(`Document "${title}" uploaded successfully!`);

@@ -1,20 +1,31 @@
 
 <!doctype html>
-<html lang="en">
+<html lang="el">
   <head>
     <meta charset="UTF-8" />
     
-    <!-- Cache-busting headers to prevent loading issues -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <!-- Enhanced cache-busting and performance headers -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
+    <meta http-equiv="Pragma" content="cache">
+    <meta http-equiv="Expires" content="31536000">
     
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/main.tsx" as="script">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- PDF icon for browser tab -->
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNkYzI2MjYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTQgMnY0YTIgMiAwIDAgMCAyIDJoNCIvPjxwYXRoIGQ9Im0xNS41IDEzIDEuNSAzIDEuNS0zIi8+PHBhdGggZD0iTTE4IDEzdjQiLz48cGF0aCBkPSJNNCAydjIwbDE2IDBWN2wtNS01WiIvPjwvc3ZnPg==" type="image/svg+xml">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Eggrafo</title>
+    <title>Παραδείγματα εγγράφων ΓΕΜΗ</title>
     
-    <!-- Debugging script for loading issues -->
+    <!-- SEO meta tags -->
+    <meta name="description" content="Βρείτε παραδείγματα εγγράφων για το ΓΕΜΗ, τροποποιήσεις και αιτήσεις. Δωρεάν λήψη νόμων εταιρειών.">
+    <meta name="keywords" content="ΓΕΜΗ, έγγραφα, παραδείγματα, νόμοι εταιρειών, τροποποιήσεις">
+    
+    <!-- Performance optimization script -->
     <script>
+      // Resource loading optimization
       window.addEventListener('load', function() {
         const failed = [];
         performance.getEntriesByType('resource').forEach(r => {
@@ -22,31 +33,37 @@
         });
         if (failed.length) console.error('Failed to load resources:', failed);
         
-        // Clear problematic caches on load
+        // Implement aggressive caching strategy
         if ('caches' in window) {
-          caches.keys().then(cacheNames => {
-            const oldCaches = cacheNames.filter(name => 
-              name.startsWith('eggrafo-cache-') && !name.includes('v5')
-            );
-            oldCaches.forEach(cacheName => caches.delete(cacheName));
+          caches.open('eggrafo-v2').then(cache => {
+            cache.addAll([
+              '/',
+              '/src/main.tsx',
+              '/src/index.css'
+            ]).catch(err => console.log('Cache preload failed:', err));
           });
         }
       });
       
-      // Unregister any problematic service workers
+      // Service worker for better caching
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(registration => {
-            if (registration.scope.includes('localhost') || registration.scope.includes('old-domain')) {
-              registration.unregister();
-            }
-          });
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+          console.log('SW registration failed');
         });
       }
     </script>
+    
+    <!-- Inline critical CSS to reduce render blocking -->
+    <style>
+      body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+      #root { min-height: 100vh; }
+      .loading { display: flex; justify-content: center; align-items: center; height: 100vh; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="loading">Loading...</div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

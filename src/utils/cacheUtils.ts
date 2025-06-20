@@ -1,16 +1,15 @@
-
-const CACHE_VERSION = 'v6'; // Incremented to force cache refresh
+const CACHE_VERSION = 'v7'; // Incremented for new caching strategy
 const CACHE_NAME = `eggrafo-cache-${CACHE_VERSION}`;
 
 export const cleanupCache = async (): Promise<void> => {
   // Make cache cleanup completely non-blocking and fast
   setTimeout(async () => {
     try {
-      // Quick 2-second timeout for all cache operations
+      // Quick 1-second timeout for all cache operations
       const cleanupPromise = Promise.race([
         performCacheCleanup(),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Cache cleanup timeout')), 2000)
+          setTimeout(() => reject(new Error('Cache cleanup timeout')), 1000)
         )
       ]);
       
@@ -23,7 +22,7 @@ export const cleanupCache = async (): Promise<void> => {
 };
 
 const performCacheCleanup = async () => {
-  // Clear all old caches aggressively
+  // Implement smart caching strategy
   if ('caches' in window) {
     const cacheNames = await caches.keys();
     const oldCaches = cacheNames.filter(name => 
@@ -36,42 +35,44 @@ const performCacheCleanup = async () => {
     }
   }
 
-  // Clear all problematic browser storage more aggressively
+  // Only clear problematic storage items, keep useful ones
   if ('sessionStorage' in window) {
     try {
-      // Test if sessionStorage is accessible
-      const testKey = 'cache-test-' + Date.now();
-      sessionStorage.setItem(testKey, 'test');
-      sessionStorage.removeItem(testKey);
-      
-      // Clear ALL session storage to avoid any conflicts
-      sessionStorage.clear();
-      console.log('🧹 Cleared all sessionStorage');
+      // Clear only authentication-related items that might cause issues
+      const keysToRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.includes('auth-token') || key.includes('temp-session'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => sessionStorage.removeItem(key));
+      console.log('🧹 Cleaned problematic session storage');
     } catch (e) {
-      console.log('SessionStorage not accessible or already cleared');
+      console.log('SessionStorage cleanup skipped');
     }
   }
 
-  // Clear specific localStorage items that cause issues
+  // Selective localStorage cleanup
   if ('localStorage' in window) {
     try {
       const problematicKeys = [
         'supabase.auth.token',
         'sb-auth-token', 
-        'documents-cache',
-        'auth-session-cache',
-        'upload_form_data' // Clear any stuck upload form data
+        'auth-session-cache'
       ];
       
       problematicKeys.forEach(key => {
         try {
-          localStorage.removeItem(key);
+          if (localStorage.getItem(key)) {
+            localStorage.removeItem(key);
+          }
         } catch (e) {
           // Ignore individual removal failures
         }
       });
       
-      console.log('🧹 Cleared problematic localStorage keys');
+      console.log('🧹 Cleaned problematic localStorage keys');
     } catch (e) {
       console.log('localStorage cleanup failed:', e);
     }
@@ -85,18 +86,6 @@ export const clearCache = (): void => {
     // Force clear browser storage
     if ('sessionStorage' in window) {
       sessionStorage.clear();
-    }
-    
-    if ('localStorage' in window) {
-      // Clear specific keys that might be causing upload issues
-      const keysToRemove = ['upload_form_data', 'supabase.auth.token', 'sb-auth-token'];
-      keysToRemove.forEach(key => {
-        try {
-          localStorage.removeItem(key);
-        } catch (e) {
-          // Ignore failures
-        }
-      });
     }
     
     // Clear service worker cache if available
@@ -115,7 +104,7 @@ export const clearCache = (): void => {
     // Force page reload after cache clear
     setTimeout(() => {
       window.location.reload();
-    }, 500);
+    }, 100);
     
   } catch (e) {
     console.error('Manual cache clear failed:', e);
