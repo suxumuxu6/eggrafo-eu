@@ -14,104 +14,131 @@ export const useAuthState = () => {
     loading: true
   });
 
-  // Enhanced admin check with security measures
+  const [initialized, setInitialized] = useState(false);
+
+  // Enhanced admin check with better error handling
   const checkAdmin = async (uid: string | undefined) => {
-    console.log('Checking admin for user:', uid);
-    setAuthState(prev => ({ ...prev, isAdmin: false }));
-    
     if (!uid) {
       console.log('No user ID provided, not admin');
+      setAuthState(prev => ({ ...prev, isAdmin: false }));
       return;
     }
     
     try {
-      const authResult = await verifyAdminAuthentication();
+      console.log('Checking admin for user:', uid);
+      const authResult = await verifyAdminAuthentication(3000); // Reduced timeout
       console.log('Admin verification result:', authResult);
       
-      if (authResult.isValid && authResult.isAdmin) {
-        console.log('User is admin');
-        setAuthState(prev => ({ ...prev, isAdmin: true }));
-      } else {
-        console.log('User is not admin:', authResult.error);
-        setAuthState(prev => ({ ...prev, isAdmin: false }));
-      }
+      setAuthState(prev => ({ 
+        ...prev, 
+        isAdmin: authResult.isValid && authResult.isAdmin 
+      }));
     } catch (err) {
       console.error('Error in admin verification:', err);
       setAuthState(prev => ({ ...prev, isAdmin: false }));
     }
   };
 
-  // Auth state listener with enhanced security
+  // Auth state listener with better control flow
   useEffect(() => {
+    let mounted = true;
+    
     console.log('Setting up auth listener');
-    setAuthState(prev => ({ ...prev, loading: true }));
     
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       console.log('Auth state change:', { event, session: !!session, userId: session?.user?.id });
       
       const loggedUser = session?.user ?? null;
+      
+      // Update basic auth state immediately
       setAuthState(prev => ({
         ...prev,
         session,
-        user: loggedUser
+        user: loggedUser,
+        loading: false
       }));
       
+      // Handle user-specific actions
       if (loggedUser && session) {
-        console.log('User logged in, syncing profile and checking admin');
-        await AuthService.syncProfile(loggedUser);
-        
-        // Use timeout to prevent hanging on admin check
-        setTimeout(() => {
-          checkAdmin(loggedUser.id);
-        }, 0);
+        console.log('User logged in, syncing profile');
+        try {
+          await AuthService.syncProfile(loggedUser);
+          
+          // Check admin status with timeout to prevent hanging
+          setTimeout(() => {
+            if (mounted) {
+              checkAdmin(loggedUser.id);
+            }
+          }, 100);
+        } catch (error) {
+          console.error('Error syncing profile:', error);
+        }
       } else {
         console.log('No user/session, resetting admin status');
         setAuthState(prev => ({ ...prev, isAdmin: false }));
       }
       
-      setAuthState(prev => ({ ...prev, loading: false }));
+      setInitialized(true);
     });
 
-    // Check active session at load with timeout
+    // Check active session at load with better error handling
     const initializeAuth = async () => {
+      if (!mounted) return;
+      
       try {
+        console.log('Checking initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('Initial session check:', { session: !!session, error, userId: session?.user?.id });
         
         if (error) {
           console.error('Error getting session:', error);
           setAuthState(prev => ({ ...prev, loading: false }));
+          setInitialized(true);
           return;
         }
         
-        setAuthState(prev => ({
-          ...prev,
-          session,
-          user: session?.user ?? null
-        }));
+        console.log('Initial session check:', { session: !!session, userId: session?.user?.id });
         
-        if (session?.user) {
-          console.log('Initial session found, syncing profile and checking admin');
-          await AuthService.syncProfile(session.user);
-          await checkAdmin(session.user.id);
-        } else {
-          console.log('No initial session found');
-          setAuthState(prev => ({ ...prev, isAdmin: false }));
+        if (session?.user && mounted) {
+          console.log('Initial session found, syncing profile');
+          try {
+            await AuthService.syncProfile(session.user);
+            await checkAdmin(session.user.id);
+          } catch (error) {
+            console.error('Error in initial auth setup:', error);
+          }
         }
         
-        setAuthState(prev => ({ ...prev, loading: false }));
+        if (mounted) {
+          setAuthState(prev => ({ 
+            ...prev, 
+            session,
+            user: session?.user ?? null,
+            isAdmin: session?.user ? prev.isAdmin : false,
+            loading: false 
+          }));
+          setInitialized(true);
+        }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        setAuthState(prev => ({ ...prev, loading: false }));
+        if (mounted) {
+          setAuthState(prev => ({ ...prev, loading: false }));
+          setInitialized(true);
+        }
       }
     };
 
-    initializeAuth();
+    // Only initialize if not already done
+    if (!initialized) {
+      initializeAuth();
+    }
 
     return () => {
+      mounted = false;
       listener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [initialized]);
 
   return {
     ...authState,

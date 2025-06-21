@@ -15,13 +15,17 @@ const UploadPage: React.FC = () => {
   const { uploadDocument, isUploading, uploadProgress, errorMessage } = useFileUpload();
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
   const [securityVerified, setSecurityVerified] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
-  console.log('Upload page render:', { isAuthenticated, isAdmin, loading, hasUser: !!user });
+  console.log('Upload page render:', { isAuthenticated, isAdmin, loading, hasUser: !!user, retryCount });
 
   useEffect(() => {
     const performSecurityCheck = async () => {
       // Wait for auth to load completely
-      if (loading) return;
+      if (loading) {
+        console.log('Auth still loading, waiting...');
+        return;
+      }
 
       console.log('Auth loading complete, performing security check');
       
@@ -29,16 +33,55 @@ const UploadPage: React.FC = () => {
       if (!isAuthenticated || !user) {
         console.log('User not authenticated, redirecting to home');
         toast.error("Πρέπει να συνδεθείτε για πρόσβαση στη σελίδα.");
-        navigate("/home");
+        navigate("/auth");
         return;
+      }
+
+      // First check the context admin status
+      if (!isAdmin) {
+        console.log('Context shows user is not admin');
+        
+        // If we haven't retried yet, try one more time with a direct check
+        if (retryCount < 2) {
+          console.log('Retrying admin verification...');
+          setRetryCount(prev => prev + 1);
+          
+          // Wait a bit for the auth state to stabilize
+          setTimeout(async () => {
+            try {
+              const isValidAdmin = await requireAdminAuth();
+              console.log('Direct admin check result:', isValidAdmin);
+              
+              if (isValidAdmin) {
+                setSecurityVerified(true);
+                setAuthCheckComplete(true);
+              } else {
+                console.log('Direct admin verification failed, redirecting');
+                toast.error("Πρέπει να είστε διαχειριστής για upload.");
+                navigate("/home");
+              }
+            } catch (error) {
+              console.error('Direct admin check failed:', error);
+              toast.error("Σφάλμα επαλήθευσης διαχειριστή.");
+              navigate("/home");
+            }
+          }, 1000);
+          return;
+        } else {
+          console.log('Max retries reached, user is not admin');
+          toast.error("Πρέπει να είστε διαχειριστής για upload.");
+          navigate("/home");
+          return;
+        }
       }
 
       // Enhanced admin verification
       try {
+        console.log('Performing enhanced admin verification...');
         const isValidAdmin = await requireAdminAuth();
         
         if (!isValidAdmin) {
-          console.log('Admin verification failed, redirecting to home');
+          console.log('Enhanced admin verification failed, redirecting to home');
           toast.error("Πρέπει να είστε διαχειριστής για upload.");
           navigate("/home");
           return;
@@ -55,7 +98,7 @@ const UploadPage: React.FC = () => {
     };
 
     performSecurityCheck();
-  }, [isAuthenticated, isAdmin, loading, user, navigate]);
+  }, [isAuthenticated, isAdmin, loading, user, navigate, retryCount]);
 
   // Show loading while auth and security checks are being performed
   if (loading || !authCheckComplete || !securityVerified) {
@@ -66,18 +109,24 @@ const UploadPage: React.FC = () => {
           <p className="text-gray-500">
             {loading ? 'Έλεγχος δικαιωμάτων...' : 'Επαλήθευση ασφαλείας...'}
           </p>
+          {retryCount > 0 && (
+            <p className="text-xs text-gray-400 mt-2">
+              Προσπάθεια {retryCount}/2...
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
   // Final safety check
-  if (!isAuthenticated || !isAdmin || !user || !securityVerified) {
+  if (!isAuthenticated || !user || !securityVerified) {
     return null;
   }
 
   const handleUpload = async (formData: DocumentFormData) => {
     // Additional security check before upload
+    console.log('Final security check before upload...');
     const isStillAdmin = await requireAdminAuth();
     if (!isStillAdmin) {
       toast.error("Τα δικαιώματα διαχειριστή έχουν ανακληθεί.");

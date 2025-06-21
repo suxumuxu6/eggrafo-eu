@@ -15,7 +15,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signIn = async (email: string, password: string, captchaToken?: string) => {
     setLoading(true);
     try {
-      return await AuthService.signIn(email, password, captchaToken);
+      console.log('SignIn attempt for:', email);
+      const result = await AuthService.signIn(email, password, captchaToken);
+      console.log('SignIn result:', result);
+      return result;
     } finally {
       setLoading(false);
     }
@@ -25,6 +28,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUp = async (email: string, password: string) => {
     setLoading(true);
     try {
+      console.log('SignUp attempt for:', email);
       return await AuthService.signUp(email, password);
     } finally {
       setLoading(false);
@@ -33,6 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Sign Out with cleanup
   const signOut = async () => {
+    console.log('SignOut initiated');
     await AuthService.signOut();
   };
 
@@ -52,7 +57,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     hasSession: !!contextValue.session,
     isAuthenticated: contextValue.isAuthenticated,
     isAdmin: contextValue.isAdmin,
-    loading: contextValue.loading
+    loading: contextValue.loading,
+    userId: contextValue.user?.id
   });
 
   return (

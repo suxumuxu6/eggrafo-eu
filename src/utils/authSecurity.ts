@@ -7,7 +7,7 @@ export interface AuthSecurityResult {
   error?: string;
 }
 
-export const verifyAdminAuthentication = async (timeout: number = 5000): Promise<AuthSecurityResult> => {
+export const verifyAdminAuthentication = async (timeout: number = 3000): Promise<AuthSecurityResult> => {
   try {
     // Create a timeout promise
     const timeoutPromise = new Promise<AuthSecurityResult>((_, reject) => {
@@ -16,9 +16,11 @@ export const verifyAdminAuthentication = async (timeout: number = 5000): Promise
 
     // Create the authentication check promise
     const authPromise = (async (): Promise<AuthSecurityResult> => {
+      // Get session with shorter timeout
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
+        console.error('Session error:', sessionError);
         return { isValid: false, isAdmin: false, error: 'Session error' };
       }
 
@@ -26,17 +28,21 @@ export const verifyAdminAuthentication = async (timeout: number = 5000): Promise
         return { isValid: false, isAdmin: false, error: 'No active session' };
       }
 
-      // Check admin status with proper error handling
+      // Check admin status with better error handling
       try {
+        console.log('Calling is_admin function for user:', session.user.id);
+        
         const { data: isAdminResult, error: adminError } = await supabase.rpc("is_admin", { 
           _user_id: session.user.id 
         });
         
         if (adminError) {
-          console.error('Admin check error:', adminError);
+          console.error('Admin check RPC error:', adminError);
           return { isValid: true, isAdmin: false, error: 'Admin verification failed' };
         }
 
+        console.log('Admin check result:', isAdminResult);
+        
         return { 
           isValid: true, 
           isAdmin: Boolean(isAdminResult),
@@ -61,8 +67,14 @@ export const verifyAdminAuthentication = async (timeout: number = 5000): Promise
 };
 
 export const requireAdminAuth = async (): Promise<boolean> => {
-  const result = await verifyAdminAuthentication();
-  return result.isValid && result.isAdmin;
+  try {
+    const result = await verifyAdminAuthentication(3000);
+    console.log('requireAdminAuth result:', result);
+    return result.isValid && result.isAdmin;
+  } catch (error) {
+    console.error('requireAdminAuth error:', error);
+    return false;
+  }
 };
 
 // Rate limiting utility
