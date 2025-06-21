@@ -7,21 +7,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { UploadForm } from "../components/upload/UploadForm";
 import { useFileUpload } from "../components/upload/useFileUpload";
 import { DocumentFormData } from "../components/upload/UploadForm";
+import { requireAdminAuth } from "@/utils/authSecurity";
 
 const UploadPage: React.FC = () => {
   const { isAuthenticated, isAdmin, loading, user } = useAuth();
   const navigate = useNavigate();
   const { uploadDocument, isUploading, uploadProgress, errorMessage } = useFileUpload();
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
+  const [securityVerified, setSecurityVerified] = useState(false);
 
   console.log('Upload page render:', { isAuthenticated, isAdmin, loading, hasUser: !!user });
 
   useEffect(() => {
-    // Wait for auth to load completely
-    if (!loading) {
-      console.log('Auth loading complete, checking permissions');
+    const performSecurityCheck = async () => {
+      // Wait for auth to load completely
+      if (loading) return;
+
+      console.log('Auth loading complete, performing security check');
       
-      // Check if user is not authenticated
+      // Basic authentication check
       if (!isAuthenticated || !user) {
         console.log('User not authenticated, redirecting to home');
         toast.error("Πρέπει να συνδεθείτε για πρόσβαση στη σελίδα.");
@@ -29,37 +33,58 @@ const UploadPage: React.FC = () => {
         return;
       }
 
-      // Check if user is not admin
-      if (!isAdmin) {
-        console.log('User not admin, redirecting to home');
-        toast.error("Πρέπει να είστε διαχειριστής για upload.");
-        navigate("/home");
-        return;
-      }
+      // Enhanced admin verification
+      try {
+        const isValidAdmin = await requireAdminAuth();
+        
+        if (!isValidAdmin) {
+          console.log('Admin verification failed, redirecting to home');
+          toast.error("Πρέπει να είστε διαχειριστής για upload.");
+          navigate("/home");
+          return;
+        }
 
-      console.log('User is authenticated admin, allowing access');
-      setAuthCheckComplete(true);
-    }
+        console.log('Security verification passed');
+        setSecurityVerified(true);
+        setAuthCheckComplete(true);
+      } catch (error) {
+        console.error('Security check failed:', error);
+        toast.error("Σφάλμα επαλήθευσης ασφαλείας.");
+        navigate("/home");
+      }
+    };
+
+    performSecurityCheck();
   }, [isAuthenticated, isAdmin, loading, user, navigate]);
 
-  // Show loading while auth is being checked
-  if (loading || !authCheckComplete) {
+  // Show loading while auth and security checks are being performed
+  if (loading || !authCheckComplete || !securityVerified) {
     return (
       <div className="min-h-screen bg-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Έλεγχος δικαιωμάτων...</p>
+          <p className="text-gray-500">
+            {loading ? 'Έλεγχος δικαιωμάτων...' : 'Επαλήθευση ασφαλείας...'}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Final safety check - this should not render if user doesn't have proper permissions
-  if (!isAuthenticated || !isAdmin || !user) {
+  // Final safety check
+  if (!isAuthenticated || !isAdmin || !user || !securityVerified) {
     return null;
   }
 
   const handleUpload = async (formData: DocumentFormData) => {
+    // Additional security check before upload
+    const isStillAdmin = await requireAdminAuth();
+    if (!isStillAdmin) {
+      toast.error("Τα δικαιώματα διαχειριστή έχουν ανακληθεί.");
+      navigate("/home");
+      return false;
+    }
+    
     return await uploadDocument(formData);
   };
 

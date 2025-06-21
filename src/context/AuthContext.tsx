@@ -3,6 +3,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { verifyAdminAuthentication } from "@/utils/authSecurity";
 
 // Types
 interface AuthContextType {
@@ -26,27 +27,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
-  // Helper to check admin in DB
+  // Enhanced admin check with security measures
   const checkAdmin = async (uid: string | undefined) => {
     console.log('Checking admin for user:', uid);
     setIsAdmin(false);
+    
     if (!uid) {
       console.log('No user ID provided, not admin');
       return;
     }
     
     try {
-      let { data, error } = await supabase.rpc("is_admin", { _user_id: uid });
-      console.log('Admin check result:', { data, error, uid });
-      if (!error && data === true) {
+      const authResult = await verifyAdminAuthentication();
+      console.log('Admin verification result:', authResult);
+      
+      if (authResult.isValid && authResult.isAdmin) {
         console.log('User is admin');
         setIsAdmin(true);
       } else {
-        console.log('User is not admin or error occurred:', error);
+        console.log('User is not admin:', authResult.error);
         setIsAdmin(false);
       }
     } catch (err) {
-      console.error('Error checking admin status:', err);
+      console.error('Error in admin verification:', err);
       setIsAdmin(false);
     }
   };
@@ -62,12 +65,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Auth state listener
+  // Auth state listener with enhanced security
   useEffect(() => {
     console.log('Setting up auth listener');
     setLoading(true);
     
-    // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change:', { event, session: !!session, userId: session?.user?.id });
       
@@ -78,7 +80,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (loggedUser && session) {
         console.log('User logged in, syncing profile and checking admin');
         await syncProfile(loggedUser);
-        await checkAdmin(loggedUser.id);
+        
+        // Use timeout to prevent hanging on admin check
+        setTimeout(() => {
+          checkAdmin(loggedUser.id);
+        }, 0);
       } else {
         console.log('No user/session, resetting admin status');
         setIsAdmin(false);
@@ -87,87 +93,147 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
     });
 
-    // Check active session at load
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      console.log('Initial session check:', { session: !!session, error, userId: session?.user?.id });
-      
-      if (error) {
-        console.error('Error getting session:', error);
+    // Check active session at load with timeout
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Initial session check:', { session: !!session, error, userId: session?.user?.id });
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log('Initial session found, syncing profile and checking admin');
+          await syncProfile(session.user);
+          await checkAdmin(session.user.id);
+        } else {
+          console.log('No initial session found');
+          setIsAdmin(false);
+        }
+        
         setLoading(false);
-        return;
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        setLoading(false);
       }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        console.log('Initial session found, syncing profile and checking admin');
-        await syncProfile(session.user);
-        await checkAdmin(session.user.id);
-      } else {
-        console.log('No initial session found');
-        setIsAdmin(false);
-      }
-      
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     return () => {
       listener?.subscription.unsubscribe();
     };
   }, []);
 
-  // Sign In
+  // Enhanced sign in with input validation
   const signIn = async (email: string, password: string, captchaToken?: string) => {
     console.log('Attempting sign in for:', email);
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-      options: captchaToken ? { captchaToken } : undefined,
-    });
-    setLoading(false);
-    if (error) {
-      console.error('Sign in error:', error);
-      toast.error(error.message || "Login failed");
+    
+    // Basic input validation
+    if (!email || !password) {
+      toast.error("Email and password are required");
       return false;
     }
-    console.log('Sign in successful');
-    toast.success("Συνδεθήκατε!");
-    return true;
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return false;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase().trim(),
+        password,
+        options: captchaToken ? { captchaToken } : undefined,
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        toast.error(error.message || "Login failed");
+        return false;
+      }
+      
+      console.log('Sign in successful');
+      toast.success("Συνδεθήκατε!");
+      return true;
+    } catch (error: any) {
+      console.error('Sign in exception:', error);
+      toast.error("Login failed");
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Sign Up
+  // Enhanced sign up with input validation
   const signUp = async (email: string, password: string) => {
     console.log('Attempting sign up for:', email);
-    setLoading(true);
-    const redirectTo = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: redirectTo }
-    });
-    setLoading(false);
-    if (error) {
-      console.error('Sign up error:', error);
-      toast.error(error.message || "Sign up failed");
+    
+    // Enhanced input validation
+    if (!email || !password) {
+      toast.error("Email and password are required");
       return false;
     }
-    console.log('Sign up successful');
-    toast.success("Ελέγξτε το email σας για επιβεβαίωση.");
-    return true;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return false;
+    }
+
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return false;
+    }
+
+    setLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/`;
+      const { error } = await supabase.auth.signUp({
+        email: email.toLowerCase().trim(),
+        password,
+        options: { emailRedirectTo: redirectTo }
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        toast.error(error.message || "Sign up failed");
+        return false;
+      }
+      
+      console.log('Sign up successful');
+      toast.success("Ελέγξτε το email σας για επιβεβαίωση.");
+      return true;
+    } catch (error: any) {
+      console.error('Sign up exception:', error);
+      toast.error("Sign up failed");
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Sign Out
+  // Sign Out with cleanup
   const signOut = async () => {
     console.log('Signing out');
-    await supabase.auth.signOut();
-    setIsAdmin(false);
-    setUser(null);
-    setSession(null);
-    toast.info("Αποσυνδεθήκατε");
-    // Redirect to home page
-    window.location.href = '/';
+    try {
+      await supabase.auth.signOut();
+      setIsAdmin(false);
+      setUser(null);
+      setSession(null);
+      toast.info("Αποσυνδεθήκατε");
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error("Sign out failed");
+    }
   };
 
   const contextValue = {

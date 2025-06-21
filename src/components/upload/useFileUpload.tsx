@@ -5,6 +5,14 @@ import { toast } from "sonner";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentFormData } from './UploadForm';
+import { 
+  sanitizeInput, 
+  validateDocumentTitle, 
+  validateDocumentDescription,
+  validateFileType,
+  validateFileSize,
+  sanitizeFilename
+} from '@/utils/inputValidation';
 
 export const useFileUpload = () => {
   const { user, isAdmin } = useAuth();
@@ -22,24 +30,45 @@ export const useFileUpload = () => {
 
     const { title, description, tags, category, file } = formData;
 
+    // Enhanced input validation
     if (!file) {
       toast.error('Please select a PDF file');
       return false;
     }
+
+    // Sanitize and validate inputs
+    const sanitizedTitle = sanitizeInput(title);
+    const sanitizedDescription = sanitizeInput(description);
+    const sanitizedTags = sanitizeInput(tags);
+
+    if (!validateDocumentTitle(sanitizedTitle)) {
+      toast.error('Title must be between 1 and 200 characters');
+      setErrorMessage('Title must be between 1 and 200 characters');
+      return false;
+    }
+
+    if (!validateDocumentDescription(sanitizedDescription)) {
+      toast.error('Description must be less than 1000 characters');
+      setErrorMessage('Description must be less than 1000 characters');
+      return false;
+    }
+
     if (!category) {
       toast.error('Παρακαλώ επιλέξτε πού θέλετε να ανέβει το αρχείο.');
       setErrorMessage('Παρακαλώ επιλέξτε πού θέλετε να ανέβει το αρχείο.');
       return false;
     }
 
-    // Enforce file type and max size (10MB)
-    if (file.type !== 'application/pdf') {
+    // Enhanced file validation
+    const allowedTypes = ['application/pdf'];
+    if (!validateFileType(file, allowedTypes)) {
       toast.error('Only PDF files are allowed');
       setErrorMessage('Only PDF files are allowed');
       return false;
     }
+
     const maxFileSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxFileSize) {
+    if (!validateFileSize(file, maxFileSize)) {
       toast.error('Maximum file size is 10MB');
       setErrorMessage('Maximum file size is 10MB');
       return false;
@@ -54,18 +83,18 @@ export const useFileUpload = () => {
         throw new Error('You must be logged in as an administrator to upload documents.');
       }
       
-      // Create a unique file name with timestamp to avoid collisions
+      // Create a secure file name
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const sanitizedOriginalName = sanitizeFilename(file.name.replace(`.${fileExt}`, ''));
+      const fileName = `${Date.now()}-${sanitizedOriginalName}.${fileExt}`;
       const filePath = `${fileName}`;
 
       console.log('🔄 Starting file upload to Supabase storage...');
       console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
-      // Start progress immediately
       setUploadProgress(5);
 
-      // Check if documents bucket exists and is accessible
+      // Verify storage bucket accessibility
       try {
         const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
         console.log('Available buckets:', buckets);
@@ -86,36 +115,37 @@ export const useFileUpload = () => {
 
       setUploadProgress(15);
 
-      // Upload file to Supabase Storage with improved error handling
+      // Upload file with enhanced security options
       console.log('📤 Uploading file to storage...');
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
           upsert: false,
           cacheControl: '3600',
+          contentType: file.type,
         });
 
       if (uploadError) {
         console.error('❌ Storage upload error:', uploadError);
         
-        // Handle specific upload errors
         if (uploadError.message.includes('The resource already exists')) {
-          // Try with a different filename
-          const newFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 20)}.${fileExt}`;
+          // Generate a more unique filename
+          const newFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 20)}-${sanitizedOriginalName}.${fileExt}`;
           const newFilePath = `${newFileName}`;
           
-          const { error: retryError, data: retryData } = await supabase.storage
+          const { error: retryError } = await supabase.storage
             .from('documents')
             .upload(newFilePath, file, {
               upsert: false,
               cacheControl: '3600',
+              contentType: file.type,
             });
             
           if (retryError) {
             throw new Error(`Upload failed: ${retryError.message}`);
           }
           
-          console.log('✅ File uploaded successfully on retry:', retryData);
+          console.log('✅ File uploaded successfully on retry');
           setUploadProgress(60);
         } else {
           throw new Error(`Upload failed: ${uploadError.message}`);
@@ -125,7 +155,7 @@ export const useFileUpload = () => {
         setUploadProgress(60);
       }
 
-      // Generate the public URL for the uploaded file
+      // Generate the public URL
       console.log('🔗 Generating public URL...');
       const { data: publicUrlData } = supabase.storage
         .from('documents')
@@ -139,16 +169,16 @@ export const useFileUpload = () => {
 
       setUploadProgress(75);
       const fileUrl = publicUrlData.publicUrl;
-      const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+      const tagsArray = sanitizedTags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
       console.log('💾 Saving document metadata to database...');
 
-      // Save document metadata with better error handling
+      // Save metadata with sanitized inputs
       const { error: metadataError, data: insertData } = await supabase
         .from('documents')
         .insert({
-          title, 
-          description,
+          title: sanitizedTitle, 
+          description: sanitizedDescription,
           tags: tagsArray, 
           category,
           file_url: fileUrl,
@@ -162,7 +192,7 @@ export const useFileUpload = () => {
         setErrorMessage('Error saving document metadata.');
         toast.error('Error saving document metadata: ' + metadataError.message);
         
-        // Try to clean up the uploaded file
+        // Clean up uploaded file
         try {
           await supabase.storage.from('documents').remove([filePath]);
           console.log('🧹 Cleaned up uploaded file after metadata error');
@@ -174,11 +204,9 @@ export const useFileUpload = () => {
       }
 
       console.log('✅ Document metadata saved successfully:', insertData);
-      
-      // Complete progress
       setUploadProgress(100);
 
-      toast.success(`Document "${title}" uploaded successfully!`);
+      toast.success(`Document "${sanitizedTitle}" uploaded successfully!`);
       navigate('/home');
       return true;
     } catch (error: any) {

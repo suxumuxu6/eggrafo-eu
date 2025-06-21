@@ -52,27 +52,21 @@ https://eggrafo.work/support
 
     console.log('🔄 Sending request to Supabase edge function...');
 
-    const res = await fetch(
-      "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-reply",
+    // Use Supabase client configuration instead of hardcoded values
+    const { data: functionResult, error: functionError } = await supabase.functions.invoke(
+      'send-chatbot-reply',
       {
-        method: "POST",
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeHdpa2dhc3J0dGJuZ2R5Z2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTk5NTIsImV4cCI6MjA2NTM5NTk1Mn0.jB0vM1kLbBgZ256-16lypzVvyOYOah4asJN7aclrDEg'
-        },
-        body: formData
+        body: formData,
       }
     );
     
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${res.statusText} - ${errorText}`);
+    if (functionError) {
+      throw new Error(`Function error: ${functionError.message}`);
     }
 
-    const responseData = await res.json();
-    console.log('✅ Email sent successfully via Supabase edge function:', responseData);
+    console.log('✅ Email sent successfully via Supabase edge function:', functionResult);
     
-    return { success: true, id: responseData.id };
+    return { success: true, id: functionResult.id };
     
   } catch (error: any) {
     console.error('❌ Supabase edge function failed:', error);
