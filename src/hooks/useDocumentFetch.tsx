@@ -2,7 +2,6 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { Document } from '../types/document';
-import { cleanupCache } from '../utils/cacheUtils';
 import { fetchDocumentsFromSupabase } from '../utils/documentApi';
 
 interface UseDocumentFetchProps {
@@ -21,25 +20,24 @@ export const useDocumentFetch = ({
   const fetchDocuments = useCallback(async () => {
     if (!isMountedRef.current) return;
     
-    console.log('🔄 Starting document fetch');
+    console.log('🔄 Starting fresh document fetch');
     
     try {
       setLoading(true);
       setError(null);
       
-      // Run cleanup in background without waiting
-      cleanupCache();
-      
+      console.log('📡 Calling fetchDocumentsFromSupabase');
       const transformedDocuments = await fetchDocumentsFromSupabase();
+      console.log('✅ Documents fetched:', transformedDocuments.length);
       
       if (isMountedRef.current) {
         setDocuments(transformedDocuments);
         setError(null);
-        console.log('✅ Documents loaded successfully:', transformedDocuments.length);
+        console.log('✅ Documents set in state');
       }
       
     } catch (err: any) {
-      console.error('💥 Fetch error:', err);
+      console.error('❌ Fetch error:', err);
       
       if (isMountedRef.current) {
         const errorMessage = err.message || 'Σφάλμα φόρτωσης εγγράφων';
@@ -50,6 +48,7 @@ export const useDocumentFetch = ({
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
+        console.log('✅ Loading set to false');
       }
     }
   }, [setDocuments, setLoading, setError, isMountedRef]);

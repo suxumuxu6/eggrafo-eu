@@ -33,10 +33,11 @@ export const useDocuments = () => {
   const { searchDocuments } = useDocumentSearch(documents);
 
   useEffect(() => {
-    console.log('🚀 useDocuments: Initializing');
+    console.log('🚀 useDocuments: Initializing fresh');
     isMountedRef.current = true;
     
-    // Start fetching immediately - no delays
+    // Simple immediate fetch without delays or complex logic
+    console.log('🔄 Calling fetchDocuments immediately');
     fetchDocuments();
 
     return () => {

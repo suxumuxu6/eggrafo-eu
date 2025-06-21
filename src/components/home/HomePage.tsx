@@ -42,7 +42,12 @@ const HomePage: React.FC = () => {
     setDeletingState
   } = useHomeState({ documents: allDocuments, searchDocuments });
 
-  console.log('🏠 Home render - loading:', loading, 'documents count:', allDocuments.length, 'error:', error);
+  console.log('🏠 HomePage render state:', { 
+    loading, 
+    documentsCount: allDocuments.length, 
+    error,
+    filteredCount: filteredDocuments.length 
+  });
 
   const handleViewDocumentWithIncrement = (document: any) => {
     incrementViewCount(document.id);
@@ -68,11 +73,11 @@ const HomePage: React.FC = () => {
   };
 
   const handleRetry = () => {
-    console.log('🔄 Manual retry triggered');
+    console.log('🔄 Manual retry triggered from HomePage');
     fetchDocuments();
   };
 
-  // Show loading state with improved UI
+  // Show loading state
   if (loading) {
     console.log('🔄 Showing loading state');
     return <LoadingState />;

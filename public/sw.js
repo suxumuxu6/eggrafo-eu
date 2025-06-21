@@ -1,41 +1,32 @@
 
-const CACHE_NAME = 'eggrafo-cache-v8';
-const urlsToCache = [
-  '/',
-  '/src/main.tsx',
-  '/src/index.css'
-];
-
+// Simplified service worker without aggressive caching
 self.addEventListener('install', function(event) {
-  // Skip waiting to activate immediately
+  console.log('SW: Install event');
   self.skipWaiting();
-  
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        return cache.addAll(urlsToCache);
-      })
-      .catch(function(error) {
-        console.log('Cache preload failed:', error);
-      })
-  );
 });
 
 self.addEventListener('activate', function(event) {
-  // Take control immediately
-  event.waitUntil(self.clients.claim());
+  console.log('SW: Activate event');
+  // Clear all caches on activation
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          console.log('SW: Deleting cache:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(function() {
+      return self.clients.claim();
+    })
+  );
 });
 
 self.addEventListener('fetch', function(event) {
-  // Simple cache strategy - cache first, then network
+  // Always fetch from network, no caching
   event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        return response || fetch(event.request);
-      })
-      .catch(function() {
-        // Return a basic fallback for failed requests
-        return new Response('Offline', { status: 503 });
-      })
+    fetch(event.request).catch(function() {
+      return new Response('Network error', { status: 503 });
+    })
   );
 });

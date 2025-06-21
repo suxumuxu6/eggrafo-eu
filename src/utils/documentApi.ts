@@ -3,13 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Document } from './searchUtils';
 
 export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
-  console.log('📡 Fetching documents from Supabase...');
+  console.log('📡 fetchDocumentsFromSupabase called');
   
   try {
+    console.log('🔄 Making Supabase query...');
     const { data, error } = await supabase
       .from('documents')
       .select('*')
       .order('created_at', { ascending: false });
+
+    console.log('📊 Supabase response:', { data: data?.length, error });
 
     if (error) {
       console.error('❌ Supabase query error:', error);
@@ -17,14 +20,15 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
     }
 
     if (!data || data.length === 0) {
-      console.log('⚠️ No documents found');
+      console.log('⚠️ No documents found in database');
       return [];
     }
 
+    console.log('🔄 Transforming documents...');
     const transformedDocuments: Document[] = data.map(doc => {
       let fileUrl = doc.file_url || '';
       
-      // Simple URL handling - no complex transformations
+      // Simple URL handling
       if (fileUrl && !fileUrl.startsWith('http')) {
         const { data: urlData } = supabase.storage
           .from('documents')
@@ -43,11 +47,11 @@ export const fetchDocumentsFromSupabase = async (): Promise<Document[]> => {
       };
     });
 
-    console.log('✅ Documents loaded:', transformedDocuments.length);
+    console.log('✅ Documents transformed successfully:', transformedDocuments.length);
     return transformedDocuments;
     
   } catch (error: any) {
-    console.error('❌ Fetch failed:', error);
+    console.error('❌ fetchDocumentsFromSupabase failed:', error);
     throw new Error('Πρόβλημα φόρτωσης εγγράφων. Δοκιμάστε ξανά.');
   }
 };

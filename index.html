@@ -4,14 +4,10 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- Enhanced cache-busting and performance headers -->
-    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
-    <meta http-equiv="Pragma" content="cache">
-    <meta http-equiv="Expires" content="31536000">
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="/src/main.tsx" as="script">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Disable caching to prevent loading issues -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     
     <!-- PDF icon for browser tab -->
     <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNkYzI2MjYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTQgMnY0YTIgMiAwIDAgMCAyIDJoNCIvPjxwYXRoIGQ9Im0xNS41IDEzIDEuNSAzIDEuNS0zIi8+PHBhdGggZD0iTTE4IDEzdjQiLz48cGF0aCBkPSJNNCAydjIwbDE2IDBWN2wtNS01WiIvPjwvc3ZnPg==" type="image/svg+xml">
@@ -23,32 +19,30 @@
     <meta name="description" content="Βρείτε παραδείγματα εγγράφων για το ΓΕΜΗ, τροποποιήσεις και αιτήσεις. Δωρεάν λήψη νόμων εταιρειών.">
     <meta name="keywords" content="ΓΕΜΗ, έγγραφα, παραδείγματα, νόμοι εταιρειών, τροποποιήσεις">
     
-    <!-- Performance optimization script -->
+    <!-- Clear any problematic caching -->
     <script>
-      // Resource loading optimization
-      window.addEventListener('load', function() {
-        const failed = [];
-        performance.getEntriesByType('resource').forEach(r => {
-          if (r.duration === 0) failed.push(r.name);
-        });
-        if (failed.length) console.error('Failed to load resources:', failed);
-        
-        // Implement aggressive caching strategy
-        if ('caches' in window) {
-          caches.open('eggrafo-v2').then(cache => {
-            cache.addAll([
-              '/',
-              '/src/main.tsx',
-              '/src/index.css'
-            ]).catch(err => console.log('Cache preload failed:', err));
-          });
-        }
-      });
+      console.log('🔄 Index.html script running');
       
-      // Service worker for better caching
+      // Clear problematic storage on load
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('cache') || key.includes('sw'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      } catch (e) {
+        console.log('Storage cleanup attempted');
+      }
+      
+      // Unregister existing service workers
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
-          console.log('SW registration failed');
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+          }
         });
       }
     </script>
