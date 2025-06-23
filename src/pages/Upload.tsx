@@ -133,7 +133,7 @@ const UploadPage: React.FC = () => {
             <UploadForm
               onSubmit={handleUpload}
               isUploading={isUploading}
-              uploadProgress={uploadProgress}
+              uploadProgress={uploadProgress.percentage}
               errorMessage={errorMessage}
             />
           </CardContent>
