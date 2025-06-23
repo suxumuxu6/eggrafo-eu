@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DocumentsHeader from '../DocumentsHeader';
 import DocumentsSection from '../DocumentsSection';
@@ -110,13 +109,6 @@ const HomeContent: React.FC<HomeContentProps> = ({
             <p className="text-sm text-gray-500">
               © Eggrafo.eu 2025 - Παραδείγματα εγγράφων ΓΕΜΗ και νόμοι εταιρειών
             </p>
-            <nav className="mt-2" aria-label="Footer navigation">
-              <ul className="flex justify-center space-x-4 text-xs text-gray-400">
-                <li><a href="/support" className="hover:text-gray-600">Υποστήριξη</a></li>
-                <li><span>|</span></li>
-                <li><span>Δωρεάν έγγραφα επιχειρήσεων</span></li>
-              </ul>
-            </nav>
           </div>
         </footer>
         
