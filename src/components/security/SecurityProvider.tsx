@@ -28,7 +28,7 @@ export const SecurityProvider: React.FC<SecurityProviderProps> = ({ children }) 
       // Content Security Policy - Updated to include functions subdomain
       const cspMeta = document.createElement('meta');
       cspMeta.httpEquiv = 'Content-Security-Policy';
-      cspMeta.content = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://vcxwikgasrttbngdygig.supabase.co https://vcxwikgasrttbngdygig.functions.supabase.co;";
+      cspMeta.content = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://vcxwikgasrttbngdygig.supabase.co https://vcxwikgasrttbngdygig.functions.supabase.co https://*.supabase.co;";
       document.head.appendChild(cspMeta);
 
       // X-Frame-Options
