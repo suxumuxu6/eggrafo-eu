@@ -5,14 +5,14 @@ import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { UploadForm } from "../components/upload/UploadForm";
-import { useFileUpload } from "../components/upload/useFileUpload";
+import { useSecureFileUpload } from "../components/upload/useSecureFileUpload";
 import { DocumentFormData } from "../components/upload/UploadForm";
 import { requireAdminAuth } from "@/utils/authSecurity";
 
 const UploadPage: React.FC = () => {
   const { isAuthenticated, isAdmin, loading, user } = useAuth();
   const navigate = useNavigate();
-  const { uploadDocument, isUploading, uploadProgress, errorMessage } = useFileUpload();
+  const { uploadDocument, isUploading, uploadProgress, errorMessage } = useSecureFileUpload();
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
   const [securityVerified, setSecurityVerified] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);

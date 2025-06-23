@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Navbar } from '@/components/Navbar';
-import { DocumentsSection } from '@/components/DocumentsSection';
+import Navbar from '@/components/Navbar';
+import DocumentsSection from '@/components/DocumentsSection';
 
 const Documents = () => {
   return (
