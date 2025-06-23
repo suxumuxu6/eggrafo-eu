@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from '@/context/AuthContext';
 import { SecureFileUploadService } from '@/services/secureFileUploadService';
 import { getCSRFToken, validateCSRFToken, sanitizeInput, logSecurityEvent } from '@/utils/securityUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { DocumentFormData } from './UploadForm';
 
 export const useSecureFileUpload = () => {
@@ -46,7 +47,7 @@ export const useSecureFileUpload = () => {
         title: sanitizeInput(formData.title),
         description: sanitizeInput(formData.description || ''),
         category: sanitizeInput(formData.category || ''),
-        tags: formData.tags?.map(tag => sanitizeInput(tag)) || [],
+        tags: Array.isArray(formData.tags) ? formData.tags.map(tag => sanitizeInput(tag)) : [],
         file: formData.file
       };
 

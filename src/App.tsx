@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
@@ -9,7 +10,7 @@ import Admin from './pages/Admin';
 import DownloadPage from './pages/DownloadPage';
 import Chatbot from './pages/Chatbot';
 import { AuthProvider } from './context/AuthContext';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster"
 import { SecurityProvider } from '@/components/security/SecurityProvider';
 
