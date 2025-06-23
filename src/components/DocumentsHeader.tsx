@@ -1,3 +1,4 @@
+
 import React from 'react';
 import SearchBar from './SearchBar';
 interface DocumentsHeaderProps {
@@ -19,14 +20,14 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
       <h1 className="sr-only">Παραδείγματα εγγράφων ΓΕΜΗ - Δωρεάν λήψη νόμων εταιρειών</h1>
       
       {/* Descriptive content with SEO keywords */}
-      <div className="max-w-4xl mx-auto mb-8">
+      <div className="w-full mx-auto mb-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200 shadow-sm">
         <p style={{
         fontSize: "1.25rem",
         color: "#111111"
       }} className="font-medium text-justify text-xl mx-0 py-[34px] px-[4px]">
-          Μέσα στο site μπορείτε βρείτε παραδείγματα εγγράφων και υποδείγματα για τροποποιήσεις, μετατροπές εταιρειών και άλλα για αιτήσεις στο ΓΕΜΗ.
+          Μέσα στο site μπορείτε βρείτε και να κατεβάσετε παραδείγματα εγγράφων και υποδείγματα για τροποποιήσεις, μετατροπές εταιρειών, αλλαγή έδρας , λύσεις και άλλα για αιτήσεις στο ΓΕΜΗ.
           <br />
-          Επίσης μπορείτε να στείλετε το αίτημά σας για συγκεκριμένο υπόδειγμα στο Chat.
+          Επίσης αν θέλετε κάποιο άλλο παράδειγμα μπορείτε να στείλετε το αίτημά σας για συγκεκριμένο υπόδειγμα στο Chat.
           <br />
           Στηρίξτε την προσπάθειά μας.
         </p>
