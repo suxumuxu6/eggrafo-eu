@@ -39,7 +39,7 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
           className="text-left text-xl px-0 font-medium"
         >
           Μέσα στο site μπορείτε βρείτε <strong>παραδείγματα εγγράφων για τροποποιήσεις</strong> και άλλες <em>αιτήσεις στο ΓΕΜΗ</em>. 
-          Δωρεάν λήψη <strong>νόμων εταιρειών</strong> και <em>επιχειρηματικών εγγράφων</em>. Στηρίξτε την προσπάθειά μας.
+          Στηρίξτε την προσπάθειά μας.
         </p>
       </div>
       
