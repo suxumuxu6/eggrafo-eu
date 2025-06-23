@@ -15,21 +15,40 @@ const AdminAuthPage: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const navigate = useNavigate();
 
+  console.log('AdminAuth render:', { isAuthenticated, isAdmin, loading });
+
   React.useEffect(() => {
     if (!loading && isAuthenticated && isAdmin) {
-      navigate("/admin-chatbot");
+      console.log('✅ Admin authenticated, redirecting to upload page');
+      navigate("/upload");
     }
   }, [isAuthenticated, isAdmin, loading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔐 Starting login process...');
     setFormLoading(true);
+    
     try {
       const success = await signIn(email, password);
+      console.log('Login result:', success);
+      
       if (success) {
+        console.log('✅ Login successful, waiting for admin verification...');
         setEmail("");
         setPassword("");
-        // Navigation will be handled by the useEffect above
+        // Don't navigate here, let the useEffect handle it after admin check
+        toast.success("Συνδεθήκατε! Επαλήθευση διαχειριστή...");
+        
+        // Give some time for admin verification
+        setTimeout(() => {
+          // Check if still not admin after verification
+          if (!isAdmin) {
+            toast.error("Δεν έχετε δικαιώματα διαχειριστή");
+          }
+        }, 2000);
+      } else {
+        console.log('❌ Login failed');
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -38,6 +57,17 @@ const AdminAuthPage: React.FC = () => {
       setFormLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-blue-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Έλεγχος δικαιωμάτων...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-blue-50">

@@ -7,57 +7,73 @@ export interface AuthSecurityResult {
   error?: string;
 }
 
-export const verifyAdminAuthentication = async (timeout: number = 3000): Promise<AuthSecurityResult> => {
+export const verifyAdminAuthentication = async (timeout: number = 5000): Promise<AuthSecurityResult> => {
   try {
-    // Create a timeout promise
-    const timeoutPromise = new Promise<AuthSecurityResult>((_, reject) => {
-      setTimeout(() => reject(new Error('Authentication timeout')), timeout);
-    });
+    console.log('🔐 Starting admin authentication verification...');
 
-    // Create the authentication check promise
-    const authPromise = (async (): Promise<AuthSecurityResult> => {
-      // Get session with shorter timeout
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Get session with timeout
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('❌ Session error:', sessionError);
+      return { isValid: false, isAdmin: false, error: 'Session error' };
+    }
+
+    if (!session || !session.user) {
+      console.log('❌ No active session found');
+      return { isValid: false, isAdmin: false, error: 'No active session' };
+    }
+
+    console.log('✅ Valid session found for user:', session.user.id);
+
+    // Check admin status with direct RPC call
+    try {
+      console.log('🔍 Checking admin status via RPC...');
       
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        return { isValid: false, isAdmin: false, error: 'Session error' };
-      }
-
-      if (!session || !session.user) {
-        return { isValid: false, isAdmin: false, error: 'No active session' };
-      }
-
-      // Check admin status with better error handling
-      try {
-        console.log('Calling is_admin function for user:', session.user.id);
+      const { data: isAdminResult, error: adminError } = await supabase.rpc("is_admin", { 
+        _user_id: session.user.id 
+      });
+      
+      if (adminError) {
+        console.error('❌ Admin check RPC error:', adminError);
+        // Try alternative method - direct query
+        console.log('🔄 Trying direct user_roles query...');
         
-        const { data: isAdminResult, error: adminError } = await supabase.rpc("is_admin", { 
-          _user_id: session.user.id 
-        });
-        
-        if (adminError) {
-          console.error('Admin check RPC error:', adminError);
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'admin')
+          .single();
+          
+        if (roleError && roleError.code !== 'PGRST116') { // PGRST116 is "not found" which is expected for non-admins
+          console.error('❌ Direct role query error:', roleError);
           return { isValid: true, isAdmin: false, error: 'Admin verification failed' };
         }
-
-        console.log('Admin check result:', isAdminResult);
+        
+        const isAdmin = !roleError && roleData?.role === 'admin';
+        console.log('✅ Direct query result - isAdmin:', isAdmin);
         
         return { 
           isValid: true, 
-          isAdmin: Boolean(isAdminResult),
-          error: isAdminResult ? undefined : 'User is not an admin'
+          isAdmin,
+          error: isAdmin ? undefined : 'User is not an admin'
         };
-      } catch (adminCheckError) {
-        console.error('Admin check exception:', adminCheckError);
-        return { isValid: true, isAdmin: false, error: 'Admin verification exception' };
       }
-    })();
 
-    // Race between timeout and auth check
-    return await Promise.race([authPromise, timeoutPromise]);
+      console.log('✅ RPC admin check result:', isAdminResult);
+      
+      return { 
+        isValid: true, 
+        isAdmin: Boolean(isAdminResult),
+        error: isAdminResult ? undefined : 'User is not an admin'
+      };
+    } catch (adminCheckError) {
+      console.error('❌ Admin check exception:', adminCheckError);
+      return { isValid: true, isAdmin: false, error: 'Admin verification exception' };
+    }
   } catch (error: any) {
-    console.error('Authentication security check failed:', error);
+    console.error('❌ Authentication security check failed:', error);
     return { 
       isValid: false, 
       isAdmin: false, 
@@ -68,7 +84,7 @@ export const verifyAdminAuthentication = async (timeout: number = 3000): Promise
 
 export const requireAdminAuth = async (): Promise<boolean> => {
   try {
-    const result = await verifyAdminAuthentication(3000);
+    const result = await verifyAdminAuthentication(5000);
     console.log('requireAdminAuth result:', result);
     return result.isValid && result.isAdmin;
   } catch (error) {
