@@ -20,8 +20,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <SecurityProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <SecurityProvider>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/home" element={<Home />} />
@@ -34,8 +34,8 @@ function App() {
               <Route path="/chatbot" element={<Chatbot />} />
             </Routes>
             <Toaster />
-          </AuthProvider>
-        </SecurityProvider>
+          </SecurityProvider>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );
