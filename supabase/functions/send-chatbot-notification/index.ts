@@ -11,16 +11,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
-
 serve(async (req: Request) => {
-  console.log("🚀 Received request:", req.method, req.url);
+  console.log("🚀 Edge function called:", req.method, req.url);
+  console.log("🚀 Headers:", Object.fromEntries(req.headers.entries()));
 
   if (req.method === "OPTIONS") {
+    console.log("✅ Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
+    console.log("❌ Method not allowed:", req.method);
     return new Response("Method not allowed", { 
       status: 405, 
       headers: corsHeaders 
@@ -29,6 +30,7 @@ serve(async (req: Request) => {
 
   // Rate limiting
   if (!checkRateLimit(req)) {
+    console.log("❌ Rate limit exceeded");
     return new Response(JSON.stringify({ error: "Too many requests" }), { 
       status: 429, 
       headers: { "Content-Type": "application/json", ...corsHeaders }
@@ -36,10 +38,14 @@ serve(async (req: Request) => {
   }
 
   try {
+    console.log("📥 Reading request body...");
     const requestBody = await req.json() as NotificationRequest;
-    const { type, email, ticketCode, chatId } = requestBody;
-    
-    console.log("📧 Processing notification:", { type, email: email?.substring(0, 5) + "***", ticketCode, chatId });
+    console.log("📦 Request body received:", {
+      type: requestBody.type,
+      email: requestBody.email?.substring(0, 5) + "***",
+      ticketCode: requestBody.ticketCode,
+      chatId: requestBody.chatId
+    });
 
     // Check if Resend API key is available
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -53,20 +59,39 @@ serve(async (req: Request) => {
       });
     }
 
+    console.log("✅ RESEND_API_KEY found, length:", resendApiKey.length);
+
     // Validate required fields
     const validationError = validateRequest(requestBody);
     if (validationError) {
       console.error("❌ Validation error:", validationError);
-      throw new Error(validationError);
+      return new Response(JSON.stringify({ 
+        error: validationError 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Generate email template
-    const emailData = generateEmailTemplate(requestBody);
+    console.log("✅ Request validation passed");
 
-    console.log("📤 Sending email via Resend to:", emailData.to);
-    
+    // Initialize Resend
+    const resend = new Resend(resendApiKey);
+
+    // Generate email template
+    console.log("📧 Generating email template...");
+    const emailData = generateEmailTemplate(requestBody);
+    console.log("📧 Email template generated:", {
+      to: emailData.to.substring(0, 10) + "***",
+      subject: emailData.subject
+    });
+
     // Use verified domain
     const fromEmail = "Eggrafo Support <support@eggrafo.work>";
+    
+    console.log("📤 Sending email via Resend...");
+    console.log("📤 From:", fromEmail);
+    console.log("📤 To:", emailData.to.substring(0, 10) + "***");
     
     const sendResult = await resend.emails.send({
       from: fromEmail,

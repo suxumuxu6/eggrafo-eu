@@ -25,23 +25,36 @@ export const checkRateLimit = (req: Request): boolean => {
 };
 
 export const validateRequest = (requestBody: any): string | null => {
+  console.log("🔍 Validating request:", {
+    hasType: !!requestBody.type,
+    hasEmail: !!requestBody.email,
+    hasTicketCode: !!requestBody.ticketCode,
+    hasChatId: !!requestBody.chatId
+  });
+
   const { type, email, ticketCode, chatId } = requestBody;
   
   if (!type || !email || !ticketCode || !chatId) {
-    console.error("❌ Missing required fields:", { type: !!type, email: !!email, ticketCode: !!ticketCode, chatId: !!chatId });
+    console.error("❌ Missing required fields:", { 
+      type: !!type, 
+      email: !!email, 
+      ticketCode: !!ticketCode, 
+      chatId: !!chatId 
+    });
     return "Missing required fields: type, email, ticketCode, or chatId";
   }
 
   if (!isValidEmail(email)) {
-    console.error("❌ Invalid email format:", email);
+    console.error("❌ Invalid email format:", email?.substring(0, 5) + "***");
     return "Invalid email format";
   }
 
   const validTypes = ["new_ticket", "user_reply", "user_welcome", "ticket_closed", "admin_reply"];
   if (!validTypes.includes(type)) {
     console.error("❌ Invalid notification type:", type);
-    return `Invalid notification type: ${type}`;
+    return `Invalid notification type: ${type}. Valid types: ${validTypes.join(', ')}`;
   }
 
+  console.log("✅ Request validation successful");
   return null;
 };

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -36,6 +37,8 @@ export const useUserSupportData = () => {
 
     setIsLoading(true);
     try {
+      console.log('🔍 Searching for conversation:', { email, ticketCode });
+      
       const { data, error } = await supabase
         .from("chatbot_messages")
         .select("*")
@@ -44,10 +47,13 @@ export const useUserSupportData = () => {
         .single();
 
       if (error || !data) {
+        console.error('❌ Search error:', error);
         toast.error("Δεν βρέθηκε συνομιλία με αυτά τα στοιχεία.");
         setConversationFound(false);
         return;
       }
+
+      console.log('✅ Found conversation:', data);
 
       // Safely cast messages with proper type checking
       const rawMessages = data.messages;
@@ -80,6 +86,7 @@ export const useUserSupportData = () => {
         .order("created_at", { ascending: true });
 
       if (!repliesError && repliesData) {
+        console.log('✅ Found replies:', repliesData.length);
         // Transform and type-cast the replies data
         const typedReplies: SupportReply[] = repliesData.map(reply => ({
           id: reply.id,
@@ -93,7 +100,7 @@ export const useUserSupportData = () => {
 
       toast.success("Συνομιλία βρέθηκε!");
     } catch (error) {
-      console.error("Error searching conversation:", error);
+      console.error("❌ Error searching conversation:", error);
       toast.error("Σφάλμα κατά την αναζήτηση.");
     } finally {
       setIsLoading(false);
@@ -108,6 +115,8 @@ export const useUserSupportData = () => {
 
     setIsLoading(true);
     try {
+      console.log('📝 Sending user reply:', { chatId, message: newReply.trim() });
+      
       const { data, error } = await supabase
         .from("support_replies")
         .insert({
@@ -119,10 +128,12 @@ export const useUserSupportData = () => {
         .single();
 
       if (error) {
-        console.error("Database error:", error);
+        console.error("❌ Database error:", error);
         toast.error("Σφάλμα αποστολής μηνύματος.");
         return;
       }
+
+      console.log('✅ Reply saved to database:', data);
 
       // Type-cast the returned data
       const newReplyData: SupportReply = {
@@ -136,8 +147,8 @@ export const useUserSupportData = () => {
       // Add to local state
       setReplies(prev => [...prev, newReplyData]);
       
-      // Send notification to admin about user reply using new notification system
-      console.log("Sending admin notification for user reply...");
+      // Send notification to admin about user reply
+      console.log('📧 Sending admin notification for user reply...');
       try {
         const notificationSuccess = await sendChatbotNotification('user_reply', {
           email,
@@ -147,21 +158,21 @@ export const useUserSupportData = () => {
         });
         
         if (notificationSuccess) {
-          console.log("Admin notification sent successfully");
+          console.log('✅ Admin notification sent successfully');
           toast.success("Το μήνυμά σας εστάλη και ο διαχειριστής ειδοποιήθηκε!");
         } else {
-          console.error("Failed to send admin notification");
+          console.error('❌ Failed to send admin notification');
           toast.success("Το μήνυμά σας εστάλη!");
         }
       } catch (notificationError) {
-        console.error("Failed to send admin notification:", notificationError);
+        console.error('❌ Failed to send admin notification:', notificationError);
         toast.success("Το μήνυμά σας εστάλη!");
       }
       
       setNewReply("");
       setUploadedFile(null);
     } catch (error) {
-      console.error("Error sending reply:", error);
+      console.error("❌ Error sending reply:", error);
       toast.error("Σφάλμα αποστολής μηνύματος.");
     } finally {
       setIsLoading(false);
