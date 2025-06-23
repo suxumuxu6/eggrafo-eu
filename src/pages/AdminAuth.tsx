@@ -34,25 +34,22 @@ const AdminAuthPage: React.FC = () => {
       console.log('Login result:', success);
       
       if (success) {
-        console.log('✅ Login successful, waiting for admin verification...');
+        console.log('✅ Login successful');
         setEmail("");
         setPassword("");
-        // Don't navigate here, let the useEffect handle it after admin check
-        toast.success("Συνδεθήκατε! Επαλήθευση διαχειριστή...");
+        toast.success("Συνδεθήκατε επιτυχώς!");
         
-        // Give some time for admin verification
+        // Wait for admin verification
         setTimeout(() => {
-          // Check if still not admin after verification
-          if (!isAdmin) {
-            toast.error("Δεν έχετε δικαιώματα διαχειριστή");
-          }
-        }, 2000);
+          // The useEffect will handle navigation once isAdmin is set
+        }, 1000);
       } else {
         console.log('❌ Login failed');
+        toast.error("Λάθος στοιχεία σύνδεσης");
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Login failed");
+      toast.error("Σφάλμα σύνδεσης");
     } finally {
       setFormLoading(false);
     }

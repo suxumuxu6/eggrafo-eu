@@ -11,7 +11,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, session, isAdmin, loading, setLoading } = useAuthState();
 
-  // Enhanced sign in with input validation
+  // Simplified sign in
   const signIn = async (email: string, password: string, captchaToken?: string) => {
     setLoading(true);
     try {
@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Enhanced sign up with input validation
+  // Simplified sign up
   const signUp = async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -35,10 +35,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Sign Out with cleanup
+  // Simplified sign out
   const signOut = async () => {
     console.log('SignOut initiated');
-    await AuthService.signOut();
+    setLoading(true);
+    try {
+      await AuthService.signOut();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const contextValue = {

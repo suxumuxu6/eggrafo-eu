@@ -34,7 +34,7 @@ export class FileUploadService {
   }
 
   validateUploadData(formData: UploadFormData): { isValid: boolean; error?: string } {
-    const { title, description, tags, category, file } = formData;
+    const { title, description, file, category } = formData;
 
     if (!file) {
       return { isValid: false, error: 'Please select a PDF file' };
@@ -69,9 +69,9 @@ export class FileUploadService {
   }
 
   async uploadFileToStorage(file: File): Promise<{ filePath: string; fileUrl: string }> {
-    this.updateProgress('Preparing file upload', 5);
+    this.updateProgress('Preparing file upload', 10);
 
-    // Check authentication first
+    // Verify session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
@@ -83,30 +83,7 @@ export class FileUploadService {
       throw new Error('You must be logged in to upload files.');
     }
 
-    this.updateProgress('Checking storage access', 10);
-
-    // Test storage access by trying to list buckets
-    try {
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      
-      if (bucketsError) {
-        console.error('❌ Error accessing storage:', bucketsError);
-        throw new Error(`Storage access denied: ${bucketsError.message}`);
-      }
-
-      const documentsBucket = buckets?.find(bucket => bucket.id === 'documents');
-      if (!documentsBucket) {
-        console.error('❌ Documents bucket not found');
-        throw new Error('Documents storage not configured. Please contact administrator.');
-      }
-
-      console.log('✅ Storage access verified, bucket found:', documentsBucket);
-    } catch (error: any) {
-      console.error('❌ Storage verification failed:', error);
-      throw new Error(`Storage verification failed: ${error.message}`);
-    }
-
-    this.updateProgress('Uploading file', 25);
+    this.updateProgress('Verifying storage access', 20);
 
     // Create a secure file name
     const fileExt = file.name.split('.').pop();
@@ -117,53 +94,23 @@ export class FileUploadService {
     const filePath = fileName;
 
     console.log('📤 Uploading file:', filePath);
+    this.updateProgress('Uploading file', 40);
 
     try {
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
-          upsert: false,
           cacheControl: '3600',
-          contentType: file.type,
+          upsert: false
         });
 
       if (uploadError) {
         console.error('❌ Upload error:', uploadError);
-        
-        if (uploadError.message.includes('The resource already exists')) {
-          // Try with a more unique filename
-          const newFileName = `${timestamp}-${Date.now()}-${randomSuffix}-${sanitizedOriginalName}.${fileExt}`;
-          const { data: retryData, error: retryError } = await supabase.storage
-            .from('documents')
-            .upload(newFileName, file, {
-              upsert: false,
-              cacheControl: '3600',
-              contentType: file.type,
-            });
-            
-          if (retryError) {
-            throw new Error(`Upload failed after retry: ${retryError.message}`);
-          }
-          
-          console.log('✅ File uploaded successfully on retry:', newFileName);
-          this.updateProgress('File uploaded', 70);
-          
-          // Get public URL for retry upload
-          const { data: retryPublicUrlData } = supabase.storage
-            .from('documents')
-            .getPublicUrl(newFileName);
-            
-          return { 
-            filePath: newFileName, 
-            fileUrl: retryPublicUrlData.publicUrl 
-          };
-        } else {
-          throw new Error(`Upload failed: ${uploadError.message}`);
-        }
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
       console.log('✅ File uploaded successfully:', uploadData);
-      this.updateProgress('File uploaded', 70);
+      this.updateProgress('File uploaded successfully', 80);
 
       // Generate the public URL
       console.log('🔗 Generating public URL...');
@@ -189,7 +136,7 @@ export class FileUploadService {
     fileUrl: string, 
     userId: string
   ): Promise<any> {
-    this.updateProgress('Saving document metadata', 85);
+    this.updateProgress('Saving document metadata', 90);
 
     const sanitizedTitle = sanitizeInput(formData.title);
     const sanitizedDescription = sanitizeInput(formData.description);

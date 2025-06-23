@@ -32,7 +32,6 @@ export class AuthService {
       }
       
       console.log('Sign in successful');
-      toast.success("Συνδεθήκατε!");
       return true;
     } catch (error: any) {
       console.error('Sign in exception:', error);
@@ -87,11 +86,19 @@ export class AuthService {
   static async signOut(): Promise<void> {
     console.log('Signing out');
     try {
-      await supabase.auth.signOut();
-      toast.info("Αποσυνδεθήκατε");
-      window.location.href = '/';
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+        toast.error("Sign out failed");
+      } else {
+        toast.info("Αποσυνδεθήκατε");
+        // Force page reload to clear all state
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
+      }
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Sign out exception:', error);
       toast.error("Sign out failed");
     }
   }

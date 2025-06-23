@@ -15,7 +15,7 @@ export const useAuthState = () => {
 
   const [initialized, setInitialized] = useState(false);
 
-  // Enhanced admin check with better error handling
+  // Simplified admin check without recursive calls
   const checkAdmin = async (uid: string | undefined) => {
     if (!uid) {
       console.log('No user ID provided, not admin');
@@ -27,20 +27,19 @@ export const useAuthState = () => {
       console.log('Checking admin for user:', uid);
       
       // Direct database query for admin check
-      const { data, error } = await supabase.rpc("is_admin", { 
-        _user_id: uid 
-      });
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', uid)
+        .eq('role', 'admin')
+        .single();
       
-      if (error) {
-        console.error('Admin RPC error:', error);
-        setAuthState(prev => ({ ...prev, isAdmin: false }));
-        return;
-      }
-
-      console.log('Admin check result:', data);
+      const isAdmin = !error && data?.role === 'admin';
+      console.log('Admin check result:', isAdmin);
+      
       setAuthState(prev => ({ 
         ...prev, 
-        isAdmin: Boolean(data)
+        isAdmin
       }));
     } catch (err) {
       console.error('Error in admin verification:', err);
@@ -48,7 +47,7 @@ export const useAuthState = () => {
     }
   };
 
-  // Auth state listener with better control flow
+  // Simplified auth state listener
   useEffect(() => {
     let mounted = true;
     
@@ -69,16 +68,10 @@ export const useAuthState = () => {
         loading: false
       }));
       
-      // Handle user-specific actions
+      // Handle admin check separately to avoid blocking the UI
       if (loggedUser && session) {
-        console.log('User logged in, syncing profile and checking admin');
-        try {
-          await AuthService.syncProfile(loggedUser);
-          // Check admin status immediately after login
-          await checkAdmin(loggedUser.id);
-        } catch (error) {
-          console.error('Error syncing profile:', error);
-        }
+        console.log('User logged in, checking admin status');
+        setTimeout(() => checkAdmin(loggedUser.id), 100);
       } else {
         console.log('No user/session, resetting admin status');
         setAuthState(prev => ({ ...prev, isAdmin: false }));
@@ -87,7 +80,7 @@ export const useAuthState = () => {
       setInitialized(true);
     });
 
-    // Check active session at load with better error handling
+    // Check active session at load
     const initializeAuth = async () => {
       if (!mounted) return;
       
@@ -105,13 +98,8 @@ export const useAuthState = () => {
         console.log('Initial session check:', { session: !!session, userId: session?.user?.id });
         
         if (session?.user && mounted) {
-          console.log('Initial session found, syncing profile and checking admin');
-          try {
-            await AuthService.syncProfile(session.user);
-            await checkAdmin(session.user.id);
-          } catch (error) {
-            console.error('Error in initial auth setup:', error);
-          }
+          console.log('Initial session found, checking admin');
+          setTimeout(() => checkAdmin(session.user.id), 100);
         }
         
         if (mounted) {

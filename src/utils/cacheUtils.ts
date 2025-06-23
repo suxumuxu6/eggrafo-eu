@@ -1,31 +1,45 @@
 
-// Simplified cache utilities without complex caching that can cause issues
+// Simplified cache utilities to prevent loading issues
 export const clearCache = (): void => {
   try {
     // Clear browser storage
     if (typeof window !== 'undefined') {
       sessionStorage.clear();
-      localStorage.removeItem('documents-cache');
-      localStorage.removeItem('supabase.auth.token');
+      
+      // Clear specific items that might cause issues
+      const keysToRemove = [
+        'documents-cache',
+        'supabase.auth.token',
+        'sb-auth-token'
+      ];
+      
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {
+          // Ignore errors
+        }
+      });
       
       // Clear any other auth-related storage
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('sb-') || key.includes('auth')) {
-          localStorage.removeItem(key);
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {
+            // Ignore errors
+          }
         }
       });
     }
     
-    // Force reload to ensure clean state
-    window.location.reload();
+    console.log('Cache cleared successfully');
   } catch (e) {
     console.error('Cache clear failed:', e);
-    window.location.reload();
   }
 };
 
-// Remove complex cache cleanup that was causing issues
+// Simplified cleanup
 export const cleanupCache = async (): Promise<void> => {
-  // Do nothing - simplified approach
   return Promise.resolve();
 };

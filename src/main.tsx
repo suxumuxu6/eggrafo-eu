@@ -5,7 +5,7 @@ import './index.css';
 
 console.log('🚀 Main.tsx loading...');
 
-// Get root element and render immediately
+// Get root element
 const rootElement = document.getElementById("root")!;
 
 if (!rootElement) {
@@ -13,16 +13,17 @@ if (!rootElement) {
   throw new Error('Root element not found');
 }
 
+// Remove loading indicator
 const loadingElement = rootElement.querySelector('.loading');
-
-// Remove loading indicator immediately
 if (loadingElement) {
   console.log('🔄 Removing loading indicator');
   loadingElement.remove();
 }
 
 console.log('🔄 Creating React root...');
-// Render app directly without lazy loading for faster initial load
-createRoot(rootElement).render(<App />);
+
+// Create and render React app
+const root = createRoot(rootElement);
+root.render(<App />);
 
 console.log('✅ React app rendered');
