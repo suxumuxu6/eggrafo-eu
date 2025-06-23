@@ -36,7 +36,7 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
             fontSize: "1.25rem",
             color: "#111111"
           }} 
-          className="text-left text-xl px-0 font-medium"
+          className="text-justify text-xl px-0 font-medium"
         >
           Μέσα στο site μπορείτε βρείτε παραδείγματα εγγράφων και υποδείγματα για τροποποιήσεις, μετατροπές εταιρειών και άλλα για αιτήσεις στο ΓΕΜΗ. Επίσης μπορείτε να στείλετε το αίτημά σας για συγκεκριμένο υπόδειγμα στο Chat. Στηρίξτε την προσπάθειά μας.
         </p>
