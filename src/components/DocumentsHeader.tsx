@@ -30,7 +30,7 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
       <h1 className="sr-only">Παραδείγματα εγγράφων ΓΕΜΗ - Δωρεάν λήψη νόμων εταιρειών</h1>
       
       {/* Descriptive content with SEO keywords */}
-      <div className="max-w-2xl mx-auto mb-8">
+      <div className="max-w-3xl mx-auto mb-8">
         <p 
           style={{
             fontSize: "1.25rem",
@@ -38,8 +38,7 @@ const DocumentsHeader: React.FC<DocumentsHeaderProps> = ({
           }} 
           className="text-left text-xl px-0 font-medium"
         >
-          Μέσα στο site μπορείτε βρείτε <strong>παραδείγματα εγγράφων για τροποποιήσεις</strong> και άλλες <em>αιτήσεις στο ΓΕΜΗ</em>. 
-          Στηρίξτε την προσπάθειά μας.
+          Μέσα στο site μπορείτε βρείτε παραδείγματα εγγράφων και υποδείγματα για τροποποιήσεις, μετατροπές εταιρειών και άλλα για αιτήσεις στο ΓΕΜΗ. Επίσης μπορείτε να στείλετε τι αίτημα μας για συγκεκριμένο υπόδειγμα στο Chat. Στηρίξτε την προσπάθειά μας.
         </p>
       </div>
       
