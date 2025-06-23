@@ -1,8 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ChatbotReplyDialog from "@/components/admin/ChatbotReplyDialog";
 import ChatbotDeleteDialog from "@/components/admin/ChatbotDeleteDialog";
@@ -18,6 +19,10 @@ const AdminChatbot: React.FC = () => {
   const [data, setData] = useState<ChatbotMessage[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const { supportReplies, fetchSupportReplies } = useSupportReplies();
+  
+  // Bulk delete state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   
   const {
     replyTo,
@@ -96,6 +101,55 @@ const AdminChatbot: React.FC = () => {
       toast.error("Σφάλμα κατά τη φόρτωση των μηνυμάτων");
     } finally {
       setDataLoading(false);
+    }
+  };
+
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectedIds.size === data.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(data.map(item => item.id)));
+    }
+  };
+
+  const handleSelectItem = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) {
+      toast.error("Δεν έχετε επιλέξει καμία συνομιλία");
+      return;
+    }
+
+    setBulkDeleting(true);
+    try {
+      const idsArray = Array.from(selectedIds);
+      const { error } = await supabase
+        .from("chatbot_messages")
+        .delete()
+        .in("id", idsArray);
+
+      if (!error) {
+        toast.success(`${idsArray.length} συνομιλίες διαγράφηκαν επιτυχώς`);
+        setSelectedIds(new Set());
+        fetchMessages();
+      } else {
+        console.error("Bulk delete error:", error);
+        toast.error("Αποτυχία μαζικής διαγραφής");
+      }
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      toast.error("Αποτυχία μαζικής διαγραφής");
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -205,8 +259,42 @@ const AdminChatbot: React.FC = () => {
       <Card className="bg-slate-50 border border-blue-200 shadow-sm">
         <CardHeader>
           <CardTitle>Chatbot Conversations</CardTitle>
-          <div className="text-sm text-gray-600">
-            Total conversations: {data.length}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Total conversations: {data.length}
+              {selectedIds.size > 0 && (
+                <span className="ml-4 text-blue-600">
+                  Επιλεγμένα: {selectedIds.size}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {data.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedIds.size === data.length && data.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAll}
+                  >
+                    {selectedIds.size === data.length ? 'Αποεπιλογή όλων' : 'Επιλογή όλων'}
+                  </Button>
+                  {selectedIds.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBulkDelete}
+                      disabled={bulkDeleting}
+                    >
+                      {bulkDeleting ? 'Διαγραφή...' : `Διαγραφή επιλεγμένων (${selectedIds.size})`}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -216,6 +304,8 @@ const AdminChatbot: React.FC = () => {
             <ConversationsList
               data={data}
               supportReplies={supportReplies}
+              selectedIds={selectedIds}
+              onSelectItem={handleSelectItem}
               onShowMessages={handleShowMessages}
               onReplyOpen={handleReplyOpen}
               onDeleteConfirm={setConfirmDeleteId}

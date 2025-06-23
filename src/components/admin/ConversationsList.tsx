@@ -6,6 +6,8 @@ import ConversationItem from "./ConversationItem";
 interface ConversationsListProps {
   data: ChatbotMessage[];
   supportReplies: Record<string, SupportReply[]>;
+  selectedIds?: Set<string>;
+  onSelectItem?: (id: string) => void;
   onShowMessages: (conversation: ChatbotMessage) => void;
   onReplyOpen: (email: string | null, chatId: string) => void;
   onDeleteConfirm: (id: string) => void;
@@ -15,6 +17,8 @@ interface ConversationsListProps {
 const ConversationsList: React.FC<ConversationsListProps> = ({
   data,
   supportReplies,
+  selectedIds,
+  onSelectItem,
   onShowMessages,
   onReplyOpen,
   onDeleteConfirm,
@@ -35,6 +39,8 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
           key={conversation.id}
           conversation={conversation}
           supportReplies={supportReplies[conversation.id] || []}
+          isSelected={selectedIds?.has(conversation.id) || false}
+          onSelect={onSelectItem}
           onShowMessages={onShowMessages}
           onReplyOpen={onReplyOpen}
           onDeleteConfirm={onDeleteConfirm}
