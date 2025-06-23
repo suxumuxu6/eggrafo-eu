@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2, Download, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Download, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DonationData {
@@ -29,6 +29,7 @@ const DocumentDownload: React.FC = () => {
   const [donation, setDonation] = useState<DonationData | null>(null);
   const [document, setDocument] = useState<DocumentData | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -43,30 +44,50 @@ const DocumentDownload: React.FC = () => {
 
   const verifyToken = async (token: string) => {
     try {
+      console.log('Verifying token:', token);
+      
       const { data, error } = await supabase.functions.invoke('verify-donation-link', {
         body: { token }
       });
 
+      console.log('Verification response:', { data, error });
+
       if (error) {
-        throw error;
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Σφάλμα επαλήθευσης συνδέσμου');
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Αποτυχία επαλήθευσης');
+        // Handle specific error cases
+        if (data.error === "Download link has expired") {
+          setIsExpired(true);
+          setError('Ο σύνδεσμος λήψης έχει λήξει. Παρακαλώ επικοινωνήστε με την υποστήριξη.');
+        } else {
+          setError(data.error || 'Αποτυχία επαλήθευσης');
+        }
+        setLoading(false);
+        return;
       }
 
       setDonation(data.donation);
       setDocument(data.document);
       setLoading(false);
 
-      // Start countdown timer
-      if (data.donation.expires_at) {
+      // Start countdown timer if not expired
+      if (data.donation.expires_at && !isExpired) {
         startCountdown(data.donation.expires_at);
       }
 
     } catch (err: any) {
       console.error('Token verification error:', err);
-      setError(err.message || 'Σφάλμα επαλήθευσης συνδέσμου');
+      
+      // Handle specific JWT errors
+      if (err.message && err.message.includes('InvalidJWT')) {
+        setError('Ο σύνδεσμος έχει λήξει ή δεν είναι έγκυρος. Παρακαλώ επικοινωνήστε με την υποστήριξη.');
+        setIsExpired(true);
+      } else {
+        setError(err.message || 'Σφάλμα επαλήθευσης συνδέσμου');
+      }
       setLoading(false);
     }
   };
@@ -85,6 +106,7 @@ const DocumentDownload: React.FC = () => {
         setTimeLeft(`${hours}ώ ${minutes}λ ${seconds}δ`);
       } else {
         setTimeLeft('Έληξε');
+        setIsExpired(true);
         setError('Ο σύνδεσμος έχει λήξει');
       }
     };
@@ -95,9 +117,13 @@ const DocumentDownload: React.FC = () => {
   };
 
   const handleDownload = () => {
-    if (document?.file_url) {
+    if (document?.file_url && !isExpired) {
       window.open(document.file_url, '_blank');
       toast.success('Το αρχείο ανοίγει σε νέα καρτέλα');
+    } else if (isExpired) {
+      toast.error('Ο σύνδεσμος έχει λήξει');
+    } else {
+      toast.error('Δεν υπάρχει διαθέσιμο αρχείο');
     }
   };
 
@@ -121,13 +147,24 @@ const DocumentDownload: React.FC = () => {
     return (
       <div className="min-h-screen bg-blue-50 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <XCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          {isExpired ? (
+            <AlertTriangle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+          ) : (
+            <XCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          )}
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Σφάλμα Πρόσβασης
+            {isExpired ? 'Σύνδεσμος Έχει Λήξει' : 'Σφάλμα Πρόσβασης'}
           </h2>
           <p className="text-gray-600 mb-6">
             {error}
           </p>
+          {isExpired && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-sm text-orange-800">
+                Για νέο σύνδεσμο λήψης, παρακαλώ επικοινωνήστε μαζί μας στο support@eggrafo.work
+              </p>
+            </div>
+          )}
           <Button onClick={() => navigate('/')} className="w-full bg-kb-blue hover:bg-kb-blue/90">
             Επιστροφή στην Αρχική
           </Button>
@@ -150,7 +187,7 @@ const DocumentDownload: React.FC = () => {
               Ευχαριστούμε για τη δωρεά των <span className="font-semibold">{donation.amount}€</span>
             </p>
             
-            {timeLeft && (
+            {timeLeft && !isExpired && (
               <div className="flex items-center justify-center gap-2 text-sm text-orange-600 bg-orange-50 p-2 rounded">
                 <Clock className="h-4 w-4" />
                 <span>Ο σύνδεσμος λήγει σε: {timeLeft}</span>
@@ -163,15 +200,18 @@ const DocumentDownload: React.FC = () => {
           <div className="space-y-4">
             <div className="text-left bg-blue-50 p-3 rounded-lg">
               <h3 className="font-semibold text-kb-blue mb-1">{document.title}</h3>
-              <p className="text-sm text-gray-600">Κάντε κλικ παρακάτω για λήψη</p>
+              <p className="text-sm text-gray-600">
+                {isExpired ? 'Ο σύνδεσμος έχει λήξει' : 'Κάντε κλικ παρακάτω για λήψη'}
+              </p>
             </div>
             
             <Button 
               onClick={handleDownload} 
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              disabled={isExpired}
+              className={`w-full ${isExpired ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white`}
             >
               <Download className="h-4 w-4 mr-2" />
-              Λήψη Εγγράφου
+              {isExpired ? 'Σύνδεσμος Έληξε' : 'Λήψη Εγγράφου'}
             </Button>
           </div>
         ) : (

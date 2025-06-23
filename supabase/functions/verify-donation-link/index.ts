@@ -32,7 +32,7 @@ serve(async (req) => {
     // Find donation by link_token
     const { data: donation, error } = await supabase
       .from("donations")
-      .select("id, status, amount, email, document_id")
+      .select("id, status, amount, email, document_id, expires_at")
       .eq("link_token", token)
       .maybeSingle();
 
@@ -43,7 +43,7 @@ serve(async (req) => {
       }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Only allow if status is completed
+    // Check if donation is completed
     if (donation.status !== "completed") {
       return new Response(JSON.stringify({
         success: false,
@@ -51,7 +51,18 @@ serve(async (req) => {
       }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Optionally, you can now look up the document details if document_id is present
+    // Check if link has expired
+    const now = new Date();
+    const expiresAt = new Date(donation.expires_at);
+    
+    if (now > expiresAt) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Download link has expired"
+      }), { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Look up the document details if document_id is present
     let document = null;
     if (donation.document_id) {
       const { data: docData } = await supabase
@@ -65,14 +76,18 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       message: "Donation verified",
-      donation,
+      donation: {
+        ...donation,
+        expires_at: donation.expires_at
+      },
       document,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (err) {
+    console.error('Verification error:', err);
     return new Response(JSON.stringify({
       success: false,
-      error: err.message,
+      error: "Internal server error during verification",
     }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
