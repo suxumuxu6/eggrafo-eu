@@ -1,48 +1,40 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Upload from "./pages/Upload";
-import NotFound from "./pages/NotFound";
-import PaymentSuccess from "./components/PaymentSuccess";
-import PaymentCancel from "./components/PaymentCancel";
-import DocumentDownload from "./pages/DocumentDownload";
-import { AuthProvider } from "./context/AuthContext";
-import AdminAuthPage from "./pages/AdminAuth";
-import AdminChatbot from "./pages/AdminChatbot";
-import AdminDonations from "./pages/AdminDonations";
-import Navbar from "@/components/Navbar";
-import ChatbotReply from "@/pages/ChatbotReply";
-import UserSupport from "@/pages/UserSupport";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Documents from './pages/Documents';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Upload from './pages/Upload';
+import Admin from './pages/Admin';
+import DownloadPage from './pages/DownloadPage';
+import Chatbot from './pages/Chatbot';
+import { AuthProvider } from './context/AuthContext';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { Toaster } from "@/components/ui/toaster"
+import { SecurityProvider } from '@/components/security/SecurityProvider';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <Navbar />
-          <div className="min-h-screen bg-white">
+        <SecurityProvider>
+          <AuthProvider>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/home" element={<Home />} />
+              <Route path="/documents" element={<Documents />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/upload" element={<Upload />} />
-              <Route path="/auth" element={<AdminAuthPage />} />
-              <Route path="/payment-success" element={<PaymentSuccess />} />
-              <Route path="/payment-cancel" element={<PaymentCancel />} />
-              <Route path="/download" element={<DocumentDownload />} />
-              <Route path="/admin-chatbot" element={<AdminChatbot />} />
-              <Route path="/admin-donations" element={<AdminDonations />} />
-              <Route path="/reply" element={<ChatbotReply />} />
-              <Route path="/support" element={<UserSupport />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/download" element={<DownloadPage />} />
+              <Route path="/chatbot" element={<Chatbot />} />
             </Routes>
-          </div>
-        </AuthProvider>
+            <Toaster />
+          </AuthProvider>
+        </SecurityProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

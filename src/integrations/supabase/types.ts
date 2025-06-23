@@ -253,6 +253,10 @@ export type Database = {
         Args: Record<PropertyKey, never> | { _user_id: string }
         Returns: boolean
       }
+      log_security_event: {
+        Args: { event_type: string; user_id?: string; details?: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

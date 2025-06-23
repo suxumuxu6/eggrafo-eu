@@ -1,190 +1,157 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  sanitizeInput, 
-  validateDocumentTitle, 
-  validateDocumentDescription,
-  validateFileType,
-  validateFileSize,
-  sanitizeFilename
-} from '@/utils/inputValidation';
+import { validateFile, sanitizeFilename, sanitizeInput, logSecurityEvent } from "@/utils/securityUtils";
 
 export interface UploadFormData {
   title: string;
   description: string;
-  tags: string;
+  tags: string[];
   category: string;
   file: File;
 }
 
 export interface UploadProgress {
-  stage: string;
   percentage: number;
+  stage: string;
 }
 
 export class FileUploadService {
-  private onProgress?: (progress: UploadProgress) => void;
+  private progressCallback?: (progress: UploadProgress) => void;
 
-  constructor(onProgress?: (progress: UploadProgress) => void) {
-    this.onProgress = onProgress;
+  constructor(progressCallback?: (progress: UploadProgress) => void) {
+    this.progressCallback = progressCallback;
   }
 
-  private updateProgress(stage: string, percentage: number) {
-    this.onProgress?.({ stage, percentage });
+  private updateProgress(percentage: number, stage: string) {
+    this.progressCallback?.({ percentage, stage });
   }
 
-  validateUploadData(formData: UploadFormData): { isValid: boolean; error?: string } {
-    const { title, description, file, category } = formData;
-
-    if (!file) {
-      return { isValid: false, error: 'Please select a PDF file' };
+  validateUploadData(data: UploadFormData): { isValid: boolean; error?: string } {
+    // Enhanced validation with security checks
+    if (!data.title || sanitizeInput(data.title).length < 3) {
+      return { isValid: false, error: 'Title must be at least 3 characters' };
     }
 
-    const sanitizedTitle = sanitizeInput(title);
-    const sanitizedDescription = sanitizeInput(description);
-
-    if (!validateDocumentTitle(sanitizedTitle)) {
-      return { isValid: false, error: 'Title must be between 1 and 200 characters' };
+    if (!data.file) {
+      return { isValid: false, error: 'File is required' };
     }
 
-    if (!validateDocumentDescription(sanitizedDescription)) {
-      return { isValid: false, error: 'Description must be less than 1000 characters' };
-    }
-
-    if (!category) {
-      return { isValid: false, error: 'Παρακαλώ επιλέξτε πού θέλετε να ανέβει το αρχείο.' };
-    }
-
-    const allowedTypes = ['application/pdf'];
-    if (!validateFileType(file, allowedTypes)) {
-      return { isValid: false, error: 'Only PDF files are allowed' };
-    }
-
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
-    if (!validateFileSize(file, maxFileSize)) {
-      return { isValid: false, error: 'Maximum file size is 10MB' };
+    // Use enhanced file validation
+    const fileValidation = validateFile(data.file);
+    if (!fileValidation.isValid) {
+      return { isValid: false, error: fileValidation.error };
     }
 
     return { isValid: true };
   }
 
   async uploadFileToStorage(file: File): Promise<{ filePath: string; fileUrl: string }> {
-    this.updateProgress('Preparing file upload', 10);
+    this.updateProgress(25, 'Preparing secure file upload...');
 
-    // Verify session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('❌ Session error:', sessionError);
-      throw new Error('Authentication error. Please login again.');
-    }
+    // Log upload attempt
+    await logSecurityEvent('file_upload_started', {
+      filename: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
 
-    if (!session) {
-      throw new Error('You must be logged in to upload files.');
-    }
-
-    this.updateProgress('Verifying storage access', 20);
-
-    // Create a secure file name
-    const fileExt = file.name.split('.').pop();
-    const sanitizedOriginalName = sanitizeFilename(file.name.replace(`.${fileExt}`, ''));
+    // Enhanced filename security
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const fileName = `${timestamp}-${randomSuffix}-${sanitizedOriginalName}.${fileExt}`;
-    const filePath = fileName;
+    const sanitizedName = sanitizeFilename(file.name);
+    const secureFilename = `${timestamp}_${randomSuffix}_${sanitizedName}`;
 
-    console.log('📤 Uploading file:', filePath);
-    this.updateProgress('Uploading file', 40);
+    this.updateProgress(50, 'Uploading file to secure storage...');
 
-    try {
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .upload(secureFilename, file, {
+        cacheControl: '3600',
+        upsert: false // Prevent overwriting existing files
+      });
 
-      if (uploadError) {
-        console.error('❌ Upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-
-      console.log('✅ File uploaded successfully:', uploadData);
-      this.updateProgress('File uploaded successfully', 80);
-
-      // Generate the public URL
-      console.log('🔗 Generating public URL...');
-      const { data: publicUrlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
-
-      if (!publicUrlData?.publicUrl) {
-        throw new Error("Unable to generate file URL.");
-      }
-
-      console.log('✅ Public URL generated:', publicUrlData.publicUrl);
-      return { filePath, fileUrl: publicUrlData.publicUrl };
-
-    } catch (error: any) {
-      console.error('❌ Storage upload exception:', error);
-      throw new Error(`File upload failed: ${error.message}`);
+    if (error) {
+      await logSecurityEvent('file_upload_storage_failed', {
+        filename: secureFilename,
+        error: error.message
+      });
+      throw new Error(`Secure storage upload failed: ${error.message}`);
     }
+
+    this.updateProgress(75, 'Generating secure file URL...');
+
+    const { data: urlData } = supabase.storage
+      .from('documents')
+      .getPublicUrl(data.path);
+
+    await logSecurityEvent('file_upload_storage_success', {
+      filename: secureFilename,
+      path: data.path
+    });
+
+    return {
+      filePath: data.path,
+      fileUrl: urlData.publicUrl
+    };
   }
 
   async saveDocumentMetadata(
-    formData: UploadFormData, 
-    fileUrl: string, 
+    formData: UploadFormData,
+    fileUrl: string,
     userId: string
-  ): Promise<any> {
-    this.updateProgress('Saving document metadata', 90);
+  ): Promise<void> {
+    this.updateProgress(90, 'Saving secure document metadata...');
 
-    const sanitizedTitle = sanitizeInput(formData.title);
-    const sanitizedDescription = sanitizeInput(formData.description);
-    const sanitizedTags = sanitizeInput(formData.tags);
-    const tagsArray = sanitizedTags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+    // Sanitize all input data
+    const sanitizedData = {
+      title: sanitizeInput(formData.title),
+      description: sanitizeInput(formData.description || ''),
+      category: sanitizeInput(formData.category || ''),
+      tags: formData.tags?.map(tag => sanitizeInput(tag)) || []
+    };
 
-    console.log('💾 Saving document metadata to database...');
+    const { error } = await supabase
+      .from('documents')
+      .insert({
+        title: sanitizedData.title,
+        description: sanitizedData.description,
+        file_url: fileUrl,
+        category: sanitizedData.category,
+        tags: sanitizedData.tags,
+        created_by: userId
+      });
 
-    try {
-      const { error: metadataError, data: insertData } = await supabase
-        .from('documents')
-        .insert({
-          title: sanitizedTitle, 
-          description: sanitizedDescription,
-          tags: tagsArray, 
-          category: formData.category,
-          file_url: fileUrl,
-          created_by: userId,
-        })
-        .select()
-        .single();
-
-      if (metadataError) {
-        console.error('❌ Database insert error:', metadataError);
-        throw new Error(`Database error: ${metadataError.message}`);
-      }
-
-      console.log('✅ Document metadata saved successfully:', insertData);
-      this.updateProgress('Upload complete', 100);
-
-      return insertData;
-    } catch (error: any) {
-      console.error('❌ Metadata save exception:', error);
-      throw new Error(`Failed to save document: ${error.message}`);
+    if (error) {
+      await logSecurityEvent('document_metadata_save_failed', {
+        title: sanitizedData.title,
+        userId,
+        error: error.message
+      });
+      throw new Error(`Failed to save document metadata: ${error.message}`);
     }
+
+    await logSecurityEvent('document_metadata_saved', {
+      title: sanitizedData.title,
+      userId,
+      category: sanitizedData.category
+    });
+
+    this.updateProgress(100, 'Document uploaded successfully with security validation!');
   }
 
   async cleanupFailedUpload(filePath: string): Promise<void> {
     try {
-      console.log('🧹 Cleaning up failed upload:', filePath);
-      const { error } = await supabase.storage.from('documents').remove([filePath]);
-      if (error) {
-        console.error('❌ Cleanup error:', error);
-      } else {
-        console.log('✅ File cleanup successful');
-      }
+      await supabase.storage
+        .from('documents')
+        .remove([filePath]);
+        
+      await logSecurityEvent('failed_upload_cleanup', { filePath });
     } catch (cleanupError) {
-      console.error('❌ Failed to cleanup uploaded file:', cleanupError);
+      console.error('Failed to cleanup uploaded file:', cleanupError);
+      await logSecurityEvent('cleanup_failed', { 
+        filePath, 
+        error: (cleanupError as Error).message 
+      });
     }
   }
 }
