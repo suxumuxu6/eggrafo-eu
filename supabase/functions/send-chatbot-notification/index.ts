@@ -22,9 +22,9 @@ serve(async (req: Request) => {
 
   if (req.method !== "POST") {
     console.log("❌ Method not allowed:", req.method);
-    return new Response("Method not allowed", { 
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { 
       status: 405, 
-      headers: corsHeaders 
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 
