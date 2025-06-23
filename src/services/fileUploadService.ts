@@ -71,92 +71,117 @@ export class FileUploadService {
   async uploadFileToStorage(file: File): Promise<{ filePath: string; fileUrl: string }> {
     this.updateProgress('Preparing file upload', 5);
 
-    // Verify storage bucket accessibility
+    // Check authentication first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('❌ Session error:', sessionError);
+      throw new Error('Authentication error. Please login again.');
+    }
+
+    if (!session) {
+      throw new Error('You must be logged in to upload files.');
+    }
+
+    this.updateProgress('Checking storage access', 10);
+
+    // Test storage access by trying to list buckets
     try {
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
-        console.error('❌ Error listing buckets:', bucketsError);
-        throw new Error('Storage configuration error. Please contact admin.');
+        console.error('❌ Error accessing storage:', bucketsError);
+        throw new Error(`Storage access denied: ${bucketsError.message}`);
       }
 
       const documentsBucket = buckets?.find(bucket => bucket.id === 'documents');
       if (!documentsBucket) {
-        throw new Error('Documents storage bucket not found. Please contact admin.');
+        console.error('❌ Documents bucket not found');
+        throw new Error('Documents storage not configured. Please contact administrator.');
       }
-    } catch (bucketError: any) {
-      console.error('❌ Bucket check failed:', bucketError);
-      throw new Error('Storage access error. Please try again or contact admin.');
+
+      console.log('✅ Storage access verified, bucket found:', documentsBucket);
+    } catch (error: any) {
+      console.error('❌ Storage verification failed:', error);
+      throw new Error(`Storage verification failed: ${error.message}`);
     }
 
-    this.updateProgress('Uploading file', 15);
+    this.updateProgress('Uploading file', 25);
 
     // Create a secure file name
     const fileExt = file.name.split('.').pop();
     const sanitizedOriginalName = sanitizeFilename(file.name.replace(`.${fileExt}`, ''));
-    const fileName = `${Date.now()}-${sanitizedOriginalName}.${fileExt}`;
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const fileName = `${timestamp}-${randomSuffix}-${sanitizedOriginalName}.${fileExt}`;
     const filePath = fileName;
 
-    console.log('📤 Uploading file to storage...');
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(filePath, file, {
-        upsert: false,
-        cacheControl: '3600',
-        contentType: file.type,
-      });
+    console.log('📤 Uploading file:', filePath);
 
-    if (uploadError) {
-      console.error('❌ Storage upload error:', uploadError);
-      
-      if (uploadError.message.includes('The resource already exists')) {
-        // Generate a more unique filename
-        const newFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 20)}-${sanitizedOriginalName}.${fileExt}`;
-        const newFilePath = newFileName;
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file, {
+          upsert: false,
+          cacheControl: '3600',
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
         
-        const { error: retryError } = await supabase.storage
-          .from('documents')
-          .upload(newFilePath, file, {
-            upsert: false,
-            cacheControl: '3600',
-            contentType: file.type,
-          });
+        if (uploadError.message.includes('The resource already exists')) {
+          // Try with a more unique filename
+          const newFileName = `${timestamp}-${Date.now()}-${randomSuffix}-${sanitizedOriginalName}.${fileExt}`;
+          const { data: retryData, error: retryError } = await supabase.storage
+            .from('documents')
+            .upload(newFileName, file, {
+              upsert: false,
+              cacheControl: '3600',
+              contentType: file.type,
+            });
+            
+          if (retryError) {
+            throw new Error(`Upload failed after retry: ${retryError.message}`);
+          }
           
-        if (retryError) {
-          throw new Error(`Upload failed: ${retryError.message}`);
+          console.log('✅ File uploaded successfully on retry:', newFileName);
+          this.updateProgress('File uploaded', 70);
+          
+          // Get public URL for retry upload
+          const { data: retryPublicUrlData } = supabase.storage
+            .from('documents')
+            .getPublicUrl(newFileName);
+            
+          return { 
+            filePath: newFileName, 
+            fileUrl: retryPublicUrlData.publicUrl 
+          };
+        } else {
+          throw new Error(`Upload failed: ${uploadError.message}`);
         }
-        
-        console.log('✅ File uploaded successfully on retry');
-        this.updateProgress('File uploaded', 60);
-        
-        // Get public URL for retry upload
-        const { data: retryPublicUrlData } = supabase.storage
-          .from('documents')
-          .getPublicUrl(newFilePath);
-          
-        return { 
-          filePath: newFilePath, 
-          fileUrl: retryPublicUrlData.publicUrl 
-        };
-      } else {
-        throw new Error(`Upload failed: ${uploadError.message}`);
       }
+
+      console.log('✅ File uploaded successfully:', uploadData);
+      this.updateProgress('File uploaded', 70);
+
+      // Generate the public URL
+      console.log('🔗 Generating public URL...');
+      const { data: publicUrlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      if (!publicUrlData?.publicUrl) {
+        throw new Error("Unable to generate file URL.");
+      }
+
+      console.log('✅ Public URL generated:', publicUrlData.publicUrl);
+      return { filePath, fileUrl: publicUrlData.publicUrl };
+
+    } catch (error: any) {
+      console.error('❌ Storage upload exception:', error);
+      throw new Error(`File upload failed: ${error.message}`);
     }
-
-    console.log('✅ File uploaded successfully');
-    this.updateProgress('File uploaded', 60);
-
-    // Generate the public URL
-    console.log('🔗 Generating public URL...');
-    const { data: publicUrlData } = supabase.storage
-      .from('documents')
-      .getPublicUrl(filePath);
-
-    if (!publicUrlData?.publicUrl) {
-      throw new Error("Unable to generate a file URL.");
-    }
-
-    return { filePath, fileUrl: publicUrlData.publicUrl };
   }
 
   async saveDocumentMetadata(
@@ -164,7 +189,7 @@ export class FileUploadService {
     fileUrl: string, 
     userId: string
   ): Promise<any> {
-    this.updateProgress('Saving document metadata', 75);
+    this.updateProgress('Saving document metadata', 85);
 
     const sanitizedTitle = sanitizeInput(formData.title);
     const sanitizedDescription = sanitizeInput(formData.description);
@@ -173,36 +198,46 @@ export class FileUploadService {
 
     console.log('💾 Saving document metadata to database...');
 
-    const { error: metadataError, data: insertData } = await supabase
-      .from('documents')
-      .insert({
-        title: sanitizedTitle, 
-        description: sanitizedDescription,
-        tags: tagsArray, 
-        category: formData.category,
-        file_url: fileUrl,
-        created_by: userId,
-      })
-      .select()
-      .single();
+    try {
+      const { error: metadataError, data: insertData } = await supabase
+        .from('documents')
+        .insert({
+          title: sanitizedTitle, 
+          description: sanitizedDescription,
+          tags: tagsArray, 
+          category: formData.category,
+          file_url: fileUrl,
+          created_by: userId,
+        })
+        .select()
+        .single();
 
-    if (metadataError) {
-      console.error('❌ Database insert error:', metadataError);
-      throw new Error('Error saving document metadata: ' + metadataError.message);
+      if (metadataError) {
+        console.error('❌ Database insert error:', metadataError);
+        throw new Error(`Database error: ${metadataError.message}`);
+      }
+
+      console.log('✅ Document metadata saved successfully:', insertData);
+      this.updateProgress('Upload complete', 100);
+
+      return insertData;
+    } catch (error: any) {
+      console.error('❌ Metadata save exception:', error);
+      throw new Error(`Failed to save document: ${error.message}`);
     }
-
-    console.log('✅ Document metadata saved successfully:', insertData);
-    this.updateProgress('Upload complete', 100);
-
-    return insertData;
   }
 
   async cleanupFailedUpload(filePath: string): Promise<void> {
     try {
-      await supabase.storage.from('documents').remove([filePath]);
-      console.log('🧹 Cleaned up uploaded file after metadata error');
+      console.log('🧹 Cleaning up failed upload:', filePath);
+      const { error } = await supabase.storage.from('documents').remove([filePath]);
+      if (error) {
+        console.error('❌ Cleanup error:', error);
+      } else {
+        console.log('✅ File cleanup successful');
+      }
     } catch (cleanupError) {
-      console.error('Failed to cleanup uploaded file:', cleanupError);
+      console.error('❌ Failed to cleanup uploaded file:', cleanupError);
     }
   }
 }
