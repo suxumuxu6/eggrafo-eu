@@ -25,10 +25,10 @@ export const SecurityProvider: React.FC<SecurityProviderProps> = ({ children }) 
 
     // Set security headers via meta tags
     const setSecurityHeaders = () => {
-      // Content Security Policy
+      // Content Security Policy - Updated to include functions subdomain
       const cspMeta = document.createElement('meta');
       cspMeta.httpEquiv = 'Content-Security-Policy';
-      cspMeta.content = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://vcxwikgasrttbngdygig.supabase.co;";
+      cspMeta.content = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://vcxwikgasrttbngdygig.supabase.co https://vcxwikgasrttbngdygig.functions.supabase.co;";
       document.head.appendChild(cspMeta);
 
       // X-Frame-Options
