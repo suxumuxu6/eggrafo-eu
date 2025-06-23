@@ -2,16 +2,17 @@
 const NOTIFICATION_API_URL = "https://vcxwikgasrttbngdygig.functions.supabase.co/send-chatbot-notification";
 
 export const sendChatbotNotification = async (
-  type: 'new_ticket' | 'user_reply' | 'user_welcome' | 'ticket_closed',
+  type: 'new_ticket' | 'user_reply' | 'user_welcome' | 'ticket_closed' | 'admin_reply',
   data: {
     email: string;
     ticketCode: string;
     chatId: string;
     userMessage?: string;
+    adminMessage?: string;
   }
 ): Promise<boolean> => {
   try {
-    console.log('🚀 Sending chatbot notification:', { type, ...data });
+    console.log('🚀 Sending chatbot notification:', { type, email: data.email?.substring(0, 5) + "***", ticketCode: data.ticketCode });
     
     const response = await fetch(NOTIFICATION_API_URL, {
       method: 'POST',

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmailReplyData, EmailApiResponse } from "@/types/emailReply";
+import { sendChatbotNotification } from "./notificationApi";
 
 export const sendEmailViaApi = async (
   email: string,
@@ -25,51 +26,29 @@ export const sendEmailViaApi = async (
 
     const supportTicketCode = ticketData?.support_ticket_code;
     
-    // Create proper notification message based on reply data
-    const notificationMessage = `Αγαπητέ/ή χρήστη,
-
-${replyData.body}
-
-Για περισσότερες πληροφορίες ή για να συνεχίσετε τη συνομιλία, επισκεφτείτε:
-https://eggrafo.work/support
-
-Με το email σας: ${email}
-Κωδικός αιτήματος: ${supportTicketCode}
-
-Με εκτίμηση,
-Η ομάδα υποστήριξης eggrafo.work`;
-    
-    const formData = new FormData();
-    formData.append("email", email);
-    formData.append("subject", replyData.subject);
-    formData.append("message", notificationMessage);
-    formData.append("chatId", chatId);
-    formData.append("isAdminReply", "true");
-    
-    if (replyData.file) {
-      formData.append("file", replyData.file);
+    if (!supportTicketCode) {
+      throw new Error('Support ticket code not found');
     }
 
-    console.log('🔄 Sending request to Supabase edge function...');
+    // Send admin reply notification to user
+    console.log('📧 Sending admin reply notification to user...');
+    const notificationSent = await sendChatbotNotification('admin_reply', {
+      email: email,
+      ticketCode: supportTicketCode,
+      chatId: chatId,
+      adminMessage: replyData.body
+    });
 
-    // Use Supabase client configuration instead of hardcoded values
-    const { data: functionResult, error: functionError } = await supabase.functions.invoke(
-      'send-chatbot-reply',
-      {
-        body: formData,
-      }
-    );
-    
-    if (functionError) {
-      throw new Error(`Function error: ${functionError.message}`);
+    if (!notificationSent) {
+      throw new Error('Failed to send admin reply notification');
     }
 
-    console.log('✅ Email sent successfully via Supabase edge function:', functionResult);
+    console.log('✅ Admin reply notification sent successfully');
     
-    return { success: true, id: functionResult.id };
+    return { success: true, id: 'admin-reply-' + Date.now() };
     
   } catch (error: any) {
-    console.error('❌ Supabase edge function failed:', error);
+    console.error('❌ Email API failed:', error);
     throw new Error(`Email delivery failed: ${error.message}`);
   }
 };

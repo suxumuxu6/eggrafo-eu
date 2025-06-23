@@ -37,7 +37,7 @@ export const validateRequest = (requestBody: any): string | null => {
     return "Invalid email format";
   }
 
-  const validTypes = ["new_ticket", "user_reply", "user_welcome", "ticket_closed"];
+  const validTypes = ["new_ticket", "user_reply", "user_welcome", "ticket_closed", "admin_reply"];
   if (!validTypes.includes(type)) {
     console.error("❌ Invalid notification type:", type);
     return `Invalid notification type: ${type}`;

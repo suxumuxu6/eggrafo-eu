@@ -41,9 +41,22 @@ serve(async (req: Request) => {
     
     console.log("📧 Processing notification:", { type, email: email?.substring(0, 5) + "***", ticketCode, chatId });
 
+    // Check if Resend API key is available
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("❌ RESEND_API_KEY not found in environment variables");
+      return new Response(JSON.stringify({ 
+        error: "Email service not configured. Please set RESEND_API_KEY." 
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Validate required fields
     const validationError = validateRequest(requestBody);
     if (validationError) {
+      console.error("❌ Validation error:", validationError);
       throw new Error(validationError);
     }
 
@@ -67,7 +80,8 @@ serve(async (req: Request) => {
     if (sendResult.error) {
       console.error("❌ Resend API error:", sendResult.error);
       return new Response(JSON.stringify({ 
-        error: `Email sending failed: ${sendResult.error.message}` 
+        error: `Email sending failed: ${sendResult.error.message}`,
+        details: sendResult.error
       }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

@@ -34,8 +34,9 @@ const emailBase = (content: string) => `
 </html>`;
 
 export const generateEmailTemplate = (request: NotificationRequest): EmailTemplateData => {
-  const { type, email, ticketCode, chatId, userMessage } = request;
-  const sanitizedMessage = userMessage ? sanitizeText(userMessage) : "";
+  const { type, email, ticketCode, chatId, userMessage, adminMessage } = request;
+  const sanitizedUserMessage = userMessage ? sanitizeText(userMessage) : "";
+  const sanitizedAdminMessage = adminMessage ? sanitizeText(adminMessage) : "";
   const currentTime = new Date().toLocaleString('el-GR');
 
   switch (type) {
@@ -70,10 +71,43 @@ export const generateEmailTemplate = (request: NotificationRequest): EmailTempla
           </div>
           <div style="background-color: #ecfdf5; padding: 15px; border-left: 4px solid #059669; margin: 20px 0; border-radius: 0 6px 6px 0;">
             <p style="margin: 0 0 10px 0;"><strong>📝 Μήνυμα χρήστη:</strong></p>
-            <p style="font-style: italic; color: #374151; margin: 0;">"${sanitizedMessage}"</p>
+            <p style="font-style: italic; color: #374151; margin: 0;">"${sanitizedUserMessage}"</p>
           </div>
           <div style="text-align: center; margin: 25px 0;">
             <a href="https://eggrafo.work/admin-chatbot" class="button">💬 Απάντηση</a>
+          </div>
+        `)
+      };
+
+    case "admin_reply":
+      return {
+        to: email,
+        subject: `💬 Νέα απάντηση για το αίτημά σας: ${ticketCode}`,
+        html: emailBase(`
+          <h2 style="color: #2563eb;">💬 Έχετε Νέα Απάντηση!</h2>
+          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #1565c0; margin: 0 0 15px 0;"><strong>Η ομάδα υποστήριξης απάντησε στο αίτημά σας!</strong></p>
+            <p><strong>📋 Κωδικός αιτήματος:</strong> <span style="color: #dc2626; font-weight: bold;">${ticketCode}</span></p>
+            <p><strong>🕒 Χρόνος απάντησης:</strong> ${currentTime}</p>
+          </div>
+          ${sanitizedAdminMessage ? `
+          <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #2563eb; margin: 20px 0; border-radius: 0 6px 6px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>📝 Απάντηση:</strong></p>
+            <p style="color: #374151; margin: 0;">${sanitizedAdminMessage}</p>
+          </div>
+          ` : ''}
+          <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107; margin: 20px 0;">
+            <p style="margin: 0; color: #856404;"><strong>📧 Για να δείτε την πλήρη απάντηση και να συνεχίσετε τη συνομιλία:</strong></p>
+          </div>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="https://eggrafo.work/support" class="button">🔗 Προβολή Πλήρους Απάντησης</a>
+          </div>
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 14px; color: #666;"><strong>Οδηγίες πρόσβασης:</strong></p>
+            <ul style="margin: 10px 0; color: #666; font-size: 14px;">
+              <li><strong>Email:</strong> ${email}</li>
+              <li><strong>Κωδικός:</strong> ${ticketCode}</li>
+            </ul>
           </div>
         `)
       };
