@@ -65,6 +65,7 @@ const AdminChatbot: React.FC = () => {
       const { data: rawData, error } = await supabase
         .from("chatbot_messages")
         .select("*")
+        .neq("email", "security@system.log") // Filter out security logs
         .order("submitted_at", { ascending: false });
 
       console.log("Fetched data:", { data: rawData, error });
