@@ -10,6 +10,7 @@ import { AuthProvider } from './context/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster"
 import { SecurityProvider } from '@/components/security/SecurityProvider';
+import Navbar from './components/Navbar';
 
 const queryClient = new QueryClient();
 
@@ -19,14 +20,17 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <SecurityProvider>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/upload" element={<Upload />} />
-              <Route path="/download" element={<DownloadPage />} />
-              <Route path="/chatbot" element={<Chatbot />} />
-              <Route path="/auth" element={<AdminAuth />} />
-            </Routes>
+            <div className="min-h-screen bg-gray-50">
+              <Navbar />
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/upload" element={<Upload />} />
+                <Route path="/download" element={<DownloadPage />} />
+                <Route path="/chatbot" element={<Chatbot />} />
+                <Route path="/auth" element={<AdminAuth />} />
+              </Routes>
+            </div>
             <Toaster />
           </SecurityProvider>
         </AuthProvider>
