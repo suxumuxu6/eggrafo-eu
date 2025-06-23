@@ -1,8 +1,11 @@
+
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +15,20 @@ Allow: /
 
 User-agent: *
 Allow: /
+Crawl-delay: 2
+
+# Block access to admin and authentication pages
+Disallow: /auth
+Disallow: /admin-*
+Disallow: /upload
+
+# Allow important pages
+Allow: /
+Allow: /support
+Allow: /download
+
+# Sitemap location
+Sitemap: https://eggrafo.eu/sitemap.xml
+
+# Host directive for preferred domain
+Host: https://eggrafo.eu
