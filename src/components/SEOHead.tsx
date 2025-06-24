@@ -11,11 +11,11 @@ interface SEOHeadProps {
 }
 
 const SEOHead: React.FC<SEOHeadProps> = ({
-  title = "Παραδείγματα εγγράφων ΓΕΜΗ | Δωρεάν λήψη νόμων εταιρειών | Eggrafo.eu",
+  title = "Παραδείγματα εγγράφων ΓΕΜΗ | Δωρεάν λήψη νόμων εταιρειών | Eggrafo.work",
   description = "Βρείτε παραδείγματα εγγράφων για το ΓΕΜΗ, τροποποιήσεις εταιρειών και αιτήσεις. Δωρεάν λήψη νόμων εταιρειών στην Ελλάδα.",
   keywords = "ΓΕΜΗ, έγγραφα ΓΕΜΗ, παραδείγματα εγγράφων, τροποποιήσεις εταιρειών, νόμοι εταιρειών, αιτήσεις ΓΕΜΗ, επιχειρηματικά έγγραφα, Υπόδειγμα αναβίωσης εταιρείας, Υπόδειγμα μετατροπής εταιρείας, Πρακτικό αλλαγής Έδρας στον ίδιο Δήμο",
-  canonicalUrl = "https://eggrafo.eu/",
-  ogImage = "https://eggrafo.eu/lovable-uploads/75c28a96-9985-490d-a769-b17a111dcf10.png",
+  canonicalUrl = "https://eggrafo.work/",
+  ogImage = "https://eggrafo.work/lovable-uploads/75c28a96-9985-490d-a769-b17a111dcf10.png",
   structuredData
 }) => {
   useEffect(() => {

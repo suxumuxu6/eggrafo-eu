@@ -28,7 +28,7 @@ Allow: /support
 Allow: /download
 
 # Sitemap location
-Sitemap: https://eggrafo.eu/sitemap.xml
+Sitemap: https://eggrafo.work/sitemap.xml
 
 # Host directive for preferred domain
-Host: https://eggrafo.eu
+Host: https://eggrafo.work

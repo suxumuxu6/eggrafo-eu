@@ -1,3 +1,4 @@
+
 import React from 'react';
 import DocumentsHeader from '../DocumentsHeader';
 import DocumentsSection from '../DocumentsSection';
@@ -31,14 +32,14 @@ const HomeContent: React.FC<HomeContentProps> = ({
   const getSEOData = () => {
     if (searchQuery) {
       return {
-        title: `Αναζήτηση: ${searchQuery} | Παραδείγματα εγγράφων ΓΕΜΗ | Eggrafo.eu`,
+        title: `Αναζήτηση: ${searchQuery} | Παραδείγματα εγγράφων ΓΕΜΗ | Eggrafo.work`,
         description: `Αποτελέσματα αναζήτησης για "${searchQuery}" - Βρείτε παραδείγματα εγγράφων ΓΕΜΗ, τροποποιήσεις εταιρειών και νόμους επιχειρήσεων.`,
         keywords: `${searchQuery}, ΓΕΜΗ έγγραφα, παραδείγματα εγγράφων, τροποποιήσεις εταιρειών, αναζήτηση εγγράφων, Υπόδειγμα αναβίωσης εταιρείας, Υπόδειγμα μετατροπής εταιρείας, Πρακτικό αλλαγής Έδρας στον ίδιο Δήμο`,
       };
     }
     
     return {
-      title: "Παραδείγματα εγγράφων ΓΕΜΗ | Δωρεάν λήψη νόμων εταιρειών | Eggrafo.eu",
+      title: "Παραδείγματα εγγράφων ΓΕΜΗ | Δωρεάν λήψη νόμων εταιρειών | Eggrafo.work",
       description: "Βρείτε παραδείγματα εγγράφων για το ΓΕΜΗ, τροποποιήσεις εταιρειών και αιτήσεις. Δωρεάν λήψη νόμων εταιρειών στην Ελλάδα. Πρότυπα καταστατικά και επιχειρηματικά έγγραφα.",
       keywords: "ΓΕΜΗ, έγγραφα ΓΕΜΗ, παραδείγματα εγγράφων, τροποποιήσεις εταιρειών, νόμοι εταιρειών, αιτήσεις ΓΕΜΗ, επιχειρηματικά έγγραφα, πρότυπα καταστατικά, ΓΕΜΗ Ελλάδα, επιχειρήσεις Αθήνα, Υπόδειγμα αναβίωσης εταιρείας, Υπόδειγμα μετατροπής εταιρείας, Πρακτικό αλλαγής Έδρας στον ίδιο Δήμο",
     };
@@ -52,12 +53,12 @@ const HomeContent: React.FC<HomeContentProps> = ({
     "@type": "WebPage",
     "name": seoData.title,
     "description": seoData.description,
-    "url": "https://eggrafo.eu/",
+    "url": "https://eggrafo.work/",
     "inLanguage": "el-GR",
     "isPartOf": {
       "@type": "WebSite",
-      "name": "Eggrafo.eu",
-      "url": "https://eggrafo.eu"
+      "name": "Eggrafo.work",
+      "url": "https://eggrafo.work"
     },
     "about": {
       "@type": "Thing",
@@ -70,7 +71,7 @@ const HomeContent: React.FC<HomeContentProps> = ({
         "@type": "ListItem",
         "position": 1,
         "name": "Αρχική",
-        "item": "https://eggrafo.eu/"
+        "item": "https://eggrafo.work/"
       }]
     }
   };
@@ -81,7 +82,7 @@ const HomeContent: React.FC<HomeContentProps> = ({
         title={seoData.title}
         description={seoData.description}
         keywords={seoData.keywords}
-        canonicalUrl="https://eggrafo.eu/"
+        canonicalUrl="https://eggrafo.work/"
         structuredData={structuredData}
       />
       
