@@ -54,9 +54,9 @@ export const saveChatToSupabase = async (
     let adminNotificationSuccess = false;
     let userNotificationSuccess = false;
     
-    // Send admin notification
+    // Send admin notification for new ticket
     try {
-      console.log('Sending admin notification...');
+      console.log('Sending admin notification for new ticket...');
       adminNotificationSuccess = await sendChatbotNotification('new_ticket', {
         email,
         ticketCode,
@@ -67,9 +67,9 @@ export const saveChatToSupabase = async (
       console.error('Admin notification error:', adminError);
     }
 
-    // Send user notification
+    // Send user welcome notification with access instructions
     try {
-      console.log('Sending user notification...');
+      console.log('Sending user notification with access instructions...');
       userNotificationSuccess = await sendChatbotNotification('user_welcome', {
         email,
         ticketCode,
@@ -79,6 +79,9 @@ export const saveChatToSupabase = async (
     } catch (userError) {
       console.error('User notification error:', userError);
     }
+
+    // Add delay to ensure notifications are sent
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Log final status
     console.log('Notification results:', {
