@@ -40,7 +40,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
     }));
   };
 
-  const PAYPAL_DONATION_AMOUNT = 12;
+  const PAYPAL_DONATION_AMOUNT = 17;
 
   const handlePayPalDonation = async () => {
     console.log('[DonationModal] Starting PayPal donation process');
@@ -125,7 +125,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
         <div className="space-y-4">
           <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
             <p className="font-medium text-kb-blue mb-1">{documentTitle}</p>
-            <p>Προκειμένου να δείτε το έγγραφο θα θέλαμε να μας ενισχύσετε κάνοντας δωρεά 12€.</p>
+            <p>Προκειμένου να δείτε το έγγραφο θα θέλαμε να μας ενισχύσετε κάνοντας δωρεά 17€.</p>
           </div>
           
           <div className="space-y-4">
@@ -169,7 +169,7 @@ const DonationModal: React.FC<DonationModalProps> = ({
           <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
             <div className="flex items-center gap-2 text-yellow-800 text-sm">
               <CreditCard className="h-4 w-4" />
-              <span className="font-medium">Δωρεά 12€</span>
+              <span className="font-medium">Δωρεά 17€</span>
             </div>
             <p className="text-xs text-yellow-700 mt-1">
               Θα μεταφερθείτε στο PayPal για να ολοκληρώσετε την δωρεά και θα επιστρέψετε αυτόματα.
