@@ -108,7 +108,7 @@ const HomeContent: React.FC<HomeContentProps> = ({
         <footer className="bg-white border-t border-gray-200 py-4" role="contentinfo">
           <div className="container mx-auto px-4 text-center">
             <p className="text-sm text-gray-500">
-              © Eggrafo.eu 2025 - Παραδείγματα εγγράφων ΓΕΜΗ και νόμοι εταιρειών
+              © eggrafo.work 2025 - Υποδείγματα εγγράφων ΓΕΜΗ και νόμοι εταιρειών
             </p>
           </div>
         </footer>
