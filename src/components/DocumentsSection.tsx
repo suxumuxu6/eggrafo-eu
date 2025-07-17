@@ -83,7 +83,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
   return <div className="mb-8">
       {/* Styled header to match "Νόμοι Εταιρειών" */}
       <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
-        <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">Υποδείγματα Εγγράφων για λήψη</h2>
+        <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">Υποδείγματα Εγγράφων ΓΕΜΗ για λήψη</h2>
       </div>
       <DocumentsGrid documents={filteredDocuments} allDocuments={filteredDocuments} isAdmin={isAdmin} onViewDocument={handleViewDocumentWithDonation} onEditDocument={onEditDocument} onDeleteDocument={onDeleteDocument} />
       {/* Donation modal shown only when needed */}
