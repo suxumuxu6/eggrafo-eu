@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MessageCircle, Send, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { saveChatToSupabase } from "@/utils/chatStorage";
@@ -13,7 +14,8 @@ import { ChatMessage } from "@/types/chat";
 const NewRequest: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
+  const [requestType, setRequestType] = useState("");
+  const [legalForm, setLegalForm] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -27,7 +29,7 @@ const NewRequest: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+    if (!name.trim() || !email.trim() || !requestType.trim() || !message.trim()) {
       toast.error("Παρακαλώ συμπληρώστε όλα τα πεδία");
       return;
     }
@@ -46,7 +48,8 @@ const NewRequest: React.FC = () => {
       const chatMessages: ChatMessage[] = [
         { sender: "bot", text: "Νέο αίτημα από φόρμα:" },
         { sender: "user", text: `Όνομα: ${name}` },
-        { sender: "user", text: `Θέμα: ${subject}` },
+        { sender: "user", text: `Θα ήθελα: ${requestType}` },
+        { sender: "user", text: legalForm ? `Νομική Μορφή: ${legalForm}` : "" },
         { sender: "user", text: `Μήνυμα: ${message}` },
         { sender: "user", text: email },
         { 
@@ -94,7 +97,8 @@ const NewRequest: React.FC = () => {
     setIsSubmitted(false);
     setName("");
     setEmail("");
-    setSubject("");
+    setRequestType("");
+    setLegalForm("");
     setMessage("");
     setTicketCode("");
   };
@@ -177,15 +181,31 @@ const NewRequest: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="subject">Θέμα *</Label>
-                <Input
-                  id="subject"
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Συντομό θέμα του αιτήματός σας"
-                  required
-                />
+                <Label htmlFor="requestType">Θα ήθελα: *</Label>
+                <Select value={requestType} onValueChange={setRequestType} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε τι θα θέλατε" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new-document">Νέο Υπόδειγμα έγγραφου ΓΕΜΗ</SelectItem>
+                    <SelectItem value="gemi-process">Διαδικασία στο ΓΕΜΗ</SelectItem>
+                    <SelectItem value="technical-issue">Τεχνικό Θέμα με την λήψη αρχείου</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="legalForm">Επιλέξτε Νομική Μορφή:</Label>
+                <Select value={legalForm} onValueChange={setLegalForm}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε νομική μορφή (προαιρετικό)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oe-ee">ΟΕ-ΕΕ</SelectItem>
+                    <SelectItem value="ae">ΑΕ</SelectItem>
+                    <SelectItem value="ike">ΙΚΕ</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

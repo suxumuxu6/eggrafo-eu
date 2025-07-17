@@ -21,7 +21,7 @@ const Navbar: React.FC = () => {
     <nav className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-6">
             <Link to="/" className="flex items-center space-x-2">
               <img 
                 src="/lovable-uploads/6e155ba5-d73d-4a6b-94f6-a6c56b4e33c4.png" 
@@ -31,24 +31,25 @@ const Navbar: React.FC = () => {
               />
               <span className="font-bold text-xl text-kb-darkgray">Eggrafo</span>
             </Link>
+            
+            {/* Support and New Request buttons - left side */}
+            <div className="flex items-center space-x-3">
+              <Link to="/support">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Support</span>
+                </Button>
+              </Link>
+              
+              <Link to="/new-request">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Νέο Αίτημα</span>
+                </Button>
+              </Link>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Support button - always visible */}
-            <Link to="/support">
-              <Button variant="outline" className="flex items-center gap-2">
-                <HelpCircle className="h-4 w-4" />
-                <span>Support</span>
-              </Button>
-            </Link>
-            
-            {/* New Request button - always visible */}
-            <Link to="/new-request">
-              <Button variant="outline" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                <span>Νέο Αίτημα</span>
-              </Button>
-            </Link>
-
             {loading ? (
               <div className="text-sm text-gray-500">Loading...</div>
             ) : isAuthenticated && isAdmin && user ? (
