@@ -9,6 +9,7 @@ import AdminAuth from './pages/AdminAuth';
 import AdminChatbot from './pages/AdminChatbot';
 import AdminDonations from './pages/AdminDonations';
 import UserSupport from './pages/UserSupport';
+import NewRequest from './pages/NewRequest';
 import { AuthProvider } from './context/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster"
@@ -35,6 +36,7 @@ function App() {
                 <Route path="/admin-chatbot" element={<AdminChatbot />} />
                 <Route path="/admin-donations" element={<AdminDonations />} />
                 <Route path="/support" element={<UserSupport />} />
+                <Route path="/new-request" element={<NewRequest />} />
               </Routes>
             </div>
             <Toaster />

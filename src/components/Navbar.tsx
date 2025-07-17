@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Upload, LogOut, Bot, HelpCircle, CreditCard } from "lucide-react";
+import { Upload, LogOut, Bot, HelpCircle, CreditCard, MessageCircle } from "lucide-react";
 
 const Navbar: React.FC = () => {
   const {
@@ -38,6 +38,14 @@ const Navbar: React.FC = () => {
               <Button variant="outline" className="flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
                 <span>Support</span>
+              </Button>
+            </Link>
+            
+            {/* New Request button - always visible */}
+            <Link to="/new-request">
+              <Button variant="outline" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                <span>Νέο Αίτημα</span>
               </Button>
             </Link>
 
