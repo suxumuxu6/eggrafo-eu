@@ -29,7 +29,7 @@ const NewRequest: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !email.trim() || !requestType.trim() || !message.trim()) {
+    if (!name.trim() || !email.trim() || !requestType.trim() || !legalForm.trim() || !message.trim()) {
       toast.error("Παρακαλώ συμπληρώστε όλα τα πεδία");
       return;
     }
@@ -195,10 +195,10 @@ const NewRequest: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="legalForm">Επιλέξτε Νομική Μορφή:</Label>
-                <Select value={legalForm} onValueChange={setLegalForm}>
+                <Label htmlFor="legalForm">Επιλέξτε Νομική Μορφή: *</Label>
+                <Select value={legalForm} onValueChange={setLegalForm} required>
                   <SelectTrigger>
-                    <SelectValue placeholder="Επιλέξτε νομική μορφή (προαιρετικό)" />
+                    <SelectValue placeholder="Επιλέξτε νομική μορφή" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="oe-ee">ΟΕ-ΕΕ</SelectItem>
