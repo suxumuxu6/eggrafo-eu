@@ -64,7 +64,7 @@ export const LiveChatWidget: React.FC = () => {
   const handleOption = (option: string) => {
     setMessages(msgs => [...msgs, { sender: "user", text: option }]);
     let reply = "";
-    if (option === "Θέλω ένα άλλο παράδειγμα εγγράφου") {
+    if (option === "Θα ήθελα ένα υπόδειγμα εγγράφου ΓΕΜΗ") {
       reply = "επιλέξτε μία από τις παρακάτω νομικές μορφές:";
       setTimeout(() => {
         setMessages(msgs => [...msgs, { sender: "bot", text: reply }]);
