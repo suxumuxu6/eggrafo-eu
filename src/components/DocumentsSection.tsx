@@ -3,7 +3,6 @@ import DocumentsGrid from './DocumentsGrid';
 import { Document } from '../utils/searchUtils';
 import DonationModal from './DonationModal';
 import InlinePDFViewer from './InlinePDFViewer';
-
 interface DocumentsSectionProps {
   filteredDocuments: Document[];
   isAdmin: boolean;
@@ -11,9 +10,7 @@ interface DocumentsSectionProps {
   onEditDocument: (document: Document) => void;
   onDeleteDocument: (document: Document) => void;
 }
-
 const DONATED_DOCS_KEY = 'donatedDocs';
-
 const DocumentsSection: React.FC<DocumentsSectionProps> = ({
   filteredDocuments,
   isAdmin,
@@ -40,9 +37,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
   const markDocumentDonated = (docId: string) => {
     try {
       const prev = JSON.parse(localStorage.getItem(DONATED_DOCS_KEY) || '[]');
-      const updated = Array.isArray(prev)
-        ? Array.from(new Set([...prev, docId]))
-        : [docId];
+      const updated = Array.isArray(prev) ? Array.from(new Set([...prev, docId])) : [docId];
       localStorage.setItem(DONATED_DOCS_KEY, JSON.stringify(updated));
     } catch {
       localStorage.setItem(DONATED_DOCS_KEY, JSON.stringify([docId]));
@@ -77,52 +72,24 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
       setPendingViewDocument(null);
     }
   };
-
   const handleDonationClose = () => {
     setShowDonationModal(false);
     setPendingViewDocument(null);
   };
-
   const handlePDFViewerClose = () => {
     setShowPDFViewer(false);
     setActiveDoc(null);
   };
-
-  return (
-    <div className="mb-8">
+  return <div className="mb-8">
       {/* Styled header to match "Νόμοι Εταιρειών" */}
       <div className="w-full border-2 border-kb-blue bg-kb-blue rounded-xl shadow-sm animate-fade-in mb-6">
-        <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">
-          Παραδείγματα Εγγράφων για λήψη
-        </h2>
+        <h2 className="text-2xl font-semibold text-white text-center py-4 px-2 m-0">Υποδείγματα Εγγράφων για λήψη</h2>
       </div>
-      <DocumentsGrid
-        documents={filteredDocuments}
-        allDocuments={filteredDocuments}
-        isAdmin={isAdmin}
-        onViewDocument={handleViewDocumentWithDonation}
-        onEditDocument={onEditDocument}
-        onDeleteDocument={onDeleteDocument}
-      />
+      <DocumentsGrid documents={filteredDocuments} allDocuments={filteredDocuments} isAdmin={isAdmin} onViewDocument={handleViewDocumentWithDonation} onEditDocument={onEditDocument} onDeleteDocument={onDeleteDocument} />
       {/* Donation modal shown only when needed */}
-      {pendingViewDocument && (
-        <DonationModal 
-          isOpen={showDonationModal}
-          onClose={handleDonationClose}
-          onSuccess={handleDonationSuccess}
-          documentTitle={pendingViewDocument.title}
-          documentId={pendingViewDocument.id}
-        />
-      )}
+      {pendingViewDocument && <DonationModal isOpen={showDonationModal} onClose={handleDonationClose} onSuccess={handleDonationSuccess} documentTitle={pendingViewDocument.title} documentId={pendingViewDocument.id} />}
       {/* After donation, show PDF viewer */}
-      {activeDoc && showPDFViewer && (
-        <InlinePDFViewer
-          document={activeDoc}
-          onClose={handlePDFViewerClose}
-        />
-      )}
-    </div>
-  );
+      {activeDoc && showPDFViewer && <InlinePDFViewer document={activeDoc} onClose={handlePDFViewerClose} />}
+    </div>;
 };
-
 export default DocumentsSection;
