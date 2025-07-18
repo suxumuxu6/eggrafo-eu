@@ -64,7 +64,14 @@ export const LiveChatWidget: React.FC = () => {
   const handleOption = (option: string) => {
     setMessages(msgs => [...msgs, { sender: "user", text: option }]);
     let reply = "";
-    if (option === "Θα ήθελα ένα υπόδειγμα εγγράφου ΓΕΜΗ") {
+    if (option === "Νέο Υπόδειγμα έγγραφου ΓΕΜΗ") {
+      reply = "επιλέξτε μία από τις παρακάτω νομικές μορφές:";
+      setTimeout(() => {
+        setMessages(msgs => [...msgs, { sender: "bot", text: reply }]);
+        setStep("waitingForLegalType");
+        setCanSendMessage(false);
+      }, 500);
+    } else if (option === "Διαδικασία στο ΓΕΜΗ") {
       reply = "επιλέξτε μία από τις παρακάτω νομικές μορφές:";
       setTimeout(() => {
         setMessages(msgs => [...msgs, { sender: "bot", text: reply }]);
